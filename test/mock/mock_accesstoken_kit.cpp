@@ -19,7 +19,7 @@ namespace OHOS {
 namespace Security::AccessToken {
 int AccessTokenKit::VerifyAccessToken(AccessTokenID tokenID, const std::string& permissionName)
 {
-    return 0;
+    return PERMISSION_GRANTED;
 }
 } // namespace Security::AccessToken
 } // namespace OHOS
