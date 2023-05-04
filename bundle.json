@@ -24,14 +24,15 @@
     "ram":"1024KB",
     "deps": {
       "components": [
-        "ipc",
-        "hiviewdfx_hilog_native",
-        "appexecfwk_standard",
-        "aafwk_standard",
-        "safwk",
         "ability_runtime",
         "ability_base",
-        "bundle_framework",
+        "access_token",
+        "c_utils",
+        "hiviewdfx_hilog_native",
+        "init",
+        "ipc",
+        "napi",
+        "safwk",
         "samgr"
       ],
       "third_party": []
