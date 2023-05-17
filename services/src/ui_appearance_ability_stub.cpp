@@ -15,6 +15,7 @@
 
 #include "ui_appearance_ability_stub.h"
 
+#include "ui_appearance_ipc_interface_code.h"
 #include "ui_appearance_log.h"
 
 namespace OHOS {
@@ -29,13 +30,13 @@ int32_t UiAppearanceAbilityStub::OnRemoteRequest(
         return -1;
     }
     switch (code) {
-        case SET_DARK_MODE: {
+        case static_cast<uint32_t>(UiAppearanceInterfaceCode::SET_DARK_MODE): {
             UiAppearanceAbilityInterface::DarkMode mode =
                 static_cast<UiAppearanceAbilityInterface::DarkMode>(data.ReadInt32());
             ret = reply.WriteInt32(SetDarkMode(mode));
             return (ret ? 0 : -1);
         }
-        case GET_DARK_MODE: {
+        case static_cast<uint32_t>(UiAppearanceInterfaceCode::GET_DARK_MODE): {
             ret = reply.WriteInt32(GetDarkMode());
             return (ret ? 0 : -1);
         }

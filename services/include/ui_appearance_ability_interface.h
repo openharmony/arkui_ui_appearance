@@ -28,11 +28,6 @@ public:
         UNKNOWN = 2,
     };
 
-    enum IpcCode {
-        SET_DARK_MODE = 1,
-        GET_DARK_MODE = 2,
-    };
-
     enum ErrCode {
         SUCCEEDED = 0,
         PERMISSION_ERR = 201,
