@@ -18,6 +18,7 @@
 #include <unistd.h>
 
 #include "message_parcel.h"
+#include "ui_appearance_ipc_interface_code.h"
 #include "ui_appearance_log.h"
 
 namespace OHOS {
@@ -36,7 +37,8 @@ int32_t UiAppearanceAbilityProxy::SetDarkMode(UiAppearanceAbilityInterface::Dark
         return SYS_ERR;
     }
 
-    auto res = Remote()->SendRequest(SET_DARK_MODE, data, reply, option);
+    auto res =
+        Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::SET_DARK_MODE), data, reply, option);
     if (res != ERR_NONE) {
         HILOG_ERROR("SendRequest failed.");
         return SYS_ERR;
@@ -55,7 +57,8 @@ UiAppearanceAbilityInterface::DarkMode UiAppearanceAbilityProxy::GetDarkMode()
         return UNKNOWN;
     }
 
-    auto res = Remote()->SendRequest(GET_DARK_MODE, data, reply, option);
+    auto res =
+        Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::GET_DARK_MODE), data, reply, option);
     if (res != ERR_NONE) {
         HILOG_ERROR("SendRequest failed.");
         return UNKNOWN;
