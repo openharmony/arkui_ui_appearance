@@ -15,6 +15,6 @@ import("//build/ohos.gni")
 import("//build/ohos/sa_profile/sa_profile.gni")
 
 ohos_sa_profile("arkui_ui_appearance_sa_profiles") {
-  sources = [ "7002.xml" ]
+  sources = [ "7002.json" ]
   part_name = "ui_appearance"
 }
