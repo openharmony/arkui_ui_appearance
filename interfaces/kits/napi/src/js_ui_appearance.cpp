@@ -19,7 +19,7 @@
 
 namespace OHOS {
 namespace ArkUi::UiAppearance {
-void JsDarkMode::OnExecute(napi_env env, void* data)
+void JsUiAppearance::OnExecute(napi_env env, void* data)
 {
     JS_HILOG_INFO("OnExecute begin.");
     AsyncContext* asyncContext = static_cast<AsyncContext*>(data);
@@ -29,7 +29,7 @@ void JsDarkMode::OnExecute(napi_env env, void* data)
     }
 }
 
-void JsDarkMode::OnComplete(napi_env env, napi_status status, void* data)
+void JsUiAppearance::OnComplete(napi_env env, napi_status status, void* data)
 {
     JS_HILOG_INFO("OnComplete begin.");
     AsyncContext* asyncContext = static_cast<AsyncContext*>(data);
@@ -75,7 +75,7 @@ void JsDarkMode::OnComplete(napi_env env, napi_status status, void* data)
     delete asyncContext;
 }
 
-napi_status JsDarkMode::CheckArgs(napi_env env, size_t argc, napi_value* argv)
+napi_status JsUiAppearance::CheckArgs(napi_env env, size_t argc, napi_value* argv)
 {
     if (argc < 1 || argc > 2) { // 1 and 2 is the number of arguments
         return napi_invalid_arg;
@@ -101,7 +101,7 @@ napi_status JsDarkMode::CheckArgs(napi_env env, size_t argc, napi_value* argv)
     return napi_ok;
 }
 
-UiAppearanceAbilityInterface::DarkMode JsDarkMode::ConvertJsDarkMode2Enum(int32_t jsVal)
+UiAppearanceAbilityInterface::DarkMode JsUiAppearance::ConvertJsDarkMode2Enum(int32_t jsVal)
 {
     switch (jsVal) {
         case 0:
@@ -126,7 +126,7 @@ static napi_value JSSetDarkMode(napi_env env, napi_callback_info info)
             JS_HILOG_ERROR("get callback info failed.");
             break;
         }
-        napiStatus = JsDarkMode::CheckArgs(env, argc, argv);
+        napiStatus = JsUiAppearance::CheckArgs(env, argc, argv);
         if (napiStatus != napi_ok) {
             JS_HILOG_ERROR("invalid argument.");
             break;
@@ -144,7 +144,7 @@ static napi_value JSSetDarkMode(napi_env env, napi_callback_info info)
     asyncContext->isArgsValid = (napiStatus == napi_ok);
     if (asyncContext->isArgsValid) {
         napi_get_value_int32(env, argv[0], &asyncContext->jsSetArg);
-        asyncContext->mode = JsDarkMode::ConvertJsDarkMode2Enum(asyncContext->jsSetArg);
+        asyncContext->mode = JsUiAppearance::ConvertJsDarkMode2Enum(asyncContext->jsSetArg);
     }
     if (argc == 2) { // 2: the number of arguments
         napi_create_reference(env, argv[1], 1, &asyncContext->callbackRef);
@@ -159,7 +159,7 @@ static napi_value JSSetDarkMode(napi_env env, napi_callback_info info)
 
     napi_value resource = nullptr;
     napi_create_string_utf8(env, "JSSetDarkMode", NAPI_AUTO_LENGTH, &resource);
-    napi_create_async_work(env, nullptr, resource, JsDarkMode::OnExecute, JsDarkMode::OnComplete,
+    napi_create_async_work(env, nullptr, resource, JsUiAppearance::OnExecute, JsUiAppearance::OnComplete,
         reinterpret_cast<void*>(asyncContext), &asyncContext->work);
     napi_queue_async_work(env, asyncContext->work);
 
