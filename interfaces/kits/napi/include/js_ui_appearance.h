@@ -34,7 +34,7 @@ struct AsyncContext {
     UiAppearanceAbilityInterface::DarkMode mode;
 };
 
-class JsDarkMode final {
+class JsUiAppearance final {
 public:
     enum EnumNapiResults { ERROR = 0, COMMON, BUTT };
 

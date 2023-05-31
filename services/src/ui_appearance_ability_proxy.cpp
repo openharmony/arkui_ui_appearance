@@ -15,8 +15,6 @@
 
 #include "ui_appearance_ability_proxy.h"
 
-#include <unistd.h>
-
 #include "message_parcel.h"
 #include "ui_appearance_log.h"
 
