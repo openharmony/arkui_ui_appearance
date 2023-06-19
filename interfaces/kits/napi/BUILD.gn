@@ -25,9 +25,10 @@ ohos_shared_library("uiappearance") {
 
   deps = [ "../../../services:ui_appearance_client" ]
   external_deps = [
-    "napi:ace_napi",
     "c_utils:utils",
     "hilog:libhilog",
+    "ipc:ipc_core",
+    "napi:ace_napi",
   ]
 
   relative_install_dir = "module"

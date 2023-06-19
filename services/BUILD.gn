@@ -59,5 +59,6 @@ ohos_shared_library("ui_appearance_client") {
     "samgr:samgr_proxy",
   ]
   subsystem_name = "arkui"
+  innerapi_tags = [ "platformsdk" ]
   part_name = "ui_appearance"
 }
