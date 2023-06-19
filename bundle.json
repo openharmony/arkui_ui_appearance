@@ -28,7 +28,7 @@
         "ability_base",
         "access_token",
         "c_utils",
-        "hiviewdfx_hilog_native",
+        "hilog",
         "init",
         "ipc",
         "napi",
