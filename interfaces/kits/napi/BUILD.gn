@@ -27,7 +27,7 @@ ohos_shared_library("uiappearance") {
   external_deps = [
     "napi:ace_napi",
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
   ]
 
   relative_install_dir = "module"
