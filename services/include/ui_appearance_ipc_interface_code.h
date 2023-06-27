@@ -22,7 +22,6 @@ namespace ArkUi::UiAppearance {
 enum class UiAppearanceInterfaceCode {
     SET_DARK_MODE = 1,
     GET_DARK_MODE = 2,
-    ERROR,
 };
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS
