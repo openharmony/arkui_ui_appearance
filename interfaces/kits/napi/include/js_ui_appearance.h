@@ -16,6 +16,8 @@
 #ifndef JS_UI_APPEARANCE_H
 #define JS_UI_APPEARANCE_H
 
+#include <string>
+
 #include "napi/native_api.h"
 #include "napi/native_common.h"
 #include "napi/native_node_api.h"
@@ -24,20 +26,17 @@
 namespace OHOS {
 namespace ArkUi::UiAppearance {
 struct AsyncContext {
-    napi_env env = nullptr;
     napi_async_work work = nullptr;
     napi_deferred deferred = nullptr;
     napi_ref callbackRef = nullptr;
     int32_t jsSetArg = -1;
-    int32_t status = 0;
-    bool isArgsValid = true;
+    std::string errMsg;
+    UiAppearanceAbilityInterface::ErrCode status;
     UiAppearanceAbilityInterface::DarkMode mode;
 };
 
 class JsUiAppearance final {
 public:
-    enum EnumNapiResults { ERROR = 0, COMMON, BUTT };
-
     static void OnExecute(napi_env env, void* data);
     static void OnComplete(napi_env env, napi_status status, void* data);
     static napi_status CheckArgs(napi_env env, size_t argc, napi_value* argv);
