@@ -19,79 +19,132 @@
 
 namespace OHOS {
 namespace ArkUi::UiAppearance {
+namespace {
+static constexpr size_t ARGC_WITH_ONE = 1;
+static constexpr size_t ARGC_WITH_TWO = 2;
+const std::string PERMISSION_ERR_MSG =
+    "An attempt was made to update configuration forbidden by permission: ohos.permission.UPDATE_CONFIGURATION.";
+const std::string INVALID_ARG_MSG = "The type of 'mode' must be DarkMode.";
+
+static const std::unordered_map<int32_t, std::string> ERROR_CODE_TO_MSG {
+    { UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR, "Permission denied. " },
+    { UiAppearanceAbilityInterface::ErrCode::INVALID_ARG, "Parameter error. " },
+    { UiAppearanceAbilityInterface::ErrCode::SYS_ERR, "System error. " },
+};
+
+void NapiThrow(napi_env env, const std::string& message, int32_t errCode)
+{
+    napi_value code = nullptr;
+    std::string strCode = std::to_string(errCode);
+    napi_create_string_utf8(env, strCode.c_str(), strCode.length(), &code);
+
+    napi_value msg = nullptr;
+    auto iter = ERROR_CODE_TO_MSG.find(errCode);
+    std::string strMsg = (iter != ERROR_CODE_TO_MSG.end() ? iter->second : "") + message;
+    JS_HILOG_INFO("napi throw errCode %{public}d, strMsg %{public}s", errCode, strMsg.c_str());
+    napi_create_string_utf8(env, strMsg.c_str(), strMsg.length(), &msg);
+
+    napi_value error = nullptr;
+    napi_create_error(env, code, msg, &error);
+    napi_throw(env, error);
+}
+} // namespace
+
 void JsUiAppearance::OnExecute(napi_env env, void* data)
 {
     JS_HILOG_INFO("OnExecute begin.");
     AsyncContext* asyncContext = static_cast<AsyncContext*>(data);
-    if (asyncContext->isArgsValid) {
-        auto res = UiAppearanceAbilityClient::GetInstance()->SetDarkMode(asyncContext->mode);
-        asyncContext->status = res;
+    if (asyncContext == nullptr) {
+        NapiThrow(env, "asyncContext is null.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
+        return;
+    }
+    auto resCode = UiAppearanceAbilityClient::GetInstance()->SetDarkMode(asyncContext->mode);
+    asyncContext->status = static_cast<UiAppearanceAbilityInterface::ErrCode>(resCode);
+    if (asyncContext->status == UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR) {
+        asyncContext->errMsg = PERMISSION_ERR_MSG;
+    } else if (asyncContext->status == UiAppearanceAbilityInterface::ErrCode::INVALID_ARG) {
+        asyncContext->errMsg = INVALID_ARG_MSG;
+    } else {
+        asyncContext->errMsg = "";
     }
 }
 
 void JsUiAppearance::OnComplete(napi_env env, napi_status status, void* data)
 {
     JS_HILOG_INFO("OnComplete begin.");
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    if (scope == nullptr) {
+        NapiThrow(env, "open handle scope failed.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
+        return;
+    }
     AsyncContext* asyncContext = static_cast<AsyncContext*>(data);
-    napi_value result[EnumNapiResults::BUTT] = { 0 };
-
-    // set result
-    if (asyncContext->isArgsValid && asyncContext->status == UiAppearanceAbilityInterface::ErrCode::SUCCEEDED) {
-        napi_get_undefined(env, &result[EnumNapiResults::ERROR]);
-        napi_get_undefined(env, &result[EnumNapiResults::COMMON]);
-    } else {
-        std::string err;
-        napi_value message = nullptr;
-        if (!asyncContext->isArgsValid || asyncContext->status == UiAppearanceAbilityInterface::ErrCode::INVALID_ARG) {
-            err.assign("invalid argument.");
-        } else if (asyncContext->status == UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR) {
-            err.assign("permission verification failed.");
-        } else {
-            err.assign("system error.");
-        }
-        napi_create_string_utf8(env, err.c_str(), NAPI_AUTO_LENGTH, &message);
-        napi_create_error(env, nullptr, message, &result[EnumNapiResults::ERROR]);
-        napi_get_undefined(env, &result[EnumNapiResults::COMMON]);
+    if (asyncContext == nullptr) {
+        NapiThrow(env, "asyncContext is null.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
+        return;
     }
 
-    if (asyncContext->deferred) { // promise
-        if (asyncContext->isArgsValid && asyncContext->status == UiAppearanceAbilityInterface::ErrCode::SUCCEEDED) {
-            napi_resolve_deferred(env, asyncContext->deferred, result[EnumNapiResults::COMMON]);
-        } else {
-            napi_reject_deferred(env, asyncContext->deferred, result[EnumNapiResults::ERROR]);
+    if (asyncContext->status == UiAppearanceAbilityInterface::ErrCode::SUCCEEDED) {
+        napi_value result = nullptr;
+        napi_get_undefined(env, &result);
+        if (asyncContext->deferred) { // promise
+            napi_resolve_deferred(env, asyncContext->deferred, result);
+        } else { // AsyncCallback
+            napi_value callback = nullptr;
+            napi_get_reference_value(env, asyncContext->callbackRef, &callback);
+            napi_value ret;
+            napi_call_function(env, nullptr, callback, 1, &result, &ret);
         }
-    } else { // AsyncCallback
-        JS_HILOG_INFO("napi call function start.");
-        napi_value callback = nullptr;
-        napi_value returnValue = nullptr;
-        auto errCode =
-            (asyncContext->isArgsValid) ? asyncContext->status : UiAppearanceAbilityInterface::ErrCode::INVALID_ARG;
-        napi_create_int32(env, errCode, result);
-        napi_get_reference_value(env, asyncContext->callbackRef, &callback);
-        napi_call_function(env, nullptr, callback, EnumNapiResults::BUTT, result, &returnValue);
-        napi_delete_reference(env, asyncContext->callbackRef);
+    } else {
+        napi_value code = nullptr;
+        std::string strCode = std::to_string(asyncContext->status);
+        napi_create_string_utf8(env, strCode.c_str(), strCode.length(), &code);
+
+        napi_value msg = nullptr;
+        auto iter = ERROR_CODE_TO_MSG.find(asyncContext->status);
+        std::string strMsg = (iter != ERROR_CODE_TO_MSG.end() ? iter->second : "") + asyncContext->errMsg;
+        JS_HILOG_INFO("napi throw errCode %{public}d, strMsg %{public}s", asyncContext->status, strMsg.c_str());
+        napi_create_string_utf8(env, strMsg.c_str(), strMsg.length(), &msg);
+
+        napi_value error = nullptr;
+        napi_create_error(env, code, msg, &error);
+        if (asyncContext->deferred) { // promise
+            napi_reject_deferred(env, asyncContext->deferred, error);
+        } else { // AsyncCallback
+            napi_value callback = nullptr;
+            napi_get_reference_value(env, asyncContext->callbackRef, &callback);
+            napi_value ret;
+            napi_call_function(env, nullptr, callback, 1, &error, &ret);
+        }
     }
     napi_delete_async_work(env, asyncContext->work);
     delete asyncContext;
+    napi_close_handle_scope(env, scope);
 }
 
 napi_status JsUiAppearance::CheckArgs(napi_env env, size_t argc, napi_value* argv)
 {
-    if (argc < 1 || argc > 2) { // 1 and 2 is the number of arguments
+    if (argc != ARGC_WITH_ONE && argc != ARGC_WITH_TWO) {
+        NapiThrow(
+            env, "the number of parameters can only be 1 or 2.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
         return napi_invalid_arg;
     }
 
     napi_valuetype valueType = napi_undefined;
     switch (argc) {
-        case 2: // 2 is the number of arguments
+        case ARGC_WITH_TWO:
             napi_typeof(env, argv[1], &valueType);
             if (valueType != napi_function) {
+                NapiThrow(env, "the second parameter must be a function.",
+                    UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
                 return napi_invalid_arg;
             }
             [[fallthrough]];
-        case 1:
+        case ARGC_WITH_ONE:
             napi_typeof(env, argv[0], &valueType);
             if (valueType != napi_number) {
+                NapiThrow(
+                    env, "the first parameter must be DarkMode.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
                 return napi_invalid_arg;
             }
             break;
@@ -117,44 +170,36 @@ static napi_value JSSetDarkMode(napi_env env, napi_callback_info info)
 {
     JS_HILOG_INFO("JSSetDarkMode begin.");
 
-    size_t argc = 2;
-    napi_value argv[2] = { 0 };
+    size_t argc = ARGC_WITH_TWO;
+    napi_value argv[ARGC_WITH_TWO] = { 0 };
     napi_status napiStatus = napi_ok;
-    do {
-        napiStatus = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-        if (napiStatus != napi_ok) {
-            JS_HILOG_ERROR("get callback info failed.");
-            break;
-        }
-        napiStatus = JsUiAppearance::CheckArgs(env, argc, argv);
-        if (napiStatus != napi_ok) {
-            JS_HILOG_ERROR("invalid argument.");
-            break;
-        }
-    } while (0);
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
 
-    auto asyncContext = new (std::nothrow) AsyncContext();
-    if (asyncContext == nullptr) {
-        JS_HILOG_ERROR("new AsyncContext failed.");
-        napi_value result = nullptr;
-        napi_get_undefined(env, &result);
+    napiStatus = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (napiStatus != napi_ok) {
+        NapiThrow(env, "get callback info failed.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
+        return result;
+    }
+    napiStatus = JsUiAppearance::CheckArgs(env, argc, argv);
+    if (napiStatus != napi_ok) {
+        NapiThrow(env, "parameter parsing error.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
         return result;
     }
 
-    asyncContext->isArgsValid = (napiStatus == napi_ok);
-    if (asyncContext->isArgsValid) {
-        napi_get_value_int32(env, argv[0], &asyncContext->jsSetArg);
-        asyncContext->mode = JsUiAppearance::ConvertJsDarkMode2Enum(asyncContext->jsSetArg);
-    }
-    if (argc == 2) { // 2: the number of arguments
-        napi_create_reference(env, argv[1], 1, &asyncContext->callbackRef);
+    auto asyncContext = new (std::nothrow) AsyncContext();
+    if (asyncContext == nullptr) {
+        NapiThrow(env, "create AsyncContext failed.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
+        return result;
     }
 
-    napi_value result = nullptr;
+    napi_get_value_int32(env, argv[0], &asyncContext->jsSetArg);
+    asyncContext->mode = JsUiAppearance::ConvertJsDarkMode2Enum(asyncContext->jsSetArg);
+    if (argc == ARGC_WITH_TWO) {
+        napi_create_reference(env, argv[1], 1, &asyncContext->callbackRef);
+    }
     if (asyncContext->callbackRef == nullptr) {
         napi_create_promise(env, &asyncContext->deferred, &result);
-    } else {
-        napi_get_undefined(env, &result);
     }
 
     napi_value resource = nullptr;
