@@ -27,7 +27,7 @@
 namespace {
 static const std::string LIGHT = "light";
 static const std::string DARK = "dark";
-static const std::string PERSIST_DARKMODE_KEY = "persist.darkmode";
+static const std::string PERSIST_DARKMODE_KEY = "persist.ace.darkmode";
 static const std::string PERMISSION_UPDATE_CONFIGURATION = "ohos.permission.UPDATE_CONFIGURATION";
 } // namespace
 
