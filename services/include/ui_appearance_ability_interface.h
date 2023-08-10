@@ -32,11 +32,11 @@ public:
         SUCCEEDED = 0,
         PERMISSION_ERR = 201,
         INVALID_ARG = 401,
-        SYS_ERR = 1,
+        SYS_ERR = 500001,
     };
 
     virtual int32_t SetDarkMode(DarkMode mode) = 0;
-    virtual DarkMode GetDarkMode() = 0;
+    virtual int32_t GetDarkMode() = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.UiAppearance.UiAppearanceAbilityInterface");
