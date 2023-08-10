@@ -30,7 +30,7 @@ public:
     ~UiAppearanceAbility() = default;
 
     int32_t SetDarkMode(DarkMode mode) override;
-    DarkMode GetDarkMode() override;
+    int32_t GetDarkMode() override;
 
 protected:
     void OnStart() override;
@@ -43,9 +43,9 @@ private:
     sptr<AppExecFwk::IAppMgr> GetAppManagerInstance();
     bool VerifyAccessToken(const std::string& permissionName);
     int32_t OnSetDarkMode(DarkMode mode);
-    DarkMode OnGetDarkMode();
+    int32_t OnGetDarkMode();
 
-    DarkMode darkMode_ = DarkMode::ALWAYS_LIGHT;
+    int32_t darkMode_ = 1;
 };
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS
