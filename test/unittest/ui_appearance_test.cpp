@@ -84,7 +84,7 @@ HWTEST_F(DarkModeTest, ui_appearance_test_001, TestSize.Level0)
     auto test = DarkModeTest::GetUiAppearanceAbilityTest();
     auto result = test->SetDarkMode(UiAppearanceAbilityInterface::DarkMode::ALWAYS_DARK);
     EXPECT_EQ(result, 0);
-    UiAppearanceAbilityInterface::DarkMode mode = test->GetDarkMode();
+    auto mode = test->GetDarkMode();
     EXPECT_EQ(mode, UiAppearanceAbilityInterface::DarkMode::ALWAYS_DARK);
 
     result = test->SetDarkMode(UiAppearanceAbilityInterface::DarkMode::ALWAYS_LIGHT);
@@ -105,7 +105,7 @@ HWTEST_F(DarkModeTest, ui_appearance_test_002, TestSize.Level0)
     auto test = DarkModeTest::GetUiAppearanceAbilityTest();
     auto result = test->SetDarkMode(UiAppearanceAbilityInterface::DarkMode::ALWAYS_DARK);
     EXPECT_EQ(result, 0);
-    UiAppearanceAbilityInterface::DarkMode mode = test->GetDarkMode();
+    auto mode = test->GetDarkMode();
     EXPECT_EQ(mode, UiAppearanceAbilityInterface::DarkMode::ALWAYS_DARK);
 
     result = test->SetDarkMode(UiAppearanceAbilityInterface::DarkMode::ALWAYS_DARK);

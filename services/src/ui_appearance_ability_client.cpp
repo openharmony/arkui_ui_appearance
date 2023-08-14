@@ -52,11 +52,11 @@ int32_t UiAppearanceAbilityClient::SetDarkMode(UiAppearanceAbilityInterface::Dar
     return uiAppearanceServiceProxy_->SetDarkMode(mode);
 }
 
-UiAppearanceAbilityInterface::DarkMode UiAppearanceAbilityClient::GetDarkMode()
+int32_t UiAppearanceAbilityClient::GetDarkMode()
 {
     if (!GetUiAppearanceServiceProxy()) {
         HILOG_ERROR("GetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
-        return UiAppearanceAbilityInterface::DarkMode::UNKNOWN;
+        return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
     }
     return uiAppearanceServiceProxy_->GetDarkMode();
 }

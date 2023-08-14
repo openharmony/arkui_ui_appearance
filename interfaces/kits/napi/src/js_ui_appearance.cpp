@@ -29,7 +29,7 @@ const std::string INVALID_ARG_MSG = "The type of 'mode' must be DarkMode.";
 static const std::unordered_map<int32_t, std::string> ERROR_CODE_TO_MSG {
     { UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR, "Permission denied. " },
     { UiAppearanceAbilityInterface::ErrCode::INVALID_ARG, "Parameter error. " },
-    { UiAppearanceAbilityInterface::ErrCode::SYS_ERR, "System error. " },
+    { UiAppearanceAbilityInterface::ErrCode::SYS_ERR, "Internal error. " },
 };
 
 void NapiThrow(napi_env env, const std::string& message, int32_t errCode)
@@ -86,7 +86,7 @@ void JsUiAppearance::OnComplete(napi_env env, napi_status status, void* data)
 
     if (asyncContext->status == UiAppearanceAbilityInterface::ErrCode::SUCCEEDED) {
         napi_value result = nullptr;
-        napi_get_undefined(env, &result);
+        napi_get_null(env, &result);
         if (asyncContext->deferred) { // promise
             napi_resolve_deferred(env, asyncContext->deferred, result);
         } else { // AsyncCallback
@@ -215,12 +215,26 @@ static napi_value JSGetDarkMode(napi_env env, napi_callback_info info)
 {
     JS_HILOG_INFO("JSGetDarkMode begin.");
 
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
     size_t argc = 0;
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, nullptr, nullptr, nullptr));
-    NAPI_ASSERT(env, argc == 0, "requires no parameter");
+    if (argc != 0) {
+        NapiThrow(env, "requires no parameter.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
+        return result;
+    }
 
-    UiAppearanceAbilityInterface::DarkMode mode = UiAppearanceAbilityClient::GetInstance()->GetDarkMode();
-    napi_value result;
+    auto mode = UiAppearanceAbilityClient::GetInstance()->GetDarkMode();
+    if (mode == UiAppearanceAbilityInterface::ErrCode::SYS_ERR) {
+        NapiThrow(env, "get dark-mode failed.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
+        return result;
+    }
+    if (mode == UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR) {
+        NapiThrow(env,
+            "An attempt was made to get configuration forbidden by permission: ohos.permission.UPDATE_CONFIGURATION.",
+            UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR);
+        return result;
+    }
     NAPI_CALL(env, napi_create_int32(env, mode, &result));
     return result;
 }
