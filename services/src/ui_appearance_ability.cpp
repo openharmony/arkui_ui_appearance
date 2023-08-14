@@ -134,7 +134,7 @@ int32_t UiAppearanceAbility::SetDarkMode(DarkMode mode)
     return SUCCEEDED;
 }
 
-UiAppearanceAbilityInterface::DarkMode UiAppearanceAbility::OnGetDarkMode()
+int32_t UiAppearanceAbility::OnGetDarkMode()
 {
     HILOG_INFO("OnGetDarkMode start.");
     constexpr int buffSize = 64; // buff len: 64
@@ -144,22 +144,22 @@ UiAppearanceAbilityInterface::DarkMode UiAppearanceAbility::OnGetDarkMode()
     auto res = GetParameter(PERSIST_DARKMODE_KEY.c_str(), LIGHT.c_str(), valueGet, buffSize);
     if (res <= 0) {
         HILOG_ERROR("get parameter failed.");
-        return UNKNOWN;
+        return SYS_ERR;
     }
     if (strcmp(valueGet, DARK.c_str()) == 0) {
         return ALWAYS_DARK;
     } else if (strcmp(valueGet, LIGHT.c_str()) == 0) {
         return ALWAYS_LIGHT;
     }
-    return UNKNOWN;
+    return SYS_ERR;
 }
 
-UiAppearanceAbilityInterface::DarkMode UiAppearanceAbility::GetDarkMode()
+int32_t UiAppearanceAbility::GetDarkMode()
 {
     auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
     if (!isCallingPerm) {
         HILOG_ERROR("permission verification failed");
-        return UNKNOWN;
+        return PERMISSION_ERR;
     }
     return darkMode_;
 }
@@ -188,12 +188,7 @@ void UiAppearanceAbility::OnAddSystemAbility(int32_t systemAbilityId, const std:
 {
     HILOG_INFO("systemAbilityId = %{public}d added.", systemAbilityId);
     if (systemAbilityId == APP_MGR_SERVICE_ID) {
-        darkMode_ = OnGetDarkMode();
-        if (darkMode_ == UiAppearanceAbilityInterface::DarkMode::UNKNOWN) {
-            HILOG_ERROR("get darkmode init error.");
-            darkMode_ = UiAppearanceAbilityInterface::DarkMode::ALWAYS_LIGHT;
-        }
-        auto res = OnSetDarkMode(darkMode_);
+        auto res = OnSetDarkMode(static_cast<UiAppearanceAbilityInterface::DarkMode>(OnGetDarkMode()));
         if (res < 0) {
             HILOG_ERROR("set darkmode init error.");
         }

@@ -36,7 +36,7 @@ public:
     static sptr<UiAppearanceAbilityClient> GetInstance();
 
     int32_t SetDarkMode(UiAppearanceAbilityInterface::DarkMode mode);
-    UiAppearanceAbilityInterface::DarkMode GetDarkMode();
+    int32_t GetDarkMode();
     void OnRemoteSaDied(const wptr<IRemoteObject>& object);
 
 private:

@@ -23,7 +23,7 @@ namespace ArkUi::UiAppearance {
 class UiAppearanceAbilityProxy : public IRemoteProxy<UiAppearanceAbilityInterface> {
 public:
     int32_t SetDarkMode(DarkMode mode) override;
-    DarkMode GetDarkMode() override;
+    int32_t GetDarkMode() override;
 
     explicit UiAppearanceAbilityProxy(const sptr<IRemoteObject>& impl)
         : IRemoteProxy<UiAppearanceAbilityInterface>(impl)

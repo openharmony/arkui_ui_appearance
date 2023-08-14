@@ -45,24 +45,24 @@ int32_t UiAppearanceAbilityProxy::SetDarkMode(UiAppearanceAbilityInterface::Dark
     return reply.ReadInt32();
 }
 
-UiAppearanceAbilityInterface::DarkMode UiAppearanceAbilityProxy::GetDarkMode()
+int32_t UiAppearanceAbilityProxy::GetDarkMode()
 {
     MessageParcel data, reply;
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
         HILOG_ERROR("Write descriptor failed!");
-        return UNKNOWN;
+        return SYS_ERR;
     }
 
     auto res =
         Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::GET_DARK_MODE), data, reply, option);
     if (res != ERR_NONE) {
         HILOG_ERROR("SendRequest failed.");
-        return UNKNOWN;
+        return SYS_ERR;
     }
 
-    return static_cast<UiAppearanceAbilityInterface::DarkMode>(reply.ReadInt32());
+    return reply.ReadInt32();
 }
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS
