@@ -45,7 +45,7 @@ private:
     int32_t OnSetDarkMode(DarkMode mode);
     int32_t OnGetDarkMode();
 
-    int32_t darkMode_ = 1;
+    DarkMode darkMode_ = DarkMode::ALWAYS_LIGHT;
 };
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS
