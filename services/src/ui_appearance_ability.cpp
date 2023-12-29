@@ -73,7 +73,6 @@ bool UiAppearanceAbility::VerifyAccessToken(const std::string& permissionName)
 
 int32_t UiAppearanceAbility::OnSetDarkMode(DarkMode mode)
 {
-    HILOG_INFO("OnSetDarkMode start.");
     bool ret = false;
     std::string paramValue;
     AppExecFwk::Configuration config;
@@ -103,14 +102,15 @@ int32_t UiAppearanceAbility::OnSetDarkMode(DarkMode mode)
         HILOG_ERROR("Get app manager proxy failed.");
         return SYS_ERR;
     }
+
+    HILOG_INFO("update Configuration start, mode = %{public}d.", mode);
     auto errcode = appManagerInstance->UpdateConfiguration(config);
     if (errcode != 0) {
-        HILOG_ERROR("update configuration failed.");
+        HILOG_ERROR("update configuration failed, errcode = %{public}d.", errcode);
         return SYS_ERR;
     }
     darkMode_ = mode;
 
-    HILOG_INFO("set parameter begin, persist param = %{public}s.", paramValue.c_str());
     // persist to file: etc/para/ui_appearance.para
     auto isSetPara = SetParameter(PERSIST_DARKMODE_KEY.c_str(), paramValue.c_str());
     if (isSetPara < 0) {
@@ -130,13 +130,14 @@ int32_t UiAppearanceAbility::SetDarkMode(DarkMode mode)
     }
     if (mode != darkMode_) {
         return OnSetDarkMode(mode);
+    } else {
+        HILOG_WARN("current color mode is %{public}d, no need to change!", darkMode_);
     }
-    return SUCCEEDED;
+    return SYS_ERR;
 }
 
 int32_t UiAppearanceAbility::OnGetDarkMode()
 {
-    HILOG_INFO("OnGetDarkMode start.");
     constexpr int buffSize = 64; // buff len: 64
     char valueGet[buffSize] = { 0 };
 
@@ -147,8 +148,10 @@ int32_t UiAppearanceAbility::OnGetDarkMode()
         return SYS_ERR;
     }
     if (strcmp(valueGet, DARK.c_str()) == 0) {
+        HILOG_INFO("current color mode is dark.");
         return ALWAYS_DARK;
     } else if (strcmp(valueGet, LIGHT.c_str()) == 0) {
+        HILOG_INFO("current color mode is light.");
         return ALWAYS_LIGHT;
     }
     return SYS_ERR;
@@ -166,8 +169,6 @@ int32_t UiAppearanceAbility::GetDarkMode()
 
 void UiAppearanceAbility::OnStart()
 {
-    HILOG_INFO("publish start.");
-
     bool res = Publish(this); // SA registers with SAMGR
     if (!res) {
         HILOG_ERROR("publish failed.");
