@@ -106,8 +106,19 @@ int32_t UiAppearanceAbility::OnSetDarkMode(DarkMode mode)
     HILOG_INFO("update Configuration start, mode = %{public}d.", mode);
     auto errcode = appManagerInstance->UpdateConfiguration(config);
     if (errcode != 0) {
-        HILOG_ERROR("update configuration failed, errcode = %{public}d.", errcode);
-        return SYS_ERR;
+        auto retVal = appManagerInstance->GetConfiguration(config);
+        if (retVal != 0) {
+            HILOG_ERROR("get configuration failed, update error, error is %{public}d.", retVal);
+            return SYS_ERR;
+        }
+        auto colorMode = config.GetItem(AAFwk::GlobalConfigurationKey::SYSTEM_COLORMODE);
+        if (colorMode != paramValue) {
+            HILOG_ERROR("update configuration failed, errcode = %{public}d.", errcode);
+            return SYS_ERR;
+        } else {
+            HILOG_WARN("uiappearance is different against configuration. Forced to use the configuration, error is "
+                "%{public}d.", errcode);
+        }
     }
     darkMode_ = mode;
 
