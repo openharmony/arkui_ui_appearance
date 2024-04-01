@@ -26,7 +26,7 @@ int32_t UiAppearanceAbilityStub::OnRemoteRequest(
     bool ret = false;
     std::u16string interfaceToken = data.ReadInterfaceToken();
     if (interfaceToken != GetDescriptor()) {
-        HILOG_ERROR("error permission denied.");
+        LOGE("error permission denied.");
         return -1;
     }
     switch (code) {
