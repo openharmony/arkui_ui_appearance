@@ -16,86 +16,17 @@
 #ifndef UI_APPEARANCE_LOG_H
 #define UI_APPEARANCE_LOG_H
 
-#define CONFIG_HILOG
-#ifdef CONFIG_HILOG
 #include "hilog/log.h"
 
-#ifdef HILOG_FATAL
-#undef HILOG_FATAL
-#endif
+#define UIAPPERANCE_FILE_NAME (__builtin_strrchr(__FILE__, '/') ? __builtin_strrchr(__FILE__, '/') + 1 : __FILE__)
 
-#ifdef HILOG_ERROR
-#undef HILOG_ERROR
-#endif
+#define PRINT_LOG(level, fmt, ...) \
+    HILOG_IMPL(LOG_CORE, LOG_##level, 0xD003900, "UiAppearance", "[%{public}s:%{public}s:%{public}d]" fmt, \
+        UIAPPERANCE_FILE_NAME, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 
-#ifdef HILOG_WARN
-#undef HILOG_WARN
-#endif
-
-#ifdef HILOG_INFO
-#undef HILOG_INFO
-#endif
-
-#ifdef HILOG_DEBUG
-#undef HILOG_DEBUG
-#endif
-
-#ifdef LOG_LABEL
-#undef LOG_LABEL
-#endif
-
-static constexpr unsigned int FRAMEWORK_DOMAIN = 0xD003900;
-static constexpr unsigned int JS_DOMAIN = 0xD003B00;
-static constexpr OHOS::HiviewDFX::HiLogLabel LOG_LABEL_FW = { LOG_CORE, FRAMEWORK_DOMAIN, "UiAppearance" };
-static constexpr OHOS::HiviewDFX::HiLogLabel LOG_LABEL_JS = { LOG_CORE, JS_DOMAIN, "JSApp" };
-
-#define UIFILENAME__ (__builtin_strrchr(__FILE__, '/') ? __builtin_strrchr(__FILE__, '/') + 1 : __FILE__)
-
-#define HILOG_FATAL(fmt, ...)            \
-    (void)OHOS::HiviewDFX::HiLog::Fatal( \
-        LOG_LABEL_FW, "[%{public}s(%{public}s:%{public}d)]" fmt, UIFILENAME__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define HILOG_ERROR(fmt, ...)            \
-    (void)OHOS::HiviewDFX::HiLog::Error( \
-        LOG_LABEL_FW, "[%{public}s(%{public}s:%{public}d)]" fmt, UIFILENAME__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define HILOG_WARN(fmt, ...)            \
-    (void)OHOS::HiviewDFX::HiLog::Warn( \
-        LOG_LABEL_FW, "[%{public}s(%{public}s:%{public}d)]" fmt, UIFILENAME__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define HILOG_INFO(fmt, ...)            \
-    (void)OHOS::HiviewDFX::HiLog::Info( \
-        LOG_LABEL_FW, "[%{public}s(%{public}s:%{public}d)]" fmt, UIFILENAME__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define HILOG_DEBUG(fmt, ...)            \
-    (void)OHOS::HiviewDFX::HiLog::Debug( \
-        LOG_LABEL_FW, "[%{public}s(%{public}s:%{public}d)]" fmt, UIFILENAME__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-
-#define JS_HILOG_FATAL(fmt, ...)         \
-    (void)OHOS::HiviewDFX::HiLog::Fatal( \
-        LOG_LABEL_JS, "[%{public}s(%{public}s:%{public}d)]" fmt, UIFILENAME__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define JS_HILOG_ERROR(fmt, ...)         \
-    (void)OHOS::HiviewDFX::HiLog::Error( \
-        LOG_LABEL_JS, "[%{public}s(%{public}s:%{public}d)]" fmt, UIFILENAME__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define JS_HILOG_WARN(fmt, ...)         \
-    (void)OHOS::HiviewDFX::HiLog::Warn( \
-        LOG_LABEL_JS, "[%{public}s(%{public}s:%{public}d)]" fmt, UIFILENAME__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define JS_HILOG_INFO(fmt, ...)         \
-    (void)OHOS::HiviewDFX::HiLog::Info( \
-        LOG_LABEL_JS, "[%{public}s(%{public}s:%{public}d)]" fmt, UIFILENAME__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define JS_HILOG_DEBUG(fmt, ...)         \
-    (void)OHOS::HiviewDFX::HiLog::Debug( \
-        LOG_LABEL_JS, "[%{public}s(%{public}s:%{public}d)]" fmt, UIFILENAME__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#else
-
-#define HILOG_FATAL(...)
-#define HILOG_ERROR(...)
-#define HILOG_WARN(...)
-#define HILOG_INFO(...)
-#define HILOG_DEBUG(...)
-
-#define JS_HILOG_FATAL(...)
-#define JS_HILOG_ERROR(...)
-#define JS_HILOG_WARN(...)
-#define JS_HILOG_INFO(...)
-#define JS_HILOG_DEBUG(...)
-
-#endif // CONFIG_HILOG
+#define LOGE(fmt, ...) PRINT_LOG(ERROR, fmt, ##__VA_ARGS__)
+#define LOGW(fmt, ...) PRINT_LOG(WARN, fmt, ##__VA_ARGS__)
+#define LOGI(fmt, ...) PRINT_LOG(INFO, fmt, ##__VA_ARGS__)
+#define LOGD(fmt, ...) PRINT_LOG(DEBUG, fmt, ##__VA_ARGS__)
 
 #endif // UI_APPEARANCE_LOG_H

@@ -42,19 +42,19 @@ sptr<AppExecFwk::IAppMgr> UiAppearanceAbility::GetAppManagerInstance()
     sptr<ISystemAbilityManager> systemAbilityManager =
         SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (systemAbilityManager == nullptr) {
-        HILOG_ERROR("Getting systemAbilityManager failed.");
+        LOGE("Getting systemAbilityManager failed.");
         return nullptr;
     }
 
     sptr<IRemoteObject> appObject = systemAbilityManager->GetSystemAbility(APP_MGR_SERVICE_ID);
     if (appObject == nullptr) {
-        HILOG_ERROR("Get systemAbility failed.");
+        LOGE("Get systemAbility failed.");
         return nullptr;
     }
 
     sptr<AppExecFwk::IAppMgr> systemAbility = iface_cast<AppExecFwk::IAppMgr>(appObject);
     if (systemAbility == nullptr) {
-        HILOG_ERROR("Get AppMgrProxy from SA failed.");
+        LOGE("Get AppMgrProxy from SA failed.");
         return nullptr;
     }
     return systemAbility;
@@ -65,7 +65,7 @@ bool UiAppearanceAbility::VerifyAccessToken(const std::string& permissionName)
     auto callerToken = IPCSkeleton::GetCallingTokenID();
     int32_t ret = Security::AccessToken::AccessTokenKit::VerifyAccessToken(callerToken, permissionName);
     if (ret == Security::AccessToken::PermissionState::PERMISSION_DENIED) {
-        HILOG_ERROR("permission %{private}s: PERMISSION_DENIED", permissionName.c_str());
+        LOGE("permission %{private}s: PERMISSION_DENIED", permissionName.c_str());
         return false;
     }
     return true;
@@ -93,30 +93,30 @@ int32_t UiAppearanceAbility::OnSetDarkMode(DarkMode mode)
             break;
     }
     if (!ret) {
-        HILOG_ERROR("AddItem failed, mode = %{public}d", mode);
+        LOGE("AddItem failed, mode = %{public}d", mode);
         return INVALID_ARG;
     }
 
     auto appManagerInstance = GetAppManagerInstance();
     if (appManagerInstance == nullptr) {
-        HILOG_ERROR("Get app manager proxy failed.");
+        LOGE("Get app manager proxy failed.");
         return SYS_ERR;
     }
 
-    HILOG_INFO("update Configuration start, mode = %{public}d.", mode);
+    LOGI("update Configuration start, mode = %{public}d.", mode);
     auto errcode = appManagerInstance->UpdateConfiguration(config);
     if (errcode != 0) {
         auto retVal = appManagerInstance->GetConfiguration(config);
         if (retVal != 0) {
-            HILOG_ERROR("get configuration failed, update error, error is %{public}d.", retVal);
+            LOGE("get configuration failed, update error, error is %{public}d.", retVal);
             return SYS_ERR;
         }
         auto colorMode = config.GetItem(AAFwk::GlobalConfigurationKey::SYSTEM_COLORMODE);
         if (colorMode != paramValue) {
-            HILOG_ERROR("update configuration failed, errcode = %{public}d.", errcode);
+            LOGE("update configuration failed, errcode = %{public}d.", errcode);
             return SYS_ERR;
         } else {
-            HILOG_WARN("uiappearance is different against configuration. Forced to use the configuration, error is "
+            LOGW("uiappearance is different against configuration. Forced to use the configuration, error is "
                 "%{public}d.", errcode);
         }
     }
@@ -125,7 +125,7 @@ int32_t UiAppearanceAbility::OnSetDarkMode(DarkMode mode)
     // persist to file: etc/para/ui_appearance.para
     auto isSetPara = SetParameter(PERSIST_DARKMODE_KEY.c_str(), paramValue.c_str());
     if (isSetPara < 0) {
-        HILOG_ERROR("set parameter failed");
+        LOGE("set parameter failed");
         return SYS_ERR;
     }
     return SUCCEEDED;
@@ -136,13 +136,13 @@ int32_t UiAppearanceAbility::SetDarkMode(DarkMode mode)
     // Verify permissions
     auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
     if (!isCallingPerm) {
-        HILOG_ERROR("permission verification failed");
+        LOGE("permission verification failed");
         return PERMISSION_ERR;
     }
     if (mode != darkMode_) {
         return OnSetDarkMode(mode);
     } else {
-        HILOG_WARN("current color mode is %{public}d, no need to change!", darkMode_);
+        LOGW("current color mode is %{public}d, no need to change!", darkMode_);
     }
     return SYS_ERR;
 }
@@ -155,14 +155,14 @@ int32_t UiAppearanceAbility::OnGetDarkMode()
     // LIGHT is the default.
     auto res = GetParameter(PERSIST_DARKMODE_KEY.c_str(), LIGHT.c_str(), valueGet, buffSize);
     if (res <= 0) {
-        HILOG_ERROR("get parameter failed.");
+        LOGE("get parameter failed.");
         return SYS_ERR;
     }
     if (strcmp(valueGet, DARK.c_str()) == 0) {
-        HILOG_INFO("current color mode is dark.");
+        LOGI("current color mode is dark.");
         return ALWAYS_DARK;
     } else if (strcmp(valueGet, LIGHT.c_str()) == 0) {
-        HILOG_INFO("current color mode is light.");
+        LOGI("current color mode is light.");
         return ALWAYS_LIGHT;
     }
     return SYS_ERR;
@@ -172,7 +172,7 @@ int32_t UiAppearanceAbility::GetDarkMode()
 {
     auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
     if (!isCallingPerm) {
-        HILOG_ERROR("permission verification failed");
+        LOGE("permission verification failed");
         return PERMISSION_ERR;
     }
     return darkMode_;
@@ -182,34 +182,34 @@ void UiAppearanceAbility::OnStart()
 {
     bool res = Publish(this); // SA registers with SAMGR
     if (!res) {
-        HILOG_ERROR("publish failed.");
+        LOGE("publish failed.");
         return;
     }
 
-    HILOG_INFO("AddSystemAbilityListener start.");
+    LOGI("AddSystemAbilityListener start.");
     AddSystemAbilityListener(APP_MGR_SERVICE_ID);
     return;
 }
 
 void UiAppearanceAbility::OnStop()
 {
-    HILOG_INFO("UiAppearanceAbility SA stop.");
+    LOGI("UiAppearanceAbility SA stop.");
 }
 
 void UiAppearanceAbility::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
 {
-    HILOG_INFO("systemAbilityId = %{public}d added.", systemAbilityId);
+    LOGI("systemAbilityId = %{public}d added.", systemAbilityId);
     if (systemAbilityId == APP_MGR_SERVICE_ID) {
         auto res = OnSetDarkMode(static_cast<UiAppearanceAbilityInterface::DarkMode>(OnGetDarkMode()));
         if (res < 0) {
-            HILOG_ERROR("set darkmode init error.");
+            LOGE("set darkmode init error.");
         }
     }
 }
 
 void UiAppearanceAbility::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
 {
-    HILOG_INFO("systemAbilityId = %{public}d removed.", systemAbilityId);
+    LOGI("systemAbilityId = %{public}d removed.", systemAbilityId);
 }
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS

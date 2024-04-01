@@ -27,18 +27,18 @@ int32_t UiAppearanceAbilityProxy::SetDarkMode(UiAppearanceAbilityInterface::Dark
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        HILOG_ERROR("Write descriptor failed!");
+        LOGE("Write descriptor failed!");
         return SYS_ERR;
     }
     if (!data.WriteInt32(mode)) {
-        HILOG_ERROR("Write mode failed!");
+        LOGE("Write mode failed!");
         return SYS_ERR;
     }
 
     auto res =
         Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::SET_DARK_MODE), data, reply, option);
     if (res != ERR_NONE) {
-        HILOG_ERROR("SendRequest failed.");
+        LOGE("SendRequest failed.");
         return SYS_ERR;
     }
 
@@ -51,14 +51,14 @@ int32_t UiAppearanceAbilityProxy::GetDarkMode()
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        HILOG_ERROR("Write descriptor failed!");
+        LOGE("Write descriptor failed!");
         return SYS_ERR;
     }
 
     auto res =
         Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::GET_DARK_MODE), data, reply, option);
     if (res != ERR_NONE) {
-        HILOG_ERROR("SendRequest failed.");
+        LOGE("SendRequest failed.");
         return SYS_ERR;
     }
 

@@ -79,7 +79,7 @@ void DarkModeTest::TearDown(void)
  */
 HWTEST_F(DarkModeTest, ui_appearance_test_001, TestSize.Level0)
 {
-    HILOG_INFO("Test SetDarkMode and GetDarkMode APIs when setting dark/light.");
+    LOGI("Test SetDarkMode and GetDarkMode APIs when setting dark/light.");
 
     auto test = DarkModeTest::GetUiAppearanceAbilityTest();
     auto result = test->SetDarkMode(UiAppearanceAbilityInterface::DarkMode::ALWAYS_DARK);
@@ -100,7 +100,7 @@ HWTEST_F(DarkModeTest, ui_appearance_test_001, TestSize.Level0)
  */
 HWTEST_F(DarkModeTest, ui_appearance_test_002, TestSize.Level0)
 {
-    HILOG_INFO("Test SetDarkMode and GetDarkMode APIs when repeatedly setting dark/light.");
+    LOGI("Test SetDarkMode and GetDarkMode APIs when repeatedly setting dark/light.");
 
     auto test = DarkModeTest::GetUiAppearanceAbilityTest();
     auto result = test->SetDarkMode(UiAppearanceAbilityInterface::DarkMode::ALWAYS_DARK);
@@ -131,7 +131,7 @@ HWTEST_F(DarkModeTest, ui_appearance_test_002, TestSize.Level0)
  */
 HWTEST_F(DarkModeTest, ui_appearance_test_003, TestSize.Level0)
 {
-    HILOG_INFO("Test the SetDarkMode API when setting an unexpected value.");
+    LOGI("Test the SetDarkMode API when setting an unexpected value.");
 
     int result =
         DarkModeTest::GetUiAppearanceAbilityTest()->SetDarkMode(UiAppearanceAbilityInterface::DarkMode::UNKNOWN);

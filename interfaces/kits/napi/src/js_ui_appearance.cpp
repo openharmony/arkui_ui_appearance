@@ -41,7 +41,7 @@ void NapiThrow(napi_env env, const std::string& message, int32_t errCode)
     napi_value msg = nullptr;
     auto iter = ERROR_CODE_TO_MSG.find(errCode);
     std::string strMsg = (iter != ERROR_CODE_TO_MSG.end() ? iter->second : "") + message;
-    JS_HILOG_INFO("napi throw errCode %{public}d, strMsg %{public}s", errCode, strMsg.c_str());
+    LOGI("napi throw errCode %{public}d, strMsg %{public}s", errCode, strMsg.c_str());
     napi_create_string_utf8(env, strMsg.c_str(), strMsg.length(), &msg);
 
     napi_value error = nullptr;
@@ -52,7 +52,7 @@ void NapiThrow(napi_env env, const std::string& message, int32_t errCode)
 
 void JsUiAppearance::OnExecute(napi_env env, void* data)
 {
-    JS_HILOG_INFO("OnExecute begin.");
+    LOGI("OnExecute begin.");
     AsyncContext* asyncContext = static_cast<AsyncContext*>(data);
     if (asyncContext == nullptr) {
         NapiThrow(env, "asyncContext is null.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
@@ -71,7 +71,7 @@ void JsUiAppearance::OnExecute(napi_env env, void* data)
 
 void JsUiAppearance::OnComplete(napi_env env, napi_status status, void* data)
 {
-    JS_HILOG_INFO("OnComplete begin.");
+    LOGI("OnComplete begin.");
     napi_handle_scope scope = nullptr;
     napi_open_handle_scope(env, &scope);
     if (scope == nullptr) {
@@ -103,7 +103,7 @@ void JsUiAppearance::OnComplete(napi_env env, napi_status status, void* data)
         napi_value msg = nullptr;
         auto iter = ERROR_CODE_TO_MSG.find(asyncContext->status);
         std::string strMsg = (iter != ERROR_CODE_TO_MSG.end() ? iter->second : "") + asyncContext->errMsg;
-        JS_HILOG_INFO("napi throw errCode %{public}d, strMsg %{public}s", asyncContext->status, strMsg.c_str());
+        LOGI("napi throw errCode %{public}d, strMsg %{public}s", asyncContext->status, strMsg.c_str());
         napi_create_string_utf8(env, strMsg.c_str(), strMsg.length(), &msg);
 
         napi_value error = nullptr;
@@ -168,7 +168,7 @@ UiAppearanceAbilityInterface::DarkMode JsUiAppearance::ConvertJsDarkMode2Enum(in
 
 static napi_value JSSetDarkMode(napi_env env, napi_callback_info info)
 {
-    JS_HILOG_INFO("JSSetDarkMode begin.");
+    LOGI("JSSetDarkMode begin.");
 
     size_t argc = ARGC_WITH_TWO;
     napi_value argv[ARGC_WITH_TWO] = { 0 };
@@ -213,7 +213,7 @@ static napi_value JSSetDarkMode(napi_env env, napi_callback_info info)
 
 static napi_value JSGetDarkMode(napi_env env, napi_callback_info info)
 {
-    JS_HILOG_INFO("JSGetDarkMode begin.");
+    LOGI("JSGetDarkMode begin.");
 
     napi_value result = nullptr;
     napi_get_undefined(env, &result);

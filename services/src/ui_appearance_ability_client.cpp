@@ -37,7 +37,7 @@ sptr<UiAppearanceAbilityClient> UiAppearanceAbilityClient::GetInstance()
 sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::GetUiAppearanceServiceProxy()
 {
     if (uiAppearanceServiceProxy_ == nullptr) {
-        HILOG_ERROR("Redo CreateUiAppearanceServiceProxy");
+        LOGE("Redo CreateUiAppearanceServiceProxy");
         uiAppearanceServiceProxy_ = CreateUiAppearanceServiceProxy();
     }
     return uiAppearanceServiceProxy_;
@@ -46,7 +46,7 @@ sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::GetUiAppearanceSer
 int32_t UiAppearanceAbilityClient::SetDarkMode(UiAppearanceAbilityInterface::DarkMode mode)
 {
     if (!GetUiAppearanceServiceProxy()) {
-        HILOG_ERROR("SetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
+        LOGE("SetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
         return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
     }
     return uiAppearanceServiceProxy_->SetDarkMode(mode);
@@ -55,7 +55,7 @@ int32_t UiAppearanceAbilityClient::SetDarkMode(UiAppearanceAbilityInterface::Dar
 int32_t UiAppearanceAbilityClient::GetDarkMode()
 {
     if (!GetUiAppearanceServiceProxy()) {
-        HILOG_ERROR("GetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
+        LOGE("GetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
         return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
     }
     return uiAppearanceServiceProxy_->GetDarkMode();
@@ -66,13 +66,13 @@ sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::CreateUiAppearance
     sptr<ISystemAbilityManager> systemAbilityManager =
         SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (systemAbilityManager == nullptr) {
-        HILOG_ERROR("Get SystemAbilityManager failed.");
+        LOGE("Get SystemAbilityManager failed.");
         return nullptr;
     }
 
     sptr<IRemoteObject> systemAbility = systemAbilityManager->GetSystemAbility(ARKUI_UI_APPEARANCE_SERVICE_ID);
     if (systemAbility == nullptr) {
-        HILOG_ERROR("Get SystemAbility failed.");
+        LOGE("Get SystemAbility failed.");
         return nullptr;
     }
 
@@ -81,10 +81,10 @@ sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::CreateUiAppearance
     sptr<UiAppearanceAbilityInterface> uiAppearanceServiceProxy =
         iface_cast<UiAppearanceAbilityInterface>(systemAbility);
     if (uiAppearanceServiceProxy == nullptr) {
-        HILOG_ERROR("Get uiAppearanceServiceProxy from SA failed.");
+        LOGE("Get uiAppearanceServiceProxy from SA failed.");
         return nullptr;
     }
-    HILOG_INFO("Get uiAppearanceServiceProxy successful.");
+    LOGI("Get uiAppearanceServiceProxy successful.");
     return uiAppearanceServiceProxy;
 }
 
@@ -96,7 +96,7 @@ void UiAppearanceAbilityClient::OnRemoteSaDied(const wptr<IRemoteObject>& remote
 
 void UiAppearanceDeathRecipient::OnRemoteDied(const wptr<IRemoteObject>& object)
 {
-    HILOG_INFO("UiAppearanceDeathRecipient on remote systemAbility died.");
+    LOGI("UiAppearanceDeathRecipient on remote systemAbility died.");
     UiAppearanceAbilityClient::GetInstance()->OnRemoteSaDied(object);
 }
 } // namespace ArkUi::UiAppearance
