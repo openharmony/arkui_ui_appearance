@@ -64,11 +64,11 @@ bool UiAppearanceAbility::VerifyAccessToken(const std::string& permissionName)
 {
     auto callerToken = IPCSkeleton::GetCallingTokenID();
     int32_t ret = Security::AccessToken::AccessTokenKit::VerifyAccessToken(callerToken, permissionName);
-    if (ret == Security::AccessToken::PermissionState::PERMISSION_DENIED) {
-        LOGE("permission %{private}s: PERMISSION_DENIED", permissionName.c_str());
-        return false;
+    if (ret == Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
+        return true;
     }
-    return true;
+    LOGE("permission %{private}s denied, callerToken : %{public}u", permissionName.c_str(), callerToken);
+    return false;
 }
 
 int32_t UiAppearanceAbility::OnSetDarkMode(DarkMode mode)
