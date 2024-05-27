@@ -24,6 +24,8 @@ namespace OHOS {
 namespace ArkUi::UiAppearance {
 class UiAppearanceAbilityStub : public IRemoteStub<UiAppearanceAbilityInterface> {
 public:
+    UiAppearanceAbilityStub(bool serialInvokeFlag = true) : IRemoteStub(serialInvokeFlag) {};
+    ~UiAppearanceAbilityStub() override = default;
     int32_t OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) override;
 };
 } // namespace ArkUi::UiAppearance
