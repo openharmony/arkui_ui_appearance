@@ -19,6 +19,12 @@ config("ui_appearance_service_config") {
 }
 
 ohos_shared_library("ui_appearance_service") {
+  sanitize = {
+    cfi = true  # Enable/disable control flow integrity detection
+    cfi_cross_dso = true  # Cross-SO CFI Checks
+    debug = false
+  }
+
   sources = [
     "src/ui_appearance_ability.cpp",
     "src/ui_appearance_ability_stub.cpp",
