@@ -22,6 +22,10 @@ namespace ArkUi::UiAppearance {
 enum class UiAppearanceInterfaceCode {
     SET_DARK_MODE = 1,
     GET_DARK_MODE = 2,
+    GET_FONT_SCALE = 3,
+    SET_FONT_SCALE = 4,
+    GET_FONT_WGHT_SCALE = 5,
+    SET_FONT_WGHT_SCALE = 6,
 };
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS

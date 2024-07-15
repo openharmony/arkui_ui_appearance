@@ -30,21 +30,31 @@ struct AsyncContext {
     napi_deferred deferred = nullptr;
     napi_ref callbackRef = nullptr;
     int32_t jsSetArg = -1;
+    double jsFontScale = 0;
+    double jsFontWghtScale = 0;
     std::string errMsg;
     UiAppearanceAbilityInterface::ErrCode status;
     UiAppearanceAbilityInterface::DarkMode mode;
+    std::string fontScale;
+    std::string fontWghtScale;
 };
 
 class JsUiAppearance final {
 public:
     static void OnExecute(napi_env env, void* data);
     static void OnComplete(napi_env env, napi_status status, void* data);
+    static void OnSetFontScale(napi_env env, void* data);
+    static void OnSetFontWghtScale(napi_env env, void* data);
     static napi_status CheckArgs(napi_env env, size_t argc, napi_value* argv);
     static UiAppearanceAbilityInterface::DarkMode ConvertJsDarkMode2Enum(int32_t jsVal);
 };
 
 napi_value JSSetDarkModeSync(napi_env env, napi_callback_info info);
 napi_value JSGetDarkModeSync(napi_env env, napi_callback_info info);
+napi_value JSSetFontScaleSync(napi_env env, napi_callback_info info);
+napi_value JSGetFontScaleSync(napi_env env, napi_callback_info info);
+napi_value JSSetFontWghtScaleSync(napi_env env, napi_callback_info info);
+napi_value JSGetFontWghtScaleSync(napi_env env, napi_callback_info info);
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS
 #endif //  JS_UI_APPEARANCE_H

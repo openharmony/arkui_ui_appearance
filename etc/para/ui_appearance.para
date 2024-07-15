@@ -12,3 +12,5 @@
 # limitations under the License.
 
 persist.ace.darkmode=light
+persist.ace.fontwghtscale=1
+persist.ace.fontscale=1

@@ -15,6 +15,7 @@
 
 #include "ui_appearance_ability_client.h"
 
+#include <string>
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "ui_appearance_ability_proxy.h"
@@ -59,6 +60,42 @@ int32_t UiAppearanceAbilityClient::GetDarkMode()
         return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
     }
     return uiAppearanceServiceProxy_->GetDarkMode();
+}
+
+int32_t UiAppearanceAbilityClient::SetFontScale(std::string &fontScale)
+{
+    if (!GetUiAppearanceServiceProxy()) {
+        LOGE("SetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
+        return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
+    }
+    return uiAppearanceServiceProxy_->SetFontScale(fontScale);
+}
+
+int32_t UiAppearanceAbilityClient::GetFontScale(std::string &fontScale)
+{
+    if (!GetUiAppearanceServiceProxy()) {
+        LOGE("GetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
+        return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
+    }
+    return uiAppearanceServiceProxy_->GetFontScale(fontScale);
+}
+
+int32_t UiAppearanceAbilityClient::SetFontWghtScale(std::string &fontWghtScale)
+{
+    if (!GetUiAppearanceServiceProxy()) {
+        LOGE("SetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
+        return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
+    }
+    return uiAppearanceServiceProxy_->SetFontWghtScale(fontWghtScale);
+}
+
+int32_t UiAppearanceAbilityClient::GetFontWghtScale(std::string &fontWghtScale)
+{
+    if (!GetUiAppearanceServiceProxy()) {
+        LOGE("GetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
+        return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
+    }
+    return uiAppearanceServiceProxy_->GetFontWghtScale(fontWghtScale);
 }
 
 sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::CreateUiAppearanceServiceProxy()
