@@ -24,6 +24,10 @@ class UiAppearanceAbilityProxy : public IRemoteProxy<UiAppearanceAbilityInterfac
 public:
     int32_t SetDarkMode(DarkMode mode) override;
     int32_t GetDarkMode() override;
+    int32_t SetFontScale(std::string& fontScale) override;
+    int32_t GetFontScale(std::string& fontScale) override;
+    int32_t SetFontWghtScale(std::string& fontWghtScale) override;
+    int32_t GetFontWghtScale(std::string& fontWghtScale) override;
 
     explicit UiAppearanceAbilityProxy(const sptr<IRemoteObject>& impl)
         : IRemoteProxy<UiAppearanceAbilityInterface>(impl)

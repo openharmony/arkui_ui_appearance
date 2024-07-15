@@ -15,6 +15,8 @@
 
 #include "js_ui_appearance.h"
 
+#include <string>
+#include "js_native_api.h"
 #include "ui_appearance_log.h"
 
 namespace OHOS {
@@ -59,6 +61,45 @@ void JsUiAppearance::OnExecute(napi_env env, void* data)
         return;
     }
     auto resCode = UiAppearanceAbilityClient::GetInstance()->SetDarkMode(asyncContext->mode);
+    asyncContext->status = static_cast<UiAppearanceAbilityInterface::ErrCode>(resCode);
+    if (asyncContext->status == UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR) {
+        asyncContext->errMsg = PERMISSION_ERR_MSG;
+    } else if (asyncContext->status == UiAppearanceAbilityInterface::ErrCode::INVALID_ARG) {
+        asyncContext->errMsg = INVALID_ARG_MSG;
+    } else {
+        asyncContext->errMsg = "";
+    }
+}
+
+void JsUiAppearance::OnSetFontScale(napi_env env, void* data)
+{
+    LOGI("OnSetFontScale begin.");
+    AsyncContext* asyncContext = static_cast<AsyncContext*>(data);
+    if (asyncContext == nullptr) {
+        NapiThrow(env, "asyncContext is null.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
+        return;
+    }
+    auto resCode = UiAppearanceAbilityClient::GetInstance()->SetFontScale(asyncContext->fontScale);
+    asyncContext->status = static_cast<UiAppearanceAbilityInterface::ErrCode>(resCode);
+    if (asyncContext->status == UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR) {
+        asyncContext->errMsg = PERMISSION_ERR_MSG;
+    } else if (asyncContext->status == UiAppearanceAbilityInterface::ErrCode::INVALID_ARG) {
+        asyncContext->errMsg = INVALID_ARG_MSG;
+    } else {
+        asyncContext->errMsg = "";
+    }
+}
+
+void JsUiAppearance::OnSetFontWghtScale(napi_env env, void* data)
+{
+    LOGI("OnSetFontWghtScale begin.");
+    AsyncContext* asyncContext = static_cast<AsyncContext*>(data);
+    if (asyncContext == nullptr) {
+        NapiThrow(env, "asyncContext is null.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
+        return;
+    }
+    auto resCode = UiAppearanceAbilityClient::GetInstance()->
+        SetFontWghtScale(asyncContext->fontWghtScale);
     asyncContext->status = static_cast<UiAppearanceAbilityInterface::ErrCode>(resCode);
     if (asyncContext->status == UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR) {
         asyncContext->errMsg = PERMISSION_ERR_MSG;
@@ -239,6 +280,154 @@ static napi_value JSGetDarkMode(napi_env env, napi_callback_info info)
     return result;
 }
 
+static napi_value JSGetFontScale(napi_env env, napi_callback_info info)
+{
+    LOGI("JSGetFontScale begin.");
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+    size_t argc = 0;
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, nullptr, nullptr, nullptr));
+    if (argc != 0) {
+        NapiThrow(env, "requires no parameter.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
+        return result;
+    }
+
+    std::string fontScale;
+    auto ret = UiAppearanceAbilityClient::GetInstance()->GetFontScale(fontScale);
+    if (ret == UiAppearanceAbilityInterface::ErrCode::SYS_ERR) {
+        NapiThrow(env, "get font-scale failed.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
+        return result;
+    }
+    if (ret == UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR) {
+        NapiThrow(env,
+            "An attempt was made to get configuration forbidden by permission: ohos.permission.UPDATE_CONFIGURATION.",
+            UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR);
+        return result;
+    }
+    double fontScaleNumber = std::stod(fontScale);
+    NAPI_CALL(env, napi_create_double(env, fontScaleNumber, &result));
+    return result;
+}
+
+static napi_value JSSetFontScale(napi_env env, napi_callback_info info)
+{
+    LOGI("JSSetFontScale begin.");
+
+    size_t argc = ARGC_WITH_TWO;
+    napi_value argv[ARGC_WITH_TWO] = { 0 };
+    napi_status napiStatus = napi_ok;
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+
+    napiStatus = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (napiStatus != napi_ok) {
+        NapiThrow(env, "get callback info failed.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
+        return result;
+    }
+    napiStatus = JsUiAppearance::CheckArgs(env, argc, argv);
+    if (napiStatus != napi_ok) {
+        NapiThrow(env, "parameter parsing error.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
+        return result;
+    }
+
+    auto asyncContext = new (std::nothrow) AsyncContext();
+    if (asyncContext == nullptr) {
+        NapiThrow(env, "create AsyncContext failed.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
+        return result;
+    }
+
+    napi_get_value_double(env, argv[0], &asyncContext->jsFontScale);
+    asyncContext->fontScale = std::to_string(asyncContext->jsFontScale);
+    if (argc == ARGC_WITH_TWO) {
+        napi_create_reference(env, argv[1], 1, &asyncContext->callbackRef);
+    }
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    }
+
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "JSSetFontScale", NAPI_AUTO_LENGTH, &resource);
+    napi_create_async_work(env, nullptr, resource, JsUiAppearance::OnSetFontScale, JsUiAppearance::OnComplete,
+        reinterpret_cast<void*>(asyncContext), &asyncContext->work);
+    napi_queue_async_work(env, asyncContext->work);
+
+    return result;
+}
+
+static napi_value JSGetFontWghtScale(napi_env env, napi_callback_info info)
+{
+    LOGI("JSGetFontWghtScale begin.");
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+    size_t argc = 0;
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, nullptr, nullptr, nullptr));
+    if (argc != 0) {
+        NapiThrow(env, "requires no parameter.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
+        return result;
+    }
+
+    std::string fontWghtScale;
+    auto ret = UiAppearanceAbilityClient::GetInstance()->GetFontWghtScale(fontWghtScale);
+    if (ret == UiAppearanceAbilityInterface::ErrCode::SYS_ERR) {
+        NapiThrow(env, "get font-wght-scale failed.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
+        return result;
+    }
+    if (ret == UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR) {
+        NapiThrow(env,
+            "An attempt was made to get configuration forbidden by permission: ohos.permission.UPDATE_CONFIGURATION.",
+            UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR);
+        return result;
+    }
+    double fontWghtScaleNumber = std::stod(fontWghtScale);
+    NAPI_CALL(env, napi_create_double(env, fontWghtScaleNumber, &result));
+    return result;
+}
+
+static napi_value JSSetFontWghtScale(napi_env env, napi_callback_info info)
+{
+    LOGI("JSSetFontWghtScale begin.");
+
+    size_t argc = ARGC_WITH_TWO;
+    napi_value argv[ARGC_WITH_TWO] = { 0 };
+    napi_status napiStatus = napi_ok;
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+
+    napiStatus = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (napiStatus != napi_ok) {
+        NapiThrow(env, "get callback info failed.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
+        return result;
+    }
+    napiStatus = JsUiAppearance::CheckArgs(env, argc, argv);
+    if (napiStatus != napi_ok) {
+        NapiThrow(env, "parameter parsing error.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
+        return result;
+    }
+
+    auto asyncContext = new (std::nothrow) AsyncContext();
+    if (asyncContext == nullptr) {
+        NapiThrow(env, "create AsyncContext failed.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
+        return result;
+    }
+
+    napi_get_value_double(env, argv[0], &asyncContext->jsFontWghtScale);
+    asyncContext->fontWghtScale = std::to_string(asyncContext->jsFontWghtScale);
+    if (argc == ARGC_WITH_TWO) {
+        napi_create_reference(env, argv[1], 1, &asyncContext->callbackRef);
+    }
+    if (asyncContext->callbackRef == nullptr) {
+        napi_create_promise(env, &asyncContext->deferred, &result);
+    }
+
+    napi_value resource = nullptr;
+    napi_create_string_utf8(env, "JSSetFontWghtScale", NAPI_AUTO_LENGTH, &resource);
+    napi_create_async_work(env, nullptr, resource, JsUiAppearance::OnSetFontWghtScale, JsUiAppearance::OnComplete,
+        reinterpret_cast<void*>(asyncContext), &asyncContext->work);
+    napi_queue_async_work(env, asyncContext->work);
+
+    return result;
+}
+
 EXTERN_C_START
 static napi_value UiAppearanceExports(napi_env env, napi_value exports)
 {
@@ -253,6 +442,10 @@ static napi_value UiAppearanceExports(napi_env env, napi_value exports)
     napi_property_descriptor properties[] = {
         DECLARE_NAPI_FUNCTION("setDarkMode", JSSetDarkMode),
         DECLARE_NAPI_FUNCTION("getDarkMode", JSGetDarkMode),
+        DECLARE_NAPI_FUNCTION("getFontScale", JSGetFontScale),
+        DECLARE_NAPI_FUNCTION("setFontScale", JSSetFontScale),
+        DECLARE_NAPI_FUNCTION("getFontWeightScale", JSGetFontWghtScale),
+        DECLARE_NAPI_FUNCTION("setFontWeightScale", JSSetFontWghtScale),
         DECLARE_NAPI_STATIC_PROPERTY("DarkMode", DarkMode),
     };
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(properties) / sizeof(properties[0]), properties));
