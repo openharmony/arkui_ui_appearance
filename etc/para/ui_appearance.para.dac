@@ -12,5 +12,5 @@
 # limitations under the License.
 
 persist.ace.darkmode = uiserver:servicectrl:0750
-persist.ace.fontwghtscale = uiserver:servicectrl:0750
-persist.ace.fontscale = uiserver:servicectrl:0750
+persist.sys.font_scale_for_user0 = uiserver:servicectrl:0750
+persist.sys.font_wght_scale_for_user0 = uiserver:servicectrl:0750

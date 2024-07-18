@@ -46,6 +46,7 @@ public:
     static void OnSetFontScale(napi_env env, void* data);
     static void OnSetFontWghtScale(napi_env env, void* data);
     static napi_status CheckArgs(napi_env env, size_t argc, napi_value* argv);
+    static napi_status CheckFontScaleArgs(napi_env env, size_t argc, napi_value* argv);
     static UiAppearanceAbilityInterface::DarkMode ConvertJsDarkMode2Enum(int32_t jsVal);
 };
 

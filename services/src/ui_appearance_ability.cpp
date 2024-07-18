@@ -31,8 +31,8 @@ static const std::string DARK = "dark";
 static const std::string BASE_SCALE = "1";
 static const std::string PERSIST_DARKMODE_KEY = "persist.ace.darkmode";
 static const std::string PERMISSION_UPDATE_CONFIGURATION = "ohos.permission.UPDATE_CONFIGURATION";
-static const std::string FONT_SCAL_FOR_USER0 = "persist.ace.fontscale";
-static const std::string FONT_WGHT_SCAL_FOR_USER0 = "persist.ace.fontwghtscale";
+static const std::string FONT_SCAL_FOR_USER0 = "persist.sys.font_scale_for_user0";
+static const std::string FONT_WGHT_SCAL_FOR_USER0 = "persist.sys.font_wght_scale_for_user0";
 } // namespace
 
 namespace OHOS {
@@ -186,7 +186,7 @@ int32_t UiAppearanceAbility::OnSetFontScale(std::string &fontScale)
 {
     bool ret = false;
     AppExecFwk::Configuration config;
-    ret = config.AddItem(AAFwk::GlobalConfigurationKey::FONT_SCAL_FOR_USER0, fontScale);
+    ret = config.AddItem(AAFwk::GlobalConfigurationKey::SYSTEM_FONT_SIZE_SCALE, fontScale);
     if (!ret) {
         LOGE("AddItem failed, fontScale = %{public}s", fontScale.c_str());
         return INVALID_ARG;
@@ -206,7 +206,7 @@ int32_t UiAppearanceAbility::OnSetFontScale(std::string &fontScale)
             LOGE("get configuration failed, update error, error is %{public}d.", retVal);
             return SYS_ERR;
         }
-        auto currentFontScale = config.GetItem(AAFwk::GlobalConfigurationKey::FONT_SCAL_FOR_USER0);
+        auto currentFontScale = config.GetItem(AAFwk::GlobalConfigurationKey::SYSTEM_FONT_SIZE_SCALE);
         if (currentFontScale != fontScale) {
             LOGE("update configuration failed, errcode = %{public}d.", errcode);
             return SYS_ERR;
@@ -272,7 +272,7 @@ int32_t UiAppearanceAbility::OnSetFontWghtScale(std::string &fontWghtScale)
 {
     bool ret = false;
     AppExecFwk::Configuration config;
-    ret = config.AddItem(AAFwk::GlobalConfigurationKey::FONT_WGHT_SCAL_FOR_USER0, fontWghtScale);
+    ret = config.AddItem(AAFwk::GlobalConfigurationKey::SYSTEM_FONT_WEIGHT_SCALE, fontWghtScale);
     if (!ret) {
         LOGE("AddItem failed, fontWghtScale = %{public}s", fontWghtScale.c_str());
         return INVALID_ARG;
@@ -292,7 +292,7 @@ int32_t UiAppearanceAbility::OnSetFontWghtScale(std::string &fontWghtScale)
             LOGE("get configuration failed, update error, error is %{public}d.", retVal);
             return SYS_ERR;
         }
-        auto currentFontScale = config.GetItem(AAFwk::GlobalConfigurationKey::FONT_WGHT_SCAL_FOR_USER0);
+        auto currentFontScale = config.GetItem(AAFwk::GlobalConfigurationKey::SYSTEM_FONT_WEIGHT_SCALE);
         if (currentFontScale != fontWghtScale) {
             LOGE("update configuration failed, errcode = %{public}d.", errcode);
             return SYS_ERR;

@@ -24,6 +24,8 @@ namespace ArkUi::UiAppearance {
 namespace {
 static constexpr size_t ARGC_WITH_ONE = 1;
 static constexpr size_t ARGC_WITH_TWO = 2;
+static constexpr size_t MAX_FONT_SCALE = 5;
+static constexpr size_t MIN_FONT_SCALE = 0;
 const std::string PERMISSION_ERR_MSG =
     "An attempt was made to update configuration forbidden by permission: ohos.permission.UPDATE_CONFIGURATION.";
 const std::string INVALID_ARG_MSG = "The type of 'mode' must be DarkMode.";
@@ -195,6 +197,38 @@ napi_status JsUiAppearance::CheckArgs(napi_env env, size_t argc, napi_value* arg
     return napi_ok;
 }
 
+napi_status JsUiAppearance::CheckFontScaleArgs(napi_env env, size_t argc, napi_value* argv)
+{
+    if (argc != ARGC_WITH_ONE && argc != ARGC_WITH_TWO) {
+        NapiThrow(
+            env, "the number of parameters can only be 1 or 2.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
+        return napi_invalid_arg;
+    }
+
+    napi_valuetype valueType = napi_undefined;
+    switch (argc) {
+        case ARGC_WITH_TWO:
+            napi_typeof(env, argv[1], &valueType);
+            if (valueType != napi_function) {
+                NapiThrow(env, "the second parameter must be a function.",
+                    UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
+                return napi_invalid_arg;
+            }
+            [[fallthrough]];
+        case ARGC_WITH_ONE:
+            napi_typeof(env, argv[0], &valueType);
+            if (valueType != napi_number) {
+                NapiThrow(
+                    env, "the first parameter must be Number.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
+                return napi_invalid_arg;
+            }
+            break;
+        default:
+            return napi_invalid_arg;
+    }
+    return napi_ok;
+}
+
 UiAppearanceAbilityInterface::DarkMode JsUiAppearance::ConvertJsDarkMode2Enum(int32_t jsVal)
 {
     switch (jsVal) {
@@ -324,19 +358,21 @@ static napi_value JSSetFontScale(napi_env env, napi_callback_info info)
         NapiThrow(env, "get callback info failed.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
         return result;
     }
-    napiStatus = JsUiAppearance::CheckArgs(env, argc, argv);
+    napiStatus = JsUiAppearance::CheckFontScaleArgs(env, argc, argv);
     if (napiStatus != napi_ok) {
         NapiThrow(env, "parameter parsing error.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
         return result;
     }
-
     auto asyncContext = new (std::nothrow) AsyncContext();
     if (asyncContext == nullptr) {
         NapiThrow(env, "create AsyncContext failed.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
         return result;
     }
-
     napi_get_value_double(env, argv[0], &asyncContext->jsFontScale);
+    if (asyncContext->jsFontScale <= MIN_FONT_SCALE || asyncContext->jsFontScale > MAX_FONT_SCALE) {
+        NapiThrow(env, "fontScale must between 0 and 5.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
+        return result;
+    }
     asyncContext->fontScale = std::to_string(asyncContext->jsFontScale);
     if (argc == ARGC_WITH_TWO) {
         napi_create_reference(env, argv[1], 1, &asyncContext->callbackRef);
@@ -398,19 +434,21 @@ static napi_value JSSetFontWghtScale(napi_env env, napi_callback_info info)
         NapiThrow(env, "get callback info failed.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
         return result;
     }
-    napiStatus = JsUiAppearance::CheckArgs(env, argc, argv);
+    napiStatus = JsUiAppearance::CheckFontScaleArgs(env, argc, argv);
     if (napiStatus != napi_ok) {
         NapiThrow(env, "parameter parsing error.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
         return result;
     }
-
     auto asyncContext = new (std::nothrow) AsyncContext();
     if (asyncContext == nullptr) {
         NapiThrow(env, "create AsyncContext failed.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
         return result;
     }
-
     napi_get_value_double(env, argv[0], &asyncContext->jsFontWghtScale);
+    if (asyncContext->jsFontWghtScale <= MIN_FONT_SCALE || asyncContext->jsFontWghtScale > MAX_FONT_SCALE) {
+        NapiThrow(env, "fontWghtScale must between 0 and 5.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
+        return result;
+    }
     asyncContext->fontWghtScale = std::to_string(asyncContext->jsFontWghtScale);
     if (argc == ARGC_WITH_TWO) {
         napi_create_reference(env, argv[1], 1, &asyncContext->callbackRef);

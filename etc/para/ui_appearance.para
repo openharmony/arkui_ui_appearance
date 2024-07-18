@@ -12,5 +12,5 @@
 # limitations under the License.
 
 persist.ace.darkmode=light
-persist.ace.fontwghtscale=1
-persist.ace.fontscale=1
+persist.sys.font_scale_for_user0=1
+persist.sys.font_wght_scale_for_user0=1
