@@ -31,8 +31,8 @@ public:
 private:
     int32_t OnGetFontScaleInner(MessageParcel& data, MessageParcel& reply, MessageOption& option);
     int32_t OnSetFontScaleInner(MessageParcel& data, MessageParcel& reply, MessageOption& option);
-    int32_t OnGetFontWghtScaleInner(MessageParcel& data, MessageParcel& reply, MessageOption& option);
-    int32_t OnSetFontWghtScaleInner(MessageParcel& data, MessageParcel& reply, MessageOption& option);
+    int32_t OnGetFontWeightScaleInner(MessageParcel& data, MessageParcel& reply, MessageOption& option);
+    int32_t OnSetFontWeightScaleInner(MessageParcel& data, MessageParcel& reply, MessageOption& option);
 };
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS
