@@ -80,22 +80,22 @@ int32_t UiAppearanceAbilityClient::GetFontScale(std::string &fontScale)
     return uiAppearanceServiceProxy_->GetFontScale(fontScale);
 }
 
-int32_t UiAppearanceAbilityClient::SetFontWghtScale(std::string &fontWghtScale)
+int32_t UiAppearanceAbilityClient::SetFontWeightScale(std::string &fontWeightScale)
 {
     if (!GetUiAppearanceServiceProxy()) {
         LOGE("SetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
         return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
     }
-    return uiAppearanceServiceProxy_->SetFontWghtScale(fontWghtScale);
+    return uiAppearanceServiceProxy_->SetFontWeightScale(fontWeightScale);
 }
 
-int32_t UiAppearanceAbilityClient::GetFontWghtScale(std::string &fontWghtScale)
+int32_t UiAppearanceAbilityClient::GetFontWeightScale(std::string &fontWeightScale)
 {
     if (!GetUiAppearanceServiceProxy()) {
         LOGE("GetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
         return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
     }
-    return uiAppearanceServiceProxy_->GetFontWghtScale(fontWghtScale);
+    return uiAppearanceServiceProxy_->GetFontWeightScale(fontWeightScale);
 }
 
 sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::CreateUiAppearanceServiceProxy()

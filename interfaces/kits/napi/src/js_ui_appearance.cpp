@@ -92,16 +92,16 @@ void JsUiAppearance::OnSetFontScale(napi_env env, void* data)
     }
 }
 
-void JsUiAppearance::OnSetFontWghtScale(napi_env env, void* data)
+void JsUiAppearance::OnSetFontWeightScale(napi_env env, void* data)
 {
-    LOGI("OnSetFontWghtScale begin.");
+    LOGI("OnSetFontWeightScale begin.");
     AsyncContext* asyncContext = static_cast<AsyncContext*>(data);
     if (asyncContext == nullptr) {
         NapiThrow(env, "asyncContext is null.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
         return;
     }
     auto resCode = UiAppearanceAbilityClient::GetInstance()->
-        SetFontWghtScale(asyncContext->fontWghtScale);
+        SetFontWeightScale(asyncContext->fontWeightScale);
     asyncContext->status = static_cast<UiAppearanceAbilityInterface::ErrCode>(resCode);
     if (asyncContext->status == UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR) {
         asyncContext->errMsg = PERMISSION_ERR_MSG;
@@ -390,9 +390,9 @@ static napi_value JSSetFontScale(napi_env env, napi_callback_info info)
     return result;
 }
 
-static napi_value JSGetFontWghtScale(napi_env env, napi_callback_info info)
+static napi_value JSGetFontWeightScale(napi_env env, napi_callback_info info)
 {
-    LOGI("JSGetFontWghtScale begin.");
+    LOGI("JSGetFontWeightScale begin.");
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
     size_t argc = 0;
@@ -402,10 +402,10 @@ static napi_value JSGetFontWghtScale(napi_env env, napi_callback_info info)
         return result;
     }
 
-    std::string fontWghtScale;
-    auto ret = UiAppearanceAbilityClient::GetInstance()->GetFontWghtScale(fontWghtScale);
+    std::string fontWeightScale;
+    auto ret = UiAppearanceAbilityClient::GetInstance()->GetFontWeightScale(fontWeightScale);
     if (ret == UiAppearanceAbilityInterface::ErrCode::SYS_ERR) {
-        NapiThrow(env, "get font-wght-scale failed.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
+        NapiThrow(env, "get font-Weight-scale failed.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
         return result;
     }
     if (ret == UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR) {
@@ -414,14 +414,14 @@ static napi_value JSGetFontWghtScale(napi_env env, napi_callback_info info)
             UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR);
         return result;
     }
-    double fontWghtScaleNumber = std::stod(fontWghtScale);
-    NAPI_CALL(env, napi_create_double(env, fontWghtScaleNumber, &result));
+    double fontWeightScaleNumber = std::stod(fontWeightScale);
+    NAPI_CALL(env, napi_create_double(env, fontWeightScaleNumber, &result));
     return result;
 }
 
-static napi_value JSSetFontWghtScale(napi_env env, napi_callback_info info)
+static napi_value JSSetFontWeightScale(napi_env env, napi_callback_info info)
 {
-    LOGI("JSSetFontWghtScale begin.");
+    LOGI("JSSetFontWeightScale begin.");
 
     size_t argc = ARGC_WITH_TWO;
     napi_value argv[ARGC_WITH_TWO] = { 0 };
@@ -444,12 +444,12 @@ static napi_value JSSetFontWghtScale(napi_env env, napi_callback_info info)
         NapiThrow(env, "create AsyncContext failed.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
         return result;
     }
-    napi_get_value_double(env, argv[0], &asyncContext->jsFontWghtScale);
-    if (asyncContext->jsFontWghtScale <= MIN_FONT_SCALE || asyncContext->jsFontWghtScale > MAX_FONT_SCALE) {
-        NapiThrow(env, "fontWghtScale must between 0 and 5.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
+    napi_get_value_double(env, argv[0], &asyncContext->jsFontWeightScale);
+    if (asyncContext->jsFontWeightScale <= MIN_FONT_SCALE || asyncContext->jsFontWeightScale > MAX_FONT_SCALE) {
+        NapiThrow(env, "fontWeightScale must between 0 and 5.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
         return result;
     }
-    asyncContext->fontWghtScale = std::to_string(asyncContext->jsFontWghtScale);
+    asyncContext->fontWeightScale = std::to_string(asyncContext->jsFontWeightScale);
     if (argc == ARGC_WITH_TWO) {
         napi_create_reference(env, argv[1], 1, &asyncContext->callbackRef);
     }
@@ -458,8 +458,8 @@ static napi_value JSSetFontWghtScale(napi_env env, napi_callback_info info)
     }
 
     napi_value resource = nullptr;
-    napi_create_string_utf8(env, "JSSetFontWghtScale", NAPI_AUTO_LENGTH, &resource);
-    napi_create_async_work(env, nullptr, resource, JsUiAppearance::OnSetFontWghtScale, JsUiAppearance::OnComplete,
+    napi_create_string_utf8(env, "JSSetFontWeightScale", NAPI_AUTO_LENGTH, &resource);
+    napi_create_async_work(env, nullptr, resource, JsUiAppearance::OnSetFontWeightScale, JsUiAppearance::OnComplete,
         reinterpret_cast<void*>(asyncContext), &asyncContext->work);
     napi_queue_async_work(env, asyncContext->work);
 
@@ -482,8 +482,8 @@ static napi_value UiAppearanceExports(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getDarkMode", JSGetDarkMode),
         DECLARE_NAPI_FUNCTION("getFontScale", JSGetFontScale),
         DECLARE_NAPI_FUNCTION("setFontScale", JSSetFontScale),
-        DECLARE_NAPI_FUNCTION("getFontWeightScale", JSGetFontWghtScale),
-        DECLARE_NAPI_FUNCTION("setFontWeightScale", JSSetFontWghtScale),
+        DECLARE_NAPI_FUNCTION("getFontWeightScale", JSGetFontWeightScale),
+        DECLARE_NAPI_FUNCTION("setFontWeightScale", JSSetFontWeightScale),
         DECLARE_NAPI_STATIC_PROPERTY("DarkMode", DarkMode),
     };
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(properties) / sizeof(properties[0]), properties));

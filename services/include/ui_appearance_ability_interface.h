@@ -40,8 +40,8 @@ public:
     virtual int32_t GetDarkMode() = 0;
     virtual int32_t GetFontScale(std::string &fontScale) = 0;
     virtual int32_t SetFontScale(std::string &fontScale) = 0;
-    virtual int32_t GetFontWghtScale(std::string &fontWghtScale) = 0;
-    virtual int32_t SetFontWghtScale(std::string &fontWghtScale) = 0;
+    virtual int32_t GetFontWeightScale(std::string &fontWeightScale) = 0;
+    virtual int32_t SetFontWeightScale(std::string &fontWeightScale) = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.UiAppearance.UiAppearanceAbilityInterface");

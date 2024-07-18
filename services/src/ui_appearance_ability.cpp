@@ -31,8 +31,9 @@ static const std::string DARK = "dark";
 static const std::string BASE_SCALE = "1";
 static const std::string PERSIST_DARKMODE_KEY = "persist.ace.darkmode";
 static const std::string PERMISSION_UPDATE_CONFIGURATION = "ohos.permission.UPDATE_CONFIGURATION";
+// current default accountId = 0, will change when have more user.
 static const std::string FONT_SCAL_FOR_USER0 = "persist.sys.font_scale_for_user0";
-static const std::string FONT_WGHT_SCAL_FOR_USER0 = "persist.sys.font_wght_scale_for_user0";
+static const std::string FONT_Weight_SCAL_FOR_USER0 = "persist.sys.font_Wght_scale_for_user0";
 } // namespace
 
 namespace OHOS {
@@ -268,13 +269,13 @@ int32_t UiAppearanceAbility::GetFontScale(std::string &fontScale)
     return SUCCEEDED;
 }
 
-int32_t UiAppearanceAbility::OnSetFontWghtScale(std::string &fontWghtScale)
+int32_t UiAppearanceAbility::OnSetFontWeightScale(std::string &fontWeightScale)
 {
     bool ret = false;
     AppExecFwk::Configuration config;
-    ret = config.AddItem(AAFwk::GlobalConfigurationKey::SYSTEM_FONT_WEIGHT_SCALE, fontWghtScale);
+    ret = config.AddItem(AAFwk::GlobalConfigurationKey::SYSTEM_FONT_WEIGHT_SCALE, fontWeightScale);
     if (!ret) {
-        LOGE("AddItem failed, fontWghtScale = %{public}s", fontWghtScale.c_str());
+        LOGE("AddItem failed, fontWeightScale = %{public}s", fontWeightScale.c_str());
         return INVALID_ARG;
     }
 
@@ -284,7 +285,7 @@ int32_t UiAppearanceAbility::OnSetFontWghtScale(std::string &fontWghtScale)
         return SYS_ERR;
     }
 
-    LOGI("update Configuration start, fontWghtScale = %{public}s.", fontWghtScale.c_str());
+    LOGI("update Configuration start, fontWeightScale = %{public}s.", fontWeightScale.c_str());
     auto errcode = appManagerInstance->UpdateConfiguration(config);
     if (errcode != 0) {
         auto retVal = appManagerInstance->GetConfiguration(config);
@@ -293,7 +294,7 @@ int32_t UiAppearanceAbility::OnSetFontWghtScale(std::string &fontWghtScale)
             return SYS_ERR;
         }
         auto currentFontScale = config.GetItem(AAFwk::GlobalConfigurationKey::SYSTEM_FONT_WEIGHT_SCALE);
-        if (currentFontScale != fontWghtScale) {
+        if (currentFontScale != fontWeightScale) {
             LOGE("update configuration failed, errcode = %{public}d.", errcode);
             return SYS_ERR;
         } else {
@@ -301,10 +302,10 @@ int32_t UiAppearanceAbility::OnSetFontWghtScale(std::string &fontWghtScale)
                 "%{public}d.", errcode);
         }
     }
-    fontWghtScale_ = fontWghtScale;
+    fontWeightScale_ = fontWeightScale;
 
     // persist to file: etc/para/ui_appearance.para
-    auto isSetPara = SetParameter(FONT_WGHT_SCAL_FOR_USER0.c_str(), fontWghtScale.c_str());
+    auto isSetPara = SetParameter(FONT_Weight_SCAL_FOR_USER0.c_str(), fontWeightScale.c_str());
     if (isSetPara < 0) {
         LOGE("set parameter failed");
         return SYS_ERR;
@@ -312,22 +313,22 @@ int32_t UiAppearanceAbility::OnSetFontWghtScale(std::string &fontWghtScale)
     return SUCCEEDED;
 }
 
-int32_t UiAppearanceAbility::OnGetFontWghtScale(std::string &fontWghtScale)
+int32_t UiAppearanceAbility::OnGetFontWeightScale(std::string &fontWeightScale)
 {
     constexpr int buffSize = 64; // buff len: 64
     char valueGet[buffSize] = { 0 };
 
-    auto res = GetParameter(FONT_WGHT_SCAL_FOR_USER0.c_str(), BASE_SCALE.c_str(), valueGet, buffSize);
+    auto res = GetParameter(FONT_Weight_SCAL_FOR_USER0.c_str(), BASE_SCALE.c_str(), valueGet, buffSize);
     if (res <= 0) {
         LOGE("get parameter failed.");
         return SYS_ERR;
     }
 
-    fontWghtScale = valueGet;
+    fontWeightScale = valueGet;
     return SUCCEEDED;
 }
 
-int32_t UiAppearanceAbility::SetFontWghtScale(std::string& fontWghtScale)
+int32_t UiAppearanceAbility::SetFontWeightScale(std::string& fontWeightScale)
 {
     // Verify permissions
     auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
@@ -335,22 +336,22 @@ int32_t UiAppearanceAbility::SetFontWghtScale(std::string& fontWghtScale)
         LOGE("permission verification failed");
         return PERMISSION_ERR;
     }
-    if (!fontWghtScale.empty()) {
-        return OnSetFontWghtScale(fontWghtScale);
+    if (!fontWeightScale.empty()) {
+        return OnSetFontWeightScale(fontWeightScale);
     } else {
-        LOGE("current fontWghtScale is empty!");
+        LOGE("current fontWeightScale is empty!");
     }
     return SYS_ERR;
 }
 
-int32_t UiAppearanceAbility::GetFontWghtScale(std::string &fontWghtScale)
+int32_t UiAppearanceAbility::GetFontWeightScale(std::string &fontWeightScale)
 {
     auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
     if (!isCallingPerm) {
         LOGE("permission verification failed");
         return PERMISSION_ERR;
     }
-    fontWghtScale = fontWghtScale_;
+    fontWeightScale = fontWeightScale_;
     return SUCCEEDED;
 }
 
@@ -390,13 +391,13 @@ void UiAppearanceAbility::OnAddSystemAbility(int32_t systemAbilityId, const std:
         if (res < 0) {
             LOGE("set Font init error.");
         }
-        std::string fontWghtScale;
-        res = OnGetFontWghtScale(fontWghtScale);
+        std::string fontWeightScale;
+        res = OnGetFontWeightScale(fontWeightScale);
         if (res < 0) {
             LOGE("get font init error.");
             fontScale = BASE_SCALE;
         }
-        res = OnSetFontWghtScale(fontWghtScale);
+        res = OnSetFontWeightScale(fontWeightScale);
         if (res < 0) {
             LOGE("set Font init error.");
         }

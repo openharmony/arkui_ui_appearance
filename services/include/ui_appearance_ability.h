@@ -35,8 +35,8 @@ public:
     int32_t GetDarkMode() override;
     int32_t GetFontScale(std::string &fontScale) override;
     int32_t SetFontScale(std::string &fontScale) override;
-    int32_t GetFontWghtScale(std::string &fontWghtScale) override;
-    int32_t SetFontWghtScale(std::string &fontWghtScale) override;
+    int32_t GetFontWeightScale(std::string &fontWeightScale) override;
+    int32_t SetFontWeightScale(std::string &fontWeightScale) override;
 
 protected:
     void OnStart() override;
@@ -52,12 +52,12 @@ private:
     int32_t OnGetDarkMode();
     int32_t OnGetFontScale(std::string &fontScale);
     int32_t OnSetFontScale(std::string &fontScale);
-    int32_t OnGetFontWghtScale(std::string &fontWghtScale);
-    int32_t OnSetFontWghtScale(std::string &fontWghtScale);
+    int32_t OnGetFontWeightScale(std::string &fontWeightScale);
+    int32_t OnSetFontWeightScale(std::string &fontWeightScale);
 
     DarkMode darkMode_ = DarkMode::ALWAYS_LIGHT;
     std::string fontScale_ = "1";
-    std::string fontWghtScale_ = "1";
+    std::string fontWeightScale_ = "1";
 };
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS

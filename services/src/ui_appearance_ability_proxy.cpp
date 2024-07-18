@@ -116,7 +116,7 @@ int32_t UiAppearanceAbilityProxy::GetFontScale(std::string &fontScale)
     return res;
 }
 
-int32_t UiAppearanceAbilityProxy::SetFontWghtScale(std::string& fontWghtScale)
+int32_t UiAppearanceAbilityProxy::SetFontWeightScale(std::string& fontWeightScale)
 {
     MessageParcel data, reply;
     MessageOption option;
@@ -125,13 +125,13 @@ int32_t UiAppearanceAbilityProxy::SetFontWghtScale(std::string& fontWghtScale)
         LOGE("Write descriptor failed!");
         return SYS_ERR;
     }
-    if (!data.WriteString(fontWghtScale)) {
+    if (!data.WriteString(fontWeightScale)) {
         LOGE("Write fontScale failed!");
         return SYS_ERR;
     }
 
     auto res =
-        Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::SET_FONT_WGHT_SCALE),
+        Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::SET_FONT_Weight_SCALE),
             data, reply, option);
     if (res != ERR_NONE) {
         LOGE("SendRequest failed.");
@@ -141,7 +141,7 @@ int32_t UiAppearanceAbilityProxy::SetFontWghtScale(std::string& fontWghtScale)
     return reply.ReadInt32();
 }
 
-int32_t UiAppearanceAbilityProxy::GetFontWghtScale(std::string &fontWghtScale)
+int32_t UiAppearanceAbilityProxy::GetFontWeightScale(std::string &fontWeightScale)
 {
     MessageParcel data, reply;
     MessageOption option;
@@ -152,7 +152,7 @@ int32_t UiAppearanceAbilityProxy::GetFontWghtScale(std::string &fontWghtScale)
     }
 
     auto res =
-        Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::GET_FONT_WGHT_SCALE),
+        Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::GET_FONT_Weight_SCALE),
             data, reply, option);
     if (res != ERR_NONE) {
         LOGE("SendRequest failed.");
@@ -161,7 +161,7 @@ int32_t UiAppearanceAbilityProxy::GetFontWghtScale(std::string &fontWghtScale)
 
     res = reply.ReadInt32();
 
-    if (!reply.ReadString(fontWghtScale)) {
+    if (!reply.ReadString(fontWeightScale)) {
         LOGE("Read FontScale failed!");
         return SYS_ERR;
     }

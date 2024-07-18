@@ -40,8 +40,8 @@ public:
     int32_t GetDarkMode();
     int32_t GetFontScale(std::string& fontScale);
     int32_t SetFontScale(std::string& fontScale);
-    int32_t GetFontWghtScale(std::string& fontWghtScale);
-    int32_t SetFontWghtScale(std::string& fontWghtScale);
+    int32_t GetFontWeightScale(std::string& fontWeightScale);
+    int32_t SetFontWeightScale(std::string& fontWeightScale);
     void OnRemoteSaDied(const wptr<IRemoteObject>& object);
 
 private:
