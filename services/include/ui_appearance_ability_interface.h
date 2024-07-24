@@ -17,6 +17,7 @@
 #define UI_APPEARANCE_ABILITY_INTERFACE_H
 
 #include <iremote_broker.h>
+#include <string>
 
 namespace OHOS {
 namespace ArkUi::UiAppearance {
@@ -37,6 +38,10 @@ public:
 
     virtual int32_t SetDarkMode(DarkMode mode) = 0;
     virtual int32_t GetDarkMode() = 0;
+    virtual int32_t GetFontScale(std::string &fontScale) = 0;
+    virtual int32_t SetFontScale(std::string &fontScale) = 0;
+    virtual int32_t GetFontWeightScale(std::string &fontWeightScale) = 0;
+    virtual int32_t SetFontWeightScale(std::string &fontWeightScale) = 0;
 
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.UiAppearance.UiAppearanceAbilityInterface");

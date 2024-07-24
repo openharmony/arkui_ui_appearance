@@ -15,6 +15,7 @@
 
 #include "ui_appearance_ability_proxy.h"
 
+#include <string>
 #include "message_parcel.h"
 #include "ui_appearance_ipc_interface_code.h"
 #include "ui_appearance_log.h"
@@ -63,6 +64,109 @@ int32_t UiAppearanceAbilityProxy::GetDarkMode()
     }
 
     return reply.ReadInt32();
+}
+int32_t UiAppearanceAbilityProxy::SetFontScale(std::string &fontScale)
+{
+    MessageParcel data, reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        LOGE("Write descriptor failed!");
+        return SYS_ERR;
+    }
+    if (!data.WriteString(fontScale)) {
+        LOGE("Write fontScale failed!");
+        return SYS_ERR;
+    }
+
+    auto res =
+        Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::SET_FONT_SCALE), data, reply, option);
+    if (res != ERR_NONE) {
+        LOGE("SendRequest failed.");
+        return SYS_ERR;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t UiAppearanceAbilityProxy::GetFontScale(std::string &fontScale)
+{
+    MessageParcel data, reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        LOGE("Write descriptor failed!");
+        return SYS_ERR;
+    }
+
+    auto res =
+        Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::GET_FONT_SCALE), data, reply, option);
+    if (res != ERR_NONE) {
+        LOGE("SendRequest failed.");
+        return SYS_ERR;
+    }
+
+    res = reply.ReadInt32();
+
+    if (!reply.ReadString(fontScale)) {
+        LOGE("Read FontScale failed!");
+        return SYS_ERR;
+    }
+
+    return res;
+}
+
+int32_t UiAppearanceAbilityProxy::SetFontWeightScale(std::string& fontWeightScale)
+{
+    MessageParcel data, reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        LOGE("Write descriptor failed!");
+        return SYS_ERR;
+    }
+    if (!data.WriteString(fontWeightScale)) {
+        LOGE("Write fontScale failed!");
+        return SYS_ERR;
+    }
+
+    auto res =
+        Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::SET_FONT_Weight_SCALE),
+            data, reply, option);
+    if (res != ERR_NONE) {
+        LOGE("SendRequest failed.");
+        return SYS_ERR;
+    }
+
+    return reply.ReadInt32();
+}
+
+int32_t UiAppearanceAbilityProxy::GetFontWeightScale(std::string &fontWeightScale)
+{
+    MessageParcel data, reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        LOGE("##lmz Write descriptor failed!");
+        return SYS_ERR;
+    }
+
+    auto res =
+        Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::GET_FONT_Weight_SCALE),
+            data, reply, option);
+    if (res != ERR_NONE) {
+        LOGE("SendRequest failed.");
+        return SYS_ERR;
+    }
+
+    res = reply.ReadInt32();
+
+    if (!reply.ReadString(fontWeightScale)) {
+        LOGE("Read FontScale failed!");
+        return SYS_ERR;
+    }
+
+    return res;
 }
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS

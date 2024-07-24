@@ -22,13 +22,18 @@
 #include "iservice_registry.h"
 #include "syspara/parameter.h"
 #include "system_ability_definition.h"
+#include "global_configuration_key.h"
 #include "ui_appearance_log.h"
 
 namespace {
 static const std::string LIGHT = "light";
 static const std::string DARK = "dark";
+static const std::string BASE_SCALE = "1";
 static const std::string PERSIST_DARKMODE_KEY = "persist.ace.darkmode";
 static const std::string PERMISSION_UPDATE_CONFIGURATION = "ohos.permission.UPDATE_CONFIGURATION";
+// current default accountId = 0, will change when have more user.
+static const std::string FONT_SCAL_FOR_USER0 = "persist.sys.font_scale_for_user0";
+static const std::string FONT_Weight_SCAL_FOR_USER0 = "persist.sys.font_Wght_scale_for_user0";
 } // namespace
 
 namespace OHOS {
@@ -178,6 +183,178 @@ int32_t UiAppearanceAbility::GetDarkMode()
     return darkMode_;
 }
 
+int32_t UiAppearanceAbility::OnSetFontScale(std::string &fontScale)
+{
+    bool ret = false;
+    AppExecFwk::Configuration config;
+    ret = config.AddItem(AAFwk::GlobalConfigurationKey::SYSTEM_FONT_SIZE_SCALE, fontScale);
+    if (!ret) {
+        LOGE("AddItem failed, fontScale = %{public}s", fontScale.c_str());
+        return INVALID_ARG;
+    }
+
+    auto appManagerInstance = GetAppManagerInstance();
+    if (appManagerInstance == nullptr) {
+        LOGE("Get app manager proxy failed.");
+        return SYS_ERR;
+    }
+
+    LOGI("update Configuration start, fontScale = %{public}s.", fontScale.c_str());
+    auto errcode = appManagerInstance->UpdateConfiguration(config);
+    if (errcode != 0) {
+        auto retVal = appManagerInstance->GetConfiguration(config);
+        if (retVal != 0) {
+            LOGE("get configuration failed, update error, error is %{public}d.", retVal);
+            return SYS_ERR;
+        }
+        auto currentFontScale = config.GetItem(AAFwk::GlobalConfigurationKey::SYSTEM_FONT_SIZE_SCALE);
+        if (currentFontScale != fontScale) {
+            LOGE("update configuration failed, errcode = %{public}d.", errcode);
+            return SYS_ERR;
+        } else {
+            LOGW("uiappearance is different against configuration. Forced to use the configuration, error is "
+                "%{public}d.", errcode);
+        }
+    }
+    fontScale_ = fontScale;
+
+    // persist to file: etc/para/ui_appearance.para
+    auto isSetPara = SetParameter(FONT_SCAL_FOR_USER0.c_str(), fontScale.c_str());
+    if (isSetPara < 0) {
+        LOGE("set parameter failed");
+        return SYS_ERR;
+    }
+    return SUCCEEDED;
+}
+
+int32_t UiAppearanceAbility::OnGetFontScale(std::string &fontScale)
+{
+    constexpr int buffSize = 64; // buff len: 64
+    char valueGet[buffSize] = { 0 };
+
+    auto res = GetParameter(FONT_SCAL_FOR_USER0.c_str(), BASE_SCALE.c_str(), valueGet, buffSize);
+    if (res <= 0) {
+        LOGE("get parameter failed.");
+        return SYS_ERR;
+    }
+
+    fontScale = valueGet;
+    return SUCCEEDED;
+}
+
+int32_t UiAppearanceAbility::SetFontScale(std::string& fontScale)
+{
+    // Verify permissions
+    auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
+    if (!isCallingPerm) {
+        LOGE("permission verification failed");
+        return PERMISSION_ERR;
+    }
+    if (!fontScale.empty()) {
+        return OnSetFontScale(fontScale);
+    } else {
+        LOGE("current fontScale is empty!");
+    }
+    return SYS_ERR;
+}
+
+int32_t UiAppearanceAbility::GetFontScale(std::string &fontScale)
+{
+    auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
+    if (!isCallingPerm) {
+        LOGE("permission verification failed");
+        return PERMISSION_ERR;
+    }
+    fontScale = fontScale_;
+    return SUCCEEDED;
+}
+
+int32_t UiAppearanceAbility::OnSetFontWeightScale(std::string &fontWeightScale)
+{
+    bool ret = false;
+    AppExecFwk::Configuration config;
+    ret = config.AddItem(AAFwk::GlobalConfigurationKey::SYSTEM_FONT_WEIGHT_SCALE, fontWeightScale);
+    if (!ret) {
+        LOGE("AddItem failed, fontWeightScale = %{public}s", fontWeightScale.c_str());
+        return INVALID_ARG;
+    }
+
+    auto appManagerInstance = GetAppManagerInstance();
+    if (appManagerInstance == nullptr) {
+        LOGE("Get app manager proxy failed.");
+        return SYS_ERR;
+    }
+
+    LOGI("update Configuration start, fontWeightScale = %{public}s.", fontWeightScale.c_str());
+    auto errcode = appManagerInstance->UpdateConfiguration(config);
+    if (errcode != 0) {
+        auto retVal = appManagerInstance->GetConfiguration(config);
+        if (retVal != 0) {
+            LOGE("get configuration failed, update error, error is %{public}d.", retVal);
+            return SYS_ERR;
+        }
+        auto currentFontScale = config.GetItem(AAFwk::GlobalConfigurationKey::SYSTEM_FONT_WEIGHT_SCALE);
+        if (currentFontScale != fontWeightScale) {
+            LOGE("update configuration failed, errcode = %{public}d.", errcode);
+            return SYS_ERR;
+        } else {
+            LOGW("uiappearance is different against configuration. Forced to use the configuration, error is "
+                "%{public}d.", errcode);
+        }
+    }
+    fontWeightScale_ = fontWeightScale;
+
+    // persist to file: etc/para/ui_appearance.para
+    auto isSetPara = SetParameter(FONT_Weight_SCAL_FOR_USER0.c_str(), fontWeightScale.c_str());
+    if (isSetPara < 0) {
+        LOGE("set parameter failed");
+        return SYS_ERR;
+    }
+    return SUCCEEDED;
+}
+
+int32_t UiAppearanceAbility::OnGetFontWeightScale(std::string &fontWeightScale)
+{
+    constexpr int buffSize = 64; // buff len: 64
+    char valueGet[buffSize] = { 0 };
+
+    auto res = GetParameter(FONT_Weight_SCAL_FOR_USER0.c_str(), BASE_SCALE.c_str(), valueGet, buffSize);
+    if (res <= 0) {
+        LOGE("get parameter failed.");
+        return SYS_ERR;
+    }
+
+    fontWeightScale = valueGet;
+    return SUCCEEDED;
+}
+
+int32_t UiAppearanceAbility::SetFontWeightScale(std::string& fontWeightScale)
+{
+    // Verify permissions
+    auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
+    if (!isCallingPerm) {
+        LOGE("permission verification failed");
+        return PERMISSION_ERR;
+    }
+    if (!fontWeightScale.empty()) {
+        return OnSetFontWeightScale(fontWeightScale);
+    } else {
+        LOGE("current fontWeightScale is empty!");
+    }
+    return SYS_ERR;
+}
+
+int32_t UiAppearanceAbility::GetFontWeightScale(std::string &fontWeightScale)
+{
+    auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
+    if (!isCallingPerm) {
+        LOGE("permission verification failed");
+        return PERMISSION_ERR;
+    }
+    fontWeightScale = fontWeightScale_;
+    return SUCCEEDED;
+}
+
 void UiAppearanceAbility::OnStart()
 {
     bool res = Publish(this); // SA registers with SAMGR
@@ -203,6 +380,26 @@ void UiAppearanceAbility::OnAddSystemAbility(int32_t systemAbilityId, const std:
         auto res = OnSetDarkMode(static_cast<UiAppearanceAbilityInterface::DarkMode>(OnGetDarkMode()));
         if (res < 0) {
             LOGE("set darkmode init error.");
+        }
+        std::string fontScale;
+        res = OnGetFontScale(fontScale);
+        if (res < 0) {
+            LOGE("get font init error.");
+            fontScale = BASE_SCALE;
+        }
+        res = OnSetFontScale(fontScale);
+        if (res < 0) {
+            LOGE("set Font init error.");
+        }
+        std::string fontWeightScale;
+        res = OnGetFontWeightScale(fontWeightScale);
+        if (res < 0) {
+            LOGE("get font init error.");
+            fontScale = BASE_SCALE;
+        }
+        res = OnSetFontWeightScale(fontWeightScale);
+        if (res < 0) {
+            LOGE("set Font init error.");
         }
     }
 }
