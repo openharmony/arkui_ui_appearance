@@ -27,6 +27,12 @@ public:
     UiAppearanceAbilityStub(bool serialInvokeFlag = true) : IRemoteStub(serialInvokeFlag) {};
     ~UiAppearanceAbilityStub() override = default;
     int32_t OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) override;
+
+private:
+    int32_t OnGetFontScaleInner(MessageParcel& data, MessageParcel& reply, MessageOption& option);
+    int32_t OnSetFontScaleInner(MessageParcel& data, MessageParcel& reply, MessageOption& option);
+    int32_t OnGetFontWeightScaleInner(MessageParcel& data, MessageParcel& reply, MessageOption& option);
+    int32_t OnSetFontWeightScaleInner(MessageParcel& data, MessageParcel& reply, MessageOption& option);
 };
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS

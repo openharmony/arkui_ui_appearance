@@ -19,6 +19,7 @@
 #include <iostream>
 #include <sys/types.h>
 #include <unistd.h>
+#include <string>
 
 #include "accesstoken_kit.h"
 #include "syspara/parameter.h"
@@ -135,6 +136,26 @@ HWTEST_F(DarkModeTest, ui_appearance_test_003, TestSize.Level0)
 
     int result =
         DarkModeTest::GetUiAppearanceAbilityTest()->SetDarkMode(UiAppearanceAbilityInterface::DarkMode::UNKNOWN);
+    EXPECT_NE(result, 0);
+}
+
+/**
+ * @tc.name: ui_appearance_test_004
+ * @tc.desc: Test the font API
+ * @tc.type: FUNC
+ */
+HWTEST_F(DarkModeTest, ui_appearance_test_004, TestSize.Level0)
+{
+    LOGI("Test the font API");
+
+    std::string fontScale;
+    int result =
+        DarkModeTest::GetUiAppearanceAbilityTest()->GetFontScale(fontScale);
+    EXPECT_NE(result, 0);
+
+    std::string fontWeightScale;
+    result =
+        DarkModeTest::GetUiAppearanceAbilityTest()->GetFontWeightScale(fontWeightScale);
     EXPECT_NE(result, 0);
 }
 } // namespace ArkUi::UiAppearance

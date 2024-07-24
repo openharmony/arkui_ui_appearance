@@ -16,6 +16,7 @@
 #ifndef UI_APPEARANCE_ABILITY_CLIENT_H
 #define UI_APPEARANCE_ABILITY_CLIENT_H
 
+#include <string>
 #include "iremote_object.h"
 #include "refbase.h"
 #include "ui_appearance_ability_interface.h"
@@ -37,6 +38,10 @@ public:
 
     int32_t SetDarkMode(UiAppearanceAbilityInterface::DarkMode mode);
     int32_t GetDarkMode();
+    int32_t GetFontScale(std::string& fontScale);
+    int32_t SetFontScale(std::string& fontScale);
+    int32_t GetFontWeightScale(std::string& fontWeightScale);
+    int32_t SetFontWeightScale(std::string& fontWeightScale);
     void OnRemoteSaDied(const wptr<IRemoteObject>& object);
 
 private:
