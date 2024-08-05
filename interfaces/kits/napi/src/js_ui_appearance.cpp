@@ -82,7 +82,7 @@ void JsUiAppearance::OnSetFontScale(napi_env env, void* data)
         return;
     }
     int32_t resCode = 0;
-    if (asyncContext->fontScale <= MIN_FONT_SCALE || asyncContext->fontScale > MAX_FONT_SCALE) {
+    if (asyncContext->jsFontScale <= MIN_FONT_SCALE || asyncContext->jsFontScale > MAX_FONT_SCALE) {
         asyncContext->status = UiAppearanceAbilityInterface::ErrCode::INVALID_ARG;
     } else {
         resCode = UiAppearanceAbilityClient::GetInstance()->SetFontScale(asyncContext->fontScale);
@@ -107,8 +107,8 @@ void JsUiAppearance::OnSetFontWeightScale(napi_env env, void* data)
         return;
     }
     int32_t resCode = 0;
-    if (asyncContext->fontWeightScale <= MIN_FONT_SCALE ||
-        asyncContext->fontWeightScale > MAX_FONT_SCALE) {
+    if (asyncContext->jsFontWeightScale <= MIN_FONT_SCALE ||
+        asyncContext->jsFontWeightScale > MAX_FONT_SCALE) {
         asyncContext->status = UiAppearanceAbilityInterface::ErrCode::INVALID_ARG;
     } else {
         resCode = UiAppearanceAbilityClient::GetInstance()
