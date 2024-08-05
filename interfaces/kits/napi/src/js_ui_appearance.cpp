@@ -87,7 +87,7 @@ void JsUiAppearance::OnSetFontScale(napi_env env, void* data)
     } else {
         resCode = UiAppearanceAbilityClient::GetInstance()->SetFontScale(asyncContext->fontScale);
     }
-    auto resCode = UiAppearanceAbilityClient::GetInstance()->SetFontScale(asyncContext->fontScale);
+
     asyncContext->status = static_cast<UiAppearanceAbilityInterface::ErrCode>(resCode);
     if (asyncContext->status == UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR) {
         asyncContext->errMsg = PERMISSION_ERR_MSG;
@@ -114,6 +114,7 @@ void JsUiAppearance::OnSetFontWeightScale(napi_env env, void* data)
         resCode = UiAppearanceAbilityClient::GetInstance()
             ->SetFontWeightScale(asyncContext->fontWeightScale);
     }
+
     asyncContext->status = static_cast<UiAppearanceAbilityInterface::ErrCode>(resCode);
     if (asyncContext->status == UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR) {
         asyncContext->errMsg = PERMISSION_ERR_MSG;
