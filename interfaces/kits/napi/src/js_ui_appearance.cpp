@@ -81,12 +81,18 @@ void JsUiAppearance::OnSetFontScale(napi_env env, void* data)
         NapiThrow(env, "asyncContext is null.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
         return;
     }
+    int32_t resCode = 0;
+    if (asyncContext->fontScale <= MIN_FONT_SCALE || asyncContext->fontScale > MAX_FONT_SCALE) {
+        asyncContext->status = UiAppearanceAbilityInterface::ErrCode::INVALID_ARG;
+    } else {
+        resCode = UiAppearanceAbilityClient::GetInstance()->SetFontScale(asyncContext->fontScale);
+    }
     auto resCode = UiAppearanceAbilityClient::GetInstance()->SetFontScale(asyncContext->fontScale);
     asyncContext->status = static_cast<UiAppearanceAbilityInterface::ErrCode>(resCode);
     if (asyncContext->status == UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR) {
         asyncContext->errMsg = PERMISSION_ERR_MSG;
     } else if (asyncContext->status == UiAppearanceAbilityInterface::ErrCode::INVALID_ARG) {
-        asyncContext->errMsg = INVALID_ARG_MSG;
+        asyncContext->errMsg = "fontScale must between 0 and 5";
     } else {
         asyncContext->errMsg = "";
     }
@@ -100,13 +106,19 @@ void JsUiAppearance::OnSetFontWeightScale(napi_env env, void* data)
         NapiThrow(env, "asyncContext is null.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
         return;
     }
-    auto resCode = UiAppearanceAbilityClient::GetInstance()->
-        SetFontWeightScale(asyncContext->fontWeightScale);
+    int32_t resCode = 0;
+    if (asyncContext->fontWeightScale <= MIN_FONT_SCALE ||
+        asyncContext->fontWeightScale > MAX_FONT_SCALE) {
+        asyncContext->status = UiAppearanceAbilityInterface::ErrCode::INVALID_ARG;
+    } else {
+        resCode = UiAppearanceAbilityClient::GetInstance()
+            ->SetFontWeightScale(asyncContext->fontWeightScale);
+    }
     asyncContext->status = static_cast<UiAppearanceAbilityInterface::ErrCode>(resCode);
     if (asyncContext->status == UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR) {
         asyncContext->errMsg = PERMISSION_ERR_MSG;
     } else if (asyncContext->status == UiAppearanceAbilityInterface::ErrCode::INVALID_ARG) {
-        asyncContext->errMsg = INVALID_ARG_MSG;
+        asyncContext->errMsg = "fontWeightScale must between 0 and 5";
     } else {
         asyncContext->errMsg = "";
     }
@@ -369,10 +381,7 @@ static napi_value JSSetFontScale(napi_env env, napi_callback_info info)
         return result;
     }
     napi_get_value_double(env, argv[0], &asyncContext->jsFontScale);
-    if (asyncContext->jsFontScale <= MIN_FONT_SCALE || asyncContext->jsFontScale > MAX_FONT_SCALE) {
-        NapiThrow(env, "fontScale must between 0 and 5.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
-        return result;
-    }
+
     asyncContext->fontScale = std::to_string(asyncContext->jsFontScale);
     if (argc == ARGC_WITH_TWO) {
         napi_create_reference(env, argv[1], 1, &asyncContext->callbackRef);
@@ -445,10 +454,7 @@ static napi_value JSSetFontWeightScale(napi_env env, napi_callback_info info)
         return result;
     }
     napi_get_value_double(env, argv[0], &asyncContext->jsFontWeightScale);
-    if (asyncContext->jsFontWeightScale <= MIN_FONT_SCALE || asyncContext->jsFontWeightScale > MAX_FONT_SCALE) {
-        NapiThrow(env, "fontWeightScale must between 0 and 5.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
-        return result;
-    }
+
     asyncContext->fontWeightScale = std::to_string(asyncContext->jsFontWeightScale);
     if (argc == ARGC_WITH_TWO) {
         napi_create_reference(env, argv[1], 1, &asyncContext->callbackRef);
