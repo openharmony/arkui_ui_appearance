@@ -33,7 +33,7 @@ static const std::string PERSIST_DARKMODE_KEY = "persist.ace.darkmode";
 static const std::string PERMISSION_UPDATE_CONFIGURATION = "ohos.permission.UPDATE_CONFIGURATION";
 // current default accountId = 0, will change when have more user.
 static const std::string FONT_SCAL_FOR_USER0 = "persist.sys.font_scale_for_user0";
-static const std::string FONT_Weight_SCAL_FOR_USER0 = "persist.sys.font_Wght_scale_for_user0";
+static const std::string FONT_Weight_SCAL_FOR_USER0 = "persist.sys.font_wght_scale_for_user0";
 } // namespace
 
 namespace OHOS {
