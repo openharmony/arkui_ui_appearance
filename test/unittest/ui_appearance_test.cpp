@@ -151,12 +151,12 @@ HWTEST_F(DarkModeTest, ui_appearance_test_004, TestSize.Level0)
     std::string fontScale;
     int result =
         DarkModeTest::GetUiAppearanceAbilityTest()->GetFontScale(fontScale);
-    EXPECT_NE(result, 0);
+    EXPECT_EQ(result, 0);
 
     std::string fontWeightScale;
     result =
         DarkModeTest::GetUiAppearanceAbilityTest()->GetFontWeightScale(fontWeightScale);
-    EXPECT_NE(result, 0);
+    EXPECT_EQ(result, 0);
 }
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS
