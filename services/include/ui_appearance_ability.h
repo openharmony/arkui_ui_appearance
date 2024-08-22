@@ -18,25 +18,44 @@
 
 #include <cstdint>
 #include <string>
-#include "system_ability.h"
+
 #include "appmgr/app_mgr_proxy.h"
+#include "common_event_manager.h"
+#include "common_event_support.h"
+#include "system_ability.h"
 #include "ui_appearance_ability_stub.h"
 
 namespace OHOS {
 namespace ArkUi::UiAppearance {
+class UserSwitchEventSubscriber : public EventFwk::CommonEventSubscriber {
+public:
+    explicit UserSwitchEventSubscriber(const EventFwk::CommonEventSubscribeInfo& subscriberInfo,
+        const std::function<void(const int32_t)>& userSwitchCallback);
+    ~UserSwitchEventSubscriber() override = default;
+    void OnReceiveEvent(const EventFwk::CommonEventData& data) override;
+
+private:
+    std::function<void(const int32_t)> userSwitchCallback_;
+};
+
 class UiAppearanceAbility : public SystemAbility, public UiAppearanceAbilityStub {
     DECLARE_SYSTEM_ABILITY(UiAppearanceAbility);
 
 public:
+    struct UiAppearanceParam {
+        DarkMode darkMode = DarkMode::ALWAYS_LIGHT;
+        std::string fontScale = "1";
+        std::string fontWeightScale = "1";
+    };
     UiAppearanceAbility(int32_t saId, bool runOnCreate);
     ~UiAppearanceAbility() = default;
 
     int32_t SetDarkMode(DarkMode mode) override;
     int32_t GetDarkMode() override;
-    int32_t GetFontScale(std::string &fontScale) override;
-    int32_t SetFontScale(std::string &fontScale) override;
-    int32_t GetFontWeightScale(std::string &fontWeightScale) override;
-    int32_t SetFontWeightScale(std::string &fontWeightScale) override;
+    int32_t GetFontScale(std::string& fontScale) override;
+    int32_t SetFontScale(std::string& fontScale) override;
+    int32_t GetFontWeightScale(std::string& fontWeightScale) override;
+    int32_t SetFontWeightScale(std::string& fontWeightScale) override;
 
 protected:
     void OnStart() override;
@@ -48,16 +67,37 @@ protected:
 private:
     sptr<AppExecFwk::IAppMgr> GetAppManagerInstance();
     bool VerifyAccessToken(const std::string& permissionName);
-    int32_t OnSetDarkMode(DarkMode mode);
-    int32_t OnGetDarkMode();
-    int32_t OnGetFontScale(std::string &fontScale);
-    int32_t OnSetFontScale(std::string &fontScale);
-    int32_t OnGetFontWeightScale(std::string &fontWeightScale);
-    int32_t OnSetFontWeightScale(std::string &fontWeightScale);
+    void Init();
+    void SubscribeUserSwitchEvent();
+    bool IsUserExist(const int32_t userId);
+    bool UpdateConfiguration(const AppExecFwk::Configuration& configuration, const int32_t userId);
+    void DoCompatibleProcess();
+    int32_t GetCallingUserId();
+    std::vector<int32_t> GetUserIds();
+    void UserSwitchFunc(const int32_t userId);
+    void DoInitProcess();
 
-    DarkMode darkMode_ = DarkMode::ALWAYS_LIGHT;
-    std::string fontScale_ = "1";
-    std::string fontWeightScale_ = "1";
+    bool GetParameterWrap(const std::string& paramName, std::string& value, const std::string& defaultValue);
+    bool GetParameterWrap(const std::string& paramName, std::string& value);
+    bool SetParameterWrap(const std::string& paramName, const std::string& value);
+
+    void UpdateCurrentUserConfiguration(const int32_t userId);
+    int32_t OnSetDarkMode(const int32_t userId, DarkMode mode);
+    UiAppearanceAbility::DarkMode InitGetDarkMode(const int32_t userId);
+    int32_t OnSetFontScale(const int32_t userId, std::string& fontScale);
+    int32_t OnSetFontWeightScale(const int32_t userId, std::string& fontWeightScale);
+    std::string DarkNodeConfigurationAssignUser(const int32_t userId);
+    std::string FontScaleConfigurationAssignUser(const int32_t userId);
+    std::string FontWeightScaleConfigurationAssignUser(const int32_t userId);
+    std::string DarkModeParamAssignUser(const int32_t userId);
+    std::string FontScaleParamAssignUser(const int32_t userId);
+    std::string FontWeightScaleParamAssignUser(const int32_t userId);
+
+    std::shared_ptr<UserSwitchEventSubscriber> userSwitchSubscriber_;
+    std::recursive_mutex usersParamMutex_;
+    std::map<int32_t, UiAppearanceParam> usersParam_;
+    std::atomic<bool> isNeedDoCompatibleProcess_ = false;
+    std::atomic<bool> isInitializationFinished_ = false;
 };
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS
