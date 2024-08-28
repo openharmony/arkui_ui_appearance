@@ -201,7 +201,7 @@ void UiAppearanceAbility::UpdateCurrentUserConfiguration(const int32_t userId)
 
     auto appManagerInstance = GetAppManagerInstance();
     if (appManagerInstance != nullptr) {
-        appManagerInstance->UpdateConfiguration(config, 0);
+        appManagerInstance->UpdateConfiguration(config, userId);
         SetParameterWrap(PERSIST_DARKMODE_KEY, tmpParam.darkMode == DarkMode::ALWAYS_DARK ? DARK : LIGHT);
         SetParameterWrap(FONT_SCAL_FOR_USER0, tmpParam.fontScale);
         SetParameterWrap(FONT_Weight_SCAL_FOR_USER0, tmpParam.fontWeightScale);
