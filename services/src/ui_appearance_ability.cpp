@@ -43,7 +43,10 @@ static const std::string PERSIST_DARKMODE_KEY_FOR_NONE = "persist.ace.darkmode."
 static const std::string FONT_SCAL_FOR_NONE = "persist.sys.font_scale_for_user.";
 static const std::string FONT_WEIGHT_SCAL_FOR_NONE = "persist.sys.font_wght_scale_for_user.";
 
-static const std::string FIRST_INITIALIZATION = "persist.sys.first_initialization";
+static const std::string FIRST_INITIALIZATION = "persist.uiAppearance.first_initialization";
+const static int32_t USER100 = 100;
+const static std::string FIRST_UPGRADE = "1";
+const static std::string NOT_FIRST_UPGRADE = "0";
 } // namespace
 
 namespace OHOS {
@@ -136,15 +139,24 @@ std::vector<int32_t> UiAppearanceAbility::GetUserIds()
 
 void UiAppearanceAbility::DoCompatibleProcess()
 {
+    LOGI("DoCompatibleProcess");
     auto getOldParam = [this](const std::string& paramName, std::string& result) {
         return GetParameterWrap(paramName, result);
     };
 
-    const std::vector<int32_t> userIds = GetUserIds();
+    auto isParamAllreadaySetted = [this](const std::string& paramName) {
+        std::string value;
+        return GetParameterWrap(paramName, value);
+    };
 
+    const std::vector<int32_t> userIds = GetUserIds();
+    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
     std::string darkMode = LIGHT;
     if (getOldParam(PERSIST_DARKMODE_KEY, darkMode)) {
         for (auto id : userIds) {
+            if (isParamAllreadaySetted(DarkModeParamAssignUser(id))) {
+                continue;
+            }
             SetParameterWrap(DarkModeParamAssignUser(id), darkMode);
         }
         LOGD(" set darkMode %{public}s", darkMode.c_str());
@@ -152,6 +164,9 @@ void UiAppearanceAbility::DoCompatibleProcess()
     std::string fontSize = BASE_SCALE;
     if (getOldParam(FONT_SCAL_FOR_USER0, fontSize)) {
         for (auto id : userIds) {
+            if (isParamAllreadaySetted(FontScaleParamAssignUser(id))) {
+                continue;
+            }
             SetParameterWrap(FontScaleParamAssignUser(id), fontSize);
         }
         LOGD(" set fontSize %{public}s", fontSize.c_str());
@@ -159,6 +174,9 @@ void UiAppearanceAbility::DoCompatibleProcess()
     std::string fontWeightSize = BASE_SCALE;
     if (getOldParam(FONT_Weight_SCAL_FOR_USER0, fontWeightSize)) {
         for (auto id : userIds) {
+            if (isParamAllreadaySetted(FontWeightScaleParamAssignUser(id))) {
+                continue;
+            }
             SetParameterWrap(FontWeightScaleParamAssignUser(id), fontWeightSize);
         }
         LOGD(" set fontWeightSize %{public}s", fontWeightSize.c_str());
@@ -169,8 +187,8 @@ void UiAppearanceAbility::DoCompatibleProcess()
 
 void UiAppearanceAbility::DoInitProcess()
 {
+    LOGI("DoInitProcess");
     const std::vector<int32_t> userIds = GetUserIds();
-    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
     for (auto userId : userIds) {
         std::string darkValue = LIGHT;
         GetParameterWrap(DarkModeParamAssignUser(userId), darkValue);
@@ -211,6 +229,7 @@ void UiAppearanceAbility::UpdateCurrentUserConfiguration(const int32_t userId)
 
 void UiAppearanceAbility::UserSwitchFunc(const int32_t userId)
 {
+    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
     if (isNeedDoCompatibleProcess_) {
         DoCompatibleProcess();
     }
@@ -242,25 +261,29 @@ void UiAppearanceAbility::OnAddSystemAbility(int32_t systemAbilityId, const std:
     }
 
     auto checkIfFirstUpgrade = [this]() {
-        std::string initFlag = "0";
+        std::string initFlag = NOT_FIRST_UPGRADE;
         GetParameterWrap(FIRST_INITIALIZATION, initFlag);
-        if (initFlag == "1") {
+        if (initFlag == FIRST_UPGRADE) {
             return true;
         }
         return false;
     };
     isNeedDoCompatibleProcess_ = checkIfFirstUpgrade();
     SubscribeUserSwitchEvent();
-
+    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
     if (isNeedDoCompatibleProcess_ && !GetUserIds().empty()) {
         DoCompatibleProcess();
     }
 
     if (!isInitializationFinished_ && !GetUserIds().empty()) {
         DoInitProcess();
-        AccountSA::OsAccountInfo info;
-        AccountSA::OsAccountManager::QueryCurrentOsAccount(info);
-        UpdateCurrentUserConfiguration(info.GetLocalId());
+        int32_t userId = USER100;
+        auto errCode = AccountSA::OsAccountManager::GetForegroundOsAccountLocalId(userId);
+        if (errCode != 0) {
+            LOGW("GetForegroundOsAccountLocalId error: %{public}d.", errCode);
+            userId = USER100;
+        }
+        UpdateCurrentUserConfiguration(userId);
     }
 }
 
@@ -272,7 +295,18 @@ void UiAppearanceAbility::OnRemoveSystemAbility(int32_t systemAbilityId, const s
 int32_t UiAppearanceAbility::GetCallingUserId()
 {
     const static int32_t UID_TRANSFORM_DIVISOR = 200000;
-    return OHOS::IPCSkeleton::GetCallingUid() / UID_TRANSFORM_DIVISOR;
+
+    LOGD("CallingUid = %{public}d", OHOS::IPCSkeleton::GetCallingUid());
+    int32_t userId = OHOS::IPCSkeleton::GetCallingUid() / UID_TRANSFORM_DIVISOR;
+    if (userId == 0) {
+        auto errNo = AccountSA::OsAccountManager::GetForegroundOsAccountLocalId(userId);
+        if (errNo != 0) {
+            LOGE("CallingUid = %{public}d, GetForegroundOsAccountLocalId error:%{public}d",
+                OHOS::IPCSkeleton::GetCallingUid(), errNo);
+            userId = USER100;
+        }
+    }
+    return userId;
 }
 
 std::string UiAppearanceAbility::DarkModeParamAssignUser(const int32_t userId)
@@ -383,16 +417,16 @@ int32_t UiAppearanceAbility::OnSetDarkMode(const int32_t userId, DarkMode mode)
     if (!UpdateConfiguration(config, userId)) {
         return SYS_ERR;
     }
-    {
-        std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
-        if (IsUserExist(userId)) {
-            usersParam_[userId].darkMode = mode;
-        } else {
-            UiAppearanceParam tmpParam;
-            tmpParam.darkMode = mode;
-            usersParam_[userId] = tmpParam;
-        }
+
+    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
+    if (IsUserExist(userId)) {
+        usersParam_[userId].darkMode = mode;
+    } else {
+        UiAppearanceParam tmpParam;
+        tmpParam.darkMode = mode;
+        usersParam_[userId] = tmpParam;
     }
+
     SetParameterWrap(PERSIST_DARKMODE_KEY, paramValue);
 
     // persist to file: etc/para/ui_appearance.para
@@ -413,15 +447,16 @@ int32_t UiAppearanceAbility::SetDarkMode(DarkMode mode)
         return PERMISSION_ERR;
     }
     std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
-    auto it = usersParam_.find(GetCallingUserId());
+    auto userId = GetCallingUserId();
+    auto it = usersParam_.find(userId);
     if (it != usersParam_.end()) {
         if (mode != it->second.darkMode) {
-            return OnSetDarkMode(GetCallingUserId(), mode);
+            return OnSetDarkMode(userId, mode);
         } else {
             LOGW("current color mode is %{public}d, no need to change", mode);
         }
     } else {
-        return OnSetDarkMode(GetCallingUserId(), mode);
+        return OnSetDarkMode(userId, mode);
     }
 
     return SYS_ERR;
@@ -473,15 +508,14 @@ int32_t UiAppearanceAbility::OnSetFontScale(const int32_t userId, std::string& f
     if (!UpdateConfiguration(config, userId)) {
         return SYS_ERR;
     }
-    {
-        std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
-        if (IsUserExist(userId)) {
-            usersParam_[userId].fontScale = fontScale;
-        } else {
-            UiAppearanceParam tmpParam;
-            tmpParam.fontScale = fontScale;
-            usersParam_[userId] = tmpParam;
-        }
+
+    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
+    if (IsUserExist(userId)) {
+        usersParam_[userId].fontScale = fontScale;
+    } else {
+        UiAppearanceParam tmpParam;
+        tmpParam.fontScale = fontScale;
+        usersParam_[userId] = tmpParam;
     }
 
     SetParameterWrap(FONT_SCAL_FOR_USER0, fontScale);
@@ -541,15 +575,13 @@ int32_t UiAppearanceAbility::OnSetFontWeightScale(const int32_t userId, std::str
     if (!UpdateConfiguration(config, userId)) {
         return SYS_ERR;
     }
-    {
-        std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
-        if (IsUserExist(userId)) {
-            usersParam_[userId].fontWeightScale = fontWeightScale;
-        } else {
-            UiAppearanceParam tmpParam;
-            tmpParam.fontWeightScale = fontWeightScale;
-            usersParam_[userId] = tmpParam;
-        }
+    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
+    if (IsUserExist(userId)) {
+        usersParam_[userId].fontWeightScale = fontWeightScale;
+    } else {
+        UiAppearanceParam tmpParam;
+        tmpParam.fontWeightScale = fontWeightScale;
+        usersParam_[userId] = tmpParam;
     }
 
     SetParameterWrap(FONT_Weight_SCAL_FOR_USER0, fontWeightScale);
