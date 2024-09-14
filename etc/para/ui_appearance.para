@@ -14,4 +14,4 @@
 persist.ace.darkmode=light
 persist.sys.font_scale_for_user0=1.0
 persist.sys.font_wght_scale_for_user0=1.0
-persist.sys.first_initialization=1
+persist.uiAppearance.first_initialization=1
