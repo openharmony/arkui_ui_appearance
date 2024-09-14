@@ -28,6 +28,7 @@
         "ability_base",
         "access_token",
         "c_utils",
+        "hicollie",
         "hilog",
         "init",
         "ipc",
