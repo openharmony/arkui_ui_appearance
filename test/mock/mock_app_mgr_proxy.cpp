@@ -17,7 +17,7 @@
 
 namespace OHOS {
 namespace AppExecFwk {
-int32_t AppMgrProxy::UpdateConfiguration(const Configuration& config)
+int32_t AppMgrProxy::UpdateConfiguration(const Configuration& config, const int32_t userId)
 {
     return 0;
 }
