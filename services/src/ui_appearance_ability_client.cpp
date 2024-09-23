@@ -20,6 +20,8 @@
 #include "system_ability_definition.h"
 #include "ui_appearance_ability_proxy.h"
 #include "ui_appearance_log.h"
+#include "xcollie/xcollie.h"
+#include "xcollie/xcollie_define.h"
 
 namespace OHOS {
 namespace ArkUi::UiAppearance {
@@ -77,7 +79,11 @@ int32_t UiAppearanceAbilityClient::GetFontScale(std::string &fontScale)
         LOGE("GetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
         return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
     }
-    return uiAppearanceServiceProxy_->GetFontScale(fontScale);
+    int id = HiviewDFX::XCollie::GetInstance().SetTimer(
+        "GetFontScale", 10, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
+    auto res = uiAppearanceServiceProxy_->GetFontScale(fontScale);
+    HiviewDFX::XCollie::GetInstance().CancelTimer(id);
+    return res;
 }
 
 int32_t UiAppearanceAbilityClient::SetFontWeightScale(std::string &fontWeightScale)
