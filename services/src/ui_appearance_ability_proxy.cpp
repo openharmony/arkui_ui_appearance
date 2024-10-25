@@ -147,7 +147,7 @@ int32_t UiAppearanceAbilityProxy::GetFontWeightScale(std::string &fontWeightScal
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        LOGE("##lmz Write descriptor failed!");
+        LOGE("##Write descriptor failed!");
         return SYS_ERR;
     }
 
