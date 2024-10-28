@@ -28,6 +28,7 @@
 #include "syspara/parameter.h"
 #include "system_ability_definition.h"
 #include "ui_appearance_log.h"
+#include "timer_manager_controller.h"
 
 namespace {
 static const std::string LIGHT = "light";
@@ -52,12 +53,14 @@ const static std::string NOT_FIRST_UPGRADE = "0";
 namespace OHOS {
 namespace ArkUi::UiAppearance {
 
-UserSwitchEventSubscriber::UserSwitchEventSubscriber(const EventFwk::CommonEventSubscribeInfo& subscriberInfo,
-    const std::function<void(const int32_t)>& userSwitchCallback)
-    : EventFwk::CommonEventSubscriber(subscriberInfo), userSwitchCallback_(userSwitchCallback)
+UiAppearanceEventSubscriber::UiAppearanceEventSubscriber(
+    const EventFwk::CommonEventSubscribeInfo& subscriberInfo,
+    const std::function<void(const int32_t)>& userSwitchCallback,
+    const std::function<void()>& timeChangeCallback): EventFwk::CommonEventSubscriber(subscriberInfo),
+    userSwitchCallback_(userSwitchCallback), timeChangeCallback_(timeChangeCallback)
 {}
 
-void UserSwitchEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData& data)
+void UiAppearanceEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData& data)
 {
     const AAFwk::Want& want = data.GetWant();
     std::string action = want.GetAction();
@@ -66,6 +69,14 @@ void UserSwitchEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData& 
     if (action == EventFwk::CommonEventSupport::COMMON_EVENT_USER_SWITCHED) {
         if (userSwitchCallback_ != nullptr) {
             userSwitchCallback_(data.GetCode());
+        }
+    } else if (action == EventFwk::CommonEventSupport::COMMON_EVENT_TIME_CHANGED) {
+        if (timeChangeCallback_ != nullptr) {
+            timeChangeCallback_();
+        }
+    } else if (action == EventFwk::CommonEventSupport::COMMON_EVENT_TIMEZONE_CHANGED) {
+        if (timeChangeCallback_ != nullptr) {
+            timeChangeCallback_();
         }
     }
 }
@@ -239,16 +250,22 @@ void UiAppearanceAbility::UserSwitchFunc(const int32_t userId)
     UpdateCurrentUserConfiguration(userId);
 }
 
-void UiAppearanceAbility::SubscribeUserSwitchEvent()
+void UiAppearanceAbility::SubscribeCommonEvent()
 {
     EventFwk::MatchingSkills matchingSkills;
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_USER_SWITCHED);
+    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_TIME_CHANGED);
+    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_TIMEZONE_CHANGED);
     EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
     subscribeInfo.SetThreadMode(EventFwk::CommonEventSubscribeInfo::COMMON);
+    auto darkTimerManager =
+        TimerManagerController::GetInstance().GetTimerManagerByType(UiAppearanceType::DarkColorMode);
 
-    userSwitchSubscriber_ = std::make_shared<UserSwitchEventSubscriber>(
-        subscribeInfo, [this](const int32_t userId) { UserSwitchFunc(userId); });
-    bool subResult = EventFwk::CommonEventManager::SubscribeCommonEvent(userSwitchSubscriber_);
+    uiAppearanceEventSubscriber_ = std::make_shared<UiAppearanceEventSubscriber>(
+        subscribeInfo,
+        [this](const int32_t userId) { UserSwitchFunc(userId); },
+        [darkTimerManager]() { darkTimerManager->RestartTimerByUserId(); });
+    bool subResult = EventFwk::CommonEventManager::SubscribeCommonEvent(uiAppearanceEventSubscriber_);
     if (!subResult) {
         LOGW("subscribe user switch event error");
     }
@@ -269,7 +286,7 @@ void UiAppearanceAbility::OnAddSystemAbility(int32_t systemAbilityId, const std:
         return false;
     };
     isNeedDoCompatibleProcess_ = checkIfFirstUpgrade();
-    SubscribeUserSwitchEvent();
+    SubscribeCommonEvent();
     std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
     if (isNeedDoCompatibleProcess_ && !GetUserIds().empty()) {
         DoCompatibleProcess();

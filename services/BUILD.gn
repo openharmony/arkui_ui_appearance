@@ -26,8 +26,11 @@ ohos_shared_library("ui_appearance_service") {
   }
 
   sources = [
+    "src/alarm_timer.cpp",
+    "src/timer_manager_controller.cpp",
     "src/ui_appearance_ability.cpp",
     "src/ui_appearance_ability_stub.cpp",
+    "src/ui_appearance_timer_manager.cpp",
   ]
 
   public_configs = [ ":ui_appearance_service_config" ]
@@ -36,6 +39,7 @@ ohos_shared_library("ui_appearance_service") {
   external_deps = [
     "ability_base:configuration",
     "ability_runtime:app_manager",
+    "ability_runtime:wantagent_innerkits",
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "common_event_service:cesfwk_core",
@@ -46,6 +50,7 @@ ohos_shared_library("ui_appearance_service") {
     "os_account:os_account_innerkits",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "time_service:time_client",
   ]
   subsystem_name = "arkui"
   part_name = "ui_appearance"
