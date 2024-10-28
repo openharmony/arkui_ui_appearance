@@ -17,6 +17,7 @@
 #define UI_APPEARANCE_ABILITY_H
 
 #include <cstdint>
+#include <functional>
 #include <string>
 
 #include "appmgr/app_mgr_proxy.h"
@@ -27,15 +28,16 @@
 
 namespace OHOS {
 namespace ArkUi::UiAppearance {
-class UserSwitchEventSubscriber : public EventFwk::CommonEventSubscriber {
+class UiAppearanceEventSubscriber : public EventFwk::CommonEventSubscriber {
 public:
-    explicit UserSwitchEventSubscriber(const EventFwk::CommonEventSubscribeInfo& subscriberInfo,
-        const std::function<void(const int32_t)>& userSwitchCallback);
-    ~UserSwitchEventSubscriber() override = default;
+    explicit UiAppearanceEventSubscriber(const EventFwk::CommonEventSubscribeInfo& subscriberInfo,
+        const std::function<void(const int32_t)>& userSwitchCallback,  const std::function<void()>& timeChangeCallback);
+    ~UiAppearanceEventSubscriber() override = default;
     void OnReceiveEvent(const EventFwk::CommonEventData& data) override;
 
 private:
     std::function<void(const int32_t)> userSwitchCallback_;
+    std::function<void()> timeChangeCallback_;
 };
 
 class UiAppearanceAbility : public SystemAbility, public UiAppearanceAbilityStub {
@@ -68,7 +70,7 @@ private:
     sptr<AppExecFwk::IAppMgr> GetAppManagerInstance();
     bool VerifyAccessToken(const std::string& permissionName);
     void Init();
-    void SubscribeUserSwitchEvent();
+    void SubscribeCommonEvent();
     bool IsUserExist(const int32_t userId);
     bool UpdateConfiguration(const AppExecFwk::Configuration& configuration, const int32_t userId);
     void DoCompatibleProcess();
@@ -93,7 +95,7 @@ private:
     std::string FontScaleParamAssignUser(const int32_t userId);
     std::string FontWeightScaleParamAssignUser(const int32_t userId);
 
-    std::shared_ptr<UserSwitchEventSubscriber> userSwitchSubscriber_;
+    std::shared_ptr<UiAppearanceEventSubscriber> uiAppearanceEventSubscriber_;
     std::recursive_mutex usersParamMutex_;
     std::map<int32_t, UiAppearanceParam> usersParam_;
     std::atomic<bool> isNeedDoCompatibleProcess_ = false;

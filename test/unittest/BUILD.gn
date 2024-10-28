@@ -35,6 +35,7 @@ ohos_unittest("ui_appearance_test") {
     "ability_base:configuration",
     "ability_base:want",
     "ability_runtime:app_manager",
+    "ability_runtime:wantagent_innerkits",
     "access_token:libaccesstoken_sdk",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
@@ -45,6 +46,7 @@ ohos_unittest("ui_appearance_test") {
     "ipc:ipc_single",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "time_service:time_client",
   ]
 }
 
