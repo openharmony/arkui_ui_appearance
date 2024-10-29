@@ -16,24 +16,20 @@
 #include "alarm_timer.h"
 #include "ui_appearance_log.h"
 
-namespace OHOS {
-namespace ArkUi::UiAppearance {
-
+namespace OHOS::ArkUi::UiAppearance {
 void AlarmTimer::OnTrigger()
 {
-    LOGI("UiAppearanceAlarmTimer::OnTrigger called");
     if (callBack_) {
-        LOGI("callBack_ called");
         callBack_();
     }
 }
 
-void AlarmTimer::SetCallbackInfo(std::function<void()> callBack)
+void AlarmTimer::SetCallbackInfo(const std::function<void()>& callBack)
 {
     callBack_ = callBack;
 }
 
-void AlarmTimer::SetType(const int &type)
+void AlarmTimer::SetType(const int& type)
 {
     this->type = type;
 }
@@ -43,7 +39,7 @@ void AlarmTimer::SetRepeat(bool repeat)
     this->repeat = repeat;
 }
 
-void AlarmTimer::SetInterval(const uint64_t &interval)
+void AlarmTimer::SetInterval(const uint64_t& interval)
 {
     this->interval = interval;
 }
@@ -52,6 +48,4 @@ void AlarmTimer::SetWantAgent(std::shared_ptr<AbilityRuntime::WantAgent::WantAge
 {
     this->wantAgent = wantAgent;
 }
-
-} // namespace ArkUi::UiAppearance
-} // namespace OHOS
+} // namespace OHOS::ArkUi::UiAppearance
