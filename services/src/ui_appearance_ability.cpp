@@ -140,7 +140,11 @@ void UiAppearanceAbility::OnStop()
 std::vector<int32_t> UiAppearanceAbility::GetUserIds()
 {
     std::vector<AccountSA::OsAccountInfo> infos;
-    AccountSA::OsAccountManager::QueryAllCreatedOsAccounts(infos);
+    auto errCode = AccountSA::OsAccountManager::QueryAllCreatedOsAccounts(infos);
+    if (errCode != 0) {
+        LOGW("QueryAllCreatedOsAccounts error: %{public}d.", errCode);
+        return {};
+    }
     std::vector<int32_t> ids;
     for (const auto& info : infos) {
         ids.push_back(info.GetLocalId());
@@ -169,8 +173,8 @@ void UiAppearanceAbility::DoCompatibleProcess()
                 continue;
             }
             SetParameterWrap(DarkModeParamAssignUser(id), darkMode);
+            LOGI("userId:%{public}d set darkMode %{public}s", id, darkMode.c_str());
         }
-        LOGD(" set darkMode %{public}s", darkMode.c_str());
     }
     std::string fontSize = BASE_SCALE;
     if (getOldParam(FONT_SCAL_FOR_USER0, fontSize)) {
@@ -179,8 +183,8 @@ void UiAppearanceAbility::DoCompatibleProcess()
                 continue;
             }
             SetParameterWrap(FontScaleParamAssignUser(id), fontSize);
+            LOGI("userId:%{public}d set fontSize %{public}s", id, fontSize.c_str());
         }
-        LOGD(" set fontSize %{public}s", fontSize.c_str());
     }
     std::string fontWeightSize = BASE_SCALE;
     if (getOldParam(FONT_Weight_SCAL_FOR_USER0, fontWeightSize)) {
@@ -189,8 +193,8 @@ void UiAppearanceAbility::DoCompatibleProcess()
                 continue;
             }
             SetParameterWrap(FontWeightScaleParamAssignUser(id), fontWeightSize);
+            LOGI("userId:%{public}d set fontWeightSize %{public}s", id, fontWeightSize.c_str());
         }
-        LOGD(" set fontWeightSize %{public}s", fontWeightSize.c_str());
     }
     SetParameterWrap(FIRST_INITIALIZATION, "0");
     isNeedDoCompatibleProcess_ = false;
@@ -215,6 +219,8 @@ void UiAppearanceAbility::DoInitProcess()
         tmpParam.fontScale = fontSize;
         tmpParam.fontWeightScale = fontWeight;
         usersParam_[userId] = tmpParam;
+        LOGI("init userId:%{public}d, darkMode:%{public}s, fontSize:%{public}s, fontWeight:%{public}s", userId,
+            darkValue.c_str(), fontSize.c_str(), fontWeight.c_str());
     }
     isInitializationFinished_ = true;
 }
@@ -229,13 +235,15 @@ void UiAppearanceAbility::UpdateCurrentUserConfiguration(const int32_t userId)
     config.AddItem(AAFwk::GlobalConfigurationKey::SYSTEM_FONT_WEIGHT_SCALE, tmpParam.fontWeightScale);
 
     auto appManagerInstance = GetAppManagerInstance();
-    if (appManagerInstance != nullptr) {
-        appManagerInstance->UpdateConfiguration(config, userId);
-        SetParameterWrap(PERSIST_DARKMODE_KEY, tmpParam.darkMode == DarkMode::ALWAYS_DARK ? DARK : LIGHT);
-        SetParameterWrap(FONT_SCAL_FOR_USER0, tmpParam.fontScale);
-        SetParameterWrap(FONT_Weight_SCAL_FOR_USER0, tmpParam.fontWeightScale);
-        LOGD("user switch update config %{public}s", config.GetName().c_str());
+    if (!appManagerInstance) {
+        LOGE("GetAppManagerInstance error userId:%{public}d", userId);
+        return;
     }
+    appManagerInstance->UpdateConfiguration(config, userId);
+    SetParameterWrap(PERSIST_DARKMODE_KEY, tmpParam.darkMode == DarkMode::ALWAYS_DARK ? DARK : LIGHT);
+    SetParameterWrap(FONT_SCAL_FOR_USER0, tmpParam.fontScale);
+    SetParameterWrap(FONT_Weight_SCAL_FOR_USER0, tmpParam.fontWeightScale);
+    LOGI("update userId:%{public}d configuration:%{public}s", userId, config.GetName().c_str());
 }
 
 void UiAppearanceAbility::UserSwitchFunc(const int32_t userId)
@@ -353,7 +361,7 @@ bool UiAppearanceAbility::GetParameterWrap(
         LOGE("get parameter %{public}s failed", paramName.c_str());
         return false;
     }
-    LOGD("get parameter %{public}s:%{public}s", paramName.c_str(), value.c_str());
+    LOGI("get parameter %{public}s:%{public}s", paramName.c_str(), value.c_str());
     value = buf;
     return true;
 }
@@ -369,7 +377,7 @@ bool UiAppearanceAbility::SetParameterWrap(const std::string& paramName, const s
         LOGE("set parameter %{public}s failed", paramName.c_str());
         return false;
     }
-    LOGD("set parameter %{public}s:%{public}s", paramName.c_str(), value.c_str());
+    LOGI("set parameter %{public}s:%{public}s", paramName.c_str(), value.c_str());
     return true;
 }
 
