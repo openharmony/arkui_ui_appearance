@@ -235,7 +235,7 @@ void UiAppearanceAbility::UpdateCurrentUserConfiguration(const int32_t userId)
     config.AddItem(AAFwk::GlobalConfigurationKey::SYSTEM_FONT_WEIGHT_SCALE, tmpParam.fontWeightScale);
 
     auto appManagerInstance = GetAppManagerInstance();
-    if(!appManagerInstance) {
+    if (!appManagerInstance) {
         LOGE("GetAppManagerInstance error userId:%{public}d", userId);
         return;
     }
@@ -244,7 +244,6 @@ void UiAppearanceAbility::UpdateCurrentUserConfiguration(const int32_t userId)
     SetParameterWrap(FONT_SCAL_FOR_USER0, tmpParam.fontScale);
     SetParameterWrap(FONT_Weight_SCAL_FOR_USER0, tmpParam.fontWeightScale);
     LOGI("update userId:%{public}d configuration:%{public}s", userId, config.GetName().c_str());
-
 }
 
 void UiAppearanceAbility::UserSwitchFunc(const int32_t userId)
