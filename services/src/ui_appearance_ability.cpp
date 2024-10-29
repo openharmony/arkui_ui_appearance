@@ -20,6 +20,7 @@
 #include "accesstoken_kit.h"
 #include "common_event_manager.h"
 #include "common_event_support.h"
+#include "dark_mode_manager.h"
 #include "global_configuration_key.h"
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
@@ -28,7 +29,6 @@
 #include "syspara/parameter.h"
 #include "system_ability_definition.h"
 #include "ui_appearance_log.h"
-#include "timer_manager_controller.h"
 
 namespace {
 static const std::string LIGHT = "light";
@@ -55,9 +55,8 @@ namespace ArkUi::UiAppearance {
 
 UiAppearanceEventSubscriber::UiAppearanceEventSubscriber(
     const EventFwk::CommonEventSubscribeInfo& subscriberInfo,
-    const std::function<void(const int32_t)>& userSwitchCallback,
-    const std::function<void()>& timeChangeCallback): EventFwk::CommonEventSubscriber(subscriberInfo),
-    userSwitchCallback_(userSwitchCallback), timeChangeCallback_(timeChangeCallback)
+    const std::function<void(const int32_t)>& userSwitchCallback): EventFwk::CommonEventSubscriber(subscriberInfo),
+    userSwitchCallback_(userSwitchCallback)
 {}
 
 void UiAppearanceEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData& data)
@@ -71,14 +70,15 @@ void UiAppearanceEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData
             userSwitchCallback_(data.GetCode());
         }
     } else if (action == EventFwk::CommonEventSupport::COMMON_EVENT_TIME_CHANGED) {
-        if (timeChangeCallback_ != nullptr) {
-            timeChangeCallback_();
-        }
+        TimeChangeCallback();
     } else if (action == EventFwk::CommonEventSupport::COMMON_EVENT_TIMEZONE_CHANGED) {
-        if (timeChangeCallback_ != nullptr) {
-            timeChangeCallback_();
-        }
+        TimeChangeCallback();
     }
+}
+
+void UiAppearanceEventSubscriber::TimeChangeCallback()
+{
+    DarkModeManager::GetInstance().RestartTimerByUserId();
 }
 
 REGISTER_SYSTEM_ABILITY_BY_ID(UiAppearanceAbility, ARKUI_UI_APPEARANCE_SERVICE_ID, true);
@@ -258,13 +258,10 @@ void UiAppearanceAbility::SubscribeCommonEvent()
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_TIMEZONE_CHANGED);
     EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
     subscribeInfo.SetThreadMode(EventFwk::CommonEventSubscribeInfo::COMMON);
-    auto darkTimerManager =
-        TimerManagerController::GetInstance().GetTimerManagerByType(UiAppearanceType::DarkColorMode);
 
     uiAppearanceEventSubscriber_ = std::make_shared<UiAppearanceEventSubscriber>(
         subscribeInfo,
-        [this](const int32_t userId) { UserSwitchFunc(userId); },
-        [darkTimerManager]() { darkTimerManager->RestartTimerByUserId(); });
+        [this](const int32_t userId) { UserSwitchFunc(userId); });
     bool subResult = EventFwk::CommonEventManager::SubscribeCommonEvent(uiAppearanceEventSubscriber_);
     if (!subResult) {
         LOGW("subscribe user switch event error");
