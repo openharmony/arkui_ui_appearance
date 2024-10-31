@@ -50,7 +50,10 @@ public:
     static void SetTimerTriggerTime(uint64_t startTime, uint64_t endTime,
         std::array<uint64_t, TRIGGER_ARRAY_SIZE>& triggerTimeInterval);
 
+    void Dump();
+
 private:
+    // TODO lock
     std::map<uint32_t, std::array<uint64_t, TRIGGER_ARRAY_SIZE>> timerIdMap_;
     std::map<uint32_t, std::array<uint64_t, TRIGGER_ARRAY_SIZE>> initialSetupTimeMap_;
 

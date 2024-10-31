@@ -37,8 +37,11 @@ public:
 
     static void TimeChangeCallback();
 
+    void BootCompetedCallback();
+
 private:
     std::function<void(const int32_t)> userSwitchCallback_;
+    std::once_flag bootCompleteFlag_;
 };
 
 class UiAppearanceAbility : public SystemAbility, public UiAppearanceAbilityStub {
@@ -95,6 +98,8 @@ private:
     std::string DarkModeParamAssignUser(const int32_t userId);
     std::string FontScaleParamAssignUser(const int32_t userId);
     std::string FontWeightScaleParamAssignUser(const int32_t userId);
+
+    void UpdateDarkModeCallback(bool isDarkMode, int32_t userId);
 
     std::shared_ptr<UiAppearanceEventSubscriber> uiAppearanceEventSubscriber_;
     std::recursive_mutex usersParamMutex_;

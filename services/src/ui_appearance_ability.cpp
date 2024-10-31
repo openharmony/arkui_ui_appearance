@@ -73,12 +73,33 @@ void UiAppearanceEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData
         TimeChangeCallback();
     } else if (action == EventFwk::CommonEventSupport::COMMON_EVENT_TIMEZONE_CHANGED) {
         TimeChangeCallback();
+    } else if (action == EventFwk::CommonEventSupport::COMMON_EVENT_BOOT_COMPLETED) {
+        BootCompetedCallback();
     }
 }
 
 void UiAppearanceEventSubscriber::TimeChangeCallback()
 {
-    DarkModeManager::GetInstance().RestartTimerByUserId();
+    DarkModeManager::GetInstance().RestartTimer();
+}
+
+void UiAppearanceEventSubscriber::BootCompetedCallback()
+{
+    std::call_once(bootCompleteFlag_, [] () {
+        std::vector<int32_t> ids;
+        AccountSA::OsAccountManager::QueryActiveOsAccountIds(ids);
+        int32_t userId;
+        if (ids.empty()) {
+            LOGE("no active user.");
+            userId = USER100;
+        } else {
+            userId = ids[0];
+        }
+        DarkModeManager &manager = DarkModeManager::GetInstance();
+        manager.OnSwitchUser(userId);
+        bool isDarkMode = false;
+        manager.LoadUserSettingData(userId, true, isDarkMode);
+    });
 }
 
 REGISTER_SYSTEM_ABILITY_BY_ID(UiAppearanceAbility, ARKUI_UI_APPEARANCE_SERVICE_ID, true);
@@ -255,12 +276,21 @@ void UiAppearanceAbility::UserSwitchFunc(const int32_t userId)
     if (!isInitializationFinished_) {
         DoInitProcess();
     }
+
+    DarkModeManager& manager = DarkModeManager::GetInstance();
+    manager.OnSwitchUser(userId);
+    bool isDarkMode = false;
+    if (manager.LoadUserSettingData(userId, false, isDarkMode) == ERR_OK) {
+        usersParam_[userId].darkMode = isDarkMode ? ALWAYS_DARK : ALWAYS_LIGHT;
+    }
+
     UpdateCurrentUserConfiguration(userId);
 }
 
 void UiAppearanceAbility::SubscribeCommonEvent()
 {
     EventFwk::MatchingSkills matchingSkills;
+    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_BOOT_COMPLETED);
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_USER_SWITCHED);
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_TIME_CHANGED);
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_TIMEZONE_CHANGED);
@@ -307,6 +337,9 @@ void UiAppearanceAbility::OnAddSystemAbility(int32_t systemAbilityId, const std:
         }
         UpdateCurrentUserConfiguration(userId);
     }
+    DarkModeManager::GetInstance().Initialize([this] (bool isDarkMode, int32_t userId) {
+        UpdateDarkModeCallback(isDarkMode, userId);
+    });
 }
 
 void UiAppearanceAbility::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
@@ -412,6 +445,7 @@ bool UiAppearanceAbility::UpdateConfiguration(const AppExecFwk::Configuration& c
 
 int32_t UiAppearanceAbility::OnSetDarkMode(const int32_t userId, DarkMode mode)
 {
+    LOGI("setDarkMode, userId:%{public}d, mode: %{public}d", userId, mode);
     bool ret = false;
     std::string paramValue;
     AppExecFwk::Configuration config;
@@ -457,6 +491,7 @@ int32_t UiAppearanceAbility::OnSetDarkMode(const int32_t userId, DarkMode mode)
         LOGE("set parameter failed");
         return SYS_ERR;
     }
+    DarkModeManager::GetInstance().NotifyDarkModeUpdate(userId, mode == ALWAYS_DARK);
     return SUCCEEDED;
 }
 
@@ -651,5 +686,43 @@ int32_t UiAppearanceAbility::GetFontWeightScale(std::string& fontWeightScale)
     return SUCCEEDED;
 }
 
+void UiAppearanceAbility::UpdateDarkModeCallback(const bool isDarkMode, const int32_t userId)
+{
+    bool ret = false;
+    std::string paramValue;
+    AppExecFwk::Configuration config;
+    if (isDarkMode) {
+        ret = config.AddItem(
+            AAFwk::GlobalConfigurationKey::SYSTEM_COLORMODE, AppExecFwk::ConfigurationInner::COLOR_MODE_DARK);
+        paramValue.assign(DARK);
+    } else {
+        ret = config.AddItem(
+            AAFwk::GlobalConfigurationKey::SYSTEM_COLORMODE, AppExecFwk::ConfigurationInner::COLOR_MODE_LIGHT);
+        paramValue.assign(LIGHT);
+    }
+    if (!ret) {
+        LOGE("AddItem failed, isDarkMode: %{public}d, userId: %{public}d", isDarkMode, userId);
+        return;
+    }
+
+    if (!UpdateConfiguration(config, userId)) {
+        return;
+    }
+
+    std::unique_lock guard(usersParamMutex_);
+    if (IsUserExist(userId)) {
+        usersParam_[userId].darkMode = isDarkMode ? ALWAYS_DARK : ALWAYS_LIGHT;
+    } else {
+        UiAppearanceParam tmpParam;
+        tmpParam.darkMode = isDarkMode ? ALWAYS_DARK : ALWAYS_LIGHT;
+        usersParam_[userId] = tmpParam;
+    }
+
+    SetParameterWrap(PERSIST_DARKMODE_KEY, paramValue);
+    bool isSetPara = SetParameterWrap(DarkModeParamAssignUser(userId), paramValue);
+    if (!isSetPara) {
+        LOGE("set parameter failed");
+    }
+}
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS
