@@ -143,7 +143,7 @@ ErrCode SettingDataManager::GetStringValue(const std::string& key, std::string& 
     int32_t count = 0;
     result->GetRowCount(count);
     if (count == 0) {
-        LOGE("not found, key: %{public}s, userId: %{public}d", key.c_str(), userId);
+        LOGI("not found, key: %{public}s, userId: %{public}d", key.c_str(), userId);
         return ERR_NAME_NOT_FOUND;
     }
 

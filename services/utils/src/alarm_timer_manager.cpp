@@ -32,11 +32,10 @@ constexpr int32_t MINUTE_TO_SECOND = 60;
 constexpr int32_t TIMER_TYPE_EXACT = 2 | 4;
 constexpr int32_t START_INDEX = 0;
 constexpr int32_t END_INDEX = 1;
-
+// TODO fix log
 ErrCode AlarmTimerManager::SetScheduleTime(const uint64_t startTime, const uint64_t endTime,
     const uint32_t userId, const std::function<void()>& startCallback, const std::function<void()>& endCallback)
 {
-    LOGI("SetTimerTriggerTime");
     if (!IsValidScheduleTime(startTime, endTime)) {
         return ERR_INVALID_VALUE;
     }
@@ -103,6 +102,20 @@ void AlarmTimerManager::SetTimerTriggerTime(const uint64_t startTime, const uint
         triggerTimeInterval = { startTimestamp + step, endTimestamp + step };
     } else {
         triggerTimeInterval = { startTimestamp + step, endTimestamp };
+    }
+}
+
+void AlarmTimerManager::Dump()
+{
+    LOGD("timerIdMap size: %{public}zu", timerIdMap_.size());
+    for (const auto& it : timerIdMap_) {
+        LOGD("userId:%{public}d, start %{public}" PRIu64 ", end %{public}" PRIu64,
+            it.first, it.second[0], it.second[1]);
+    }
+    LOGD("initialSetupTimeMap size: %{public}zu", initialSetupTimeMap_.size());
+    for (const auto& it : initialSetupTimeMap_) {
+        LOGD("userId:%{public}d, start %{public}" PRIu64 ", end %{public}" PRIu64,
+            it.first, it.second[0], it.second[1]);
     }
 }
 
@@ -195,17 +208,13 @@ bool AlarmTimerManager::IsWithinTimeInterval(const uint64_t startTime, const uin
 
     if (endTime <= DAY_TO_MINUTE) {
         if (startTime <= totalMinutes && totalMinutes < endTime) {
-            LOGI("inner");
             return true;
         }
-        LOGI("outter");
         return false;
     } else {
         if ((endTime - DAY_TO_MINUTE) <= totalMinutes && totalMinutes < startTime) {
-            LOGI("outter");
             return false;
         }
-        LOGI("inner");
         return true;
     }
 }
@@ -253,7 +262,7 @@ bool AlarmTimerManager::RestartAllTimer()
 
     bool res = true;
 
-    for (const std::pair<uint64_t, std::array<uint64_t, TRIGGER_ARRAY_SIZE>>& pair : timerIdMap_) {
+    for (const auto& pair : timerIdMap_) {
         uint64_t userId = pair.first;
         if (userId == 0) {
             LOGE("userId == 0: %{public}" PRIu64, userId);
