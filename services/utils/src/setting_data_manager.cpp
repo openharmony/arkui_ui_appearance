@@ -15,8 +15,6 @@
 
 #include "setting_data_manager.h"
 
-#include <thread>
-
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "rdb_errno.h"
@@ -45,6 +43,11 @@ SettingDataManager &SettingDataManager::GetInstance()
 
 ErrCode SettingDataManager::Initialize()
 {
+    std::lock_guard guard(initializeMutex_);
+    if (isInitialized_) {
+        LOGD("already initialized");
+        return ERR_OK;
+    }
     const auto saMgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (saMgr == nullptr) {
         LOGE("saMgr is null");
@@ -81,7 +84,7 @@ ErrCode SettingDataManager::RegisterObserver(const std::string& key, const Setti
         return ERR_INVALID_OPERATION;
     }
 
-    sptr<SettingDataObserver> observer = SettingDataManager::CreateObserver(key, updateFunc, userId);
+    sptr<SettingDataObserver> observer = CreateObserver(key, updateFunc, userId);
     ErrCode code = RegisterObserverInner(observer);
     if (code != ERR_OK) {
         return code;
@@ -133,12 +136,11 @@ ErrCode SettingDataManager::GetStringValue(const std::string& key, std::string& 
     auto result = helper->Query(uri, predicates, columns);
     ReleaseDataShareHelper(helper);
     IPCSkeleton::SetCallingIdentity(callingIdentity);
-
     if (result == nullptr) {
         LOGE("query return null, key: %{public}s, userId: %{public}d", key.c_str(), userId);
         return ERR_INVALID_OPERATION;
     }
-    int32_t count;
+    int32_t count = 0;
     result->GetRowCount(count);
     if (count == 0) {
         LOGE("not found, key: %{public}s, userId: %{public}d", key.c_str(), userId);
@@ -149,6 +151,7 @@ ErrCode SettingDataManager::GetStringValue(const std::string& key, std::string& 
     int32_t code = result->GetString(INDEX0, value);
     if (code != NativeRdb::E_OK) {
         LOGE("get string failed, key: %{public}s, userId: %{public}d, ret: %{public}d", key.c_str(), userId, code);
+        result->Close();
         return ERR_INVALID_VALUE;
     }
     result->Close();
@@ -223,9 +226,13 @@ ErrCode SettingDataManager::SetStringValue(const std::string& key, const std::st
     if (result <= 0) {
         LOGD("data not exist, key: %{public}s, userId: %{public}d", key.c_str(), userId);
         result = helper->Insert(uri, bucket);
-    }
-    if (result <= 0) {
-        LOGE("put string failed, key: %{public}s, userId: %{public}d, result: %{public}d", key.c_str(), userId, result);
+        if (result <= 0) {
+            ReleaseDataShareHelper(helper);
+            IPCSkeleton::SetCallingIdentity(callingIdentity);
+            LOGE("put string failed, key: %{public}s, userId: %{public}d, result: %{public}d",
+                key.c_str(), userId, result);
+            return ERR_INVALID_OPERATION;
+        }
     }
     if (needNotify) {
         helper->NotifyChange(uri);
@@ -262,17 +269,11 @@ ErrCode SettingDataManager::RegisterObserverInner(const sptr<SettingDataObserver
         LOGE("observer is null");
         return ERR_INVALID_OPERATION;
     }
-    std::string callingIdentity = IPCSkeleton::ResetCallingIdentity();
 
+    std::string callingIdentity = IPCSkeleton::ResetCallingIdentity();
     std::string uriString;
     std::shared_ptr<DataShare::DataShareHelper> helper;
-    if (observer->GetUserId() == INVALID_USER_ID) {
-        uriString = AssembleUri(observer->GetKey());
-        helper = CreateDataShareHelper();
-    } else {
-        uriString = AssembleUserDbUri(observer->GetUserId(), observer->GetKey());
-        helper = CreateUserDbDataShareHelper(observer->GetUserId());
-    }
+    CreateDataShareHelperAndUri(observer->GetUserId(), observer->GetKey(), uriString, helper);
     if (helper == nullptr) {
         LOGE("helper is null, userId: %{public}d", observer->GetUserId());
         IPCSkeleton::SetCallingIdentity(callingIdentity);
@@ -282,14 +283,6 @@ ErrCode SettingDataManager::RegisterObserverInner(const sptr<SettingDataObserver
     const Uri uri(uriString);
     helper->RegisterObserver(uri, observer);
     helper->NotifyChange(uri);
-    std::thread executeCb([](const sptr<SettingDataObserver>& obs) {
-        if (obs == nullptr) {
-            LOGE("observer is null");
-            return;
-        }
-        obs->OnChange();
-    }, observer);
-    executeCb.detach();
     ReleaseDataShareHelper(helper);
     IPCSkeleton::SetCallingIdentity(callingIdentity);
     LOGD("register observer key: %{public}s, userId: %{public}d", observer->GetKey().c_str(), observer->GetUserId());
@@ -302,17 +295,11 @@ ErrCode SettingDataManager::UnregisterObserverInner(const sptr<SettingDataObserv
         LOGE("observer is null");
         return ERR_INVALID_OPERATION;
     }
-    std::string callingIdentity = IPCSkeleton::ResetCallingIdentity();
 
+    std::string callingIdentity = IPCSkeleton::ResetCallingIdentity();
     std::string uriString;
     std::shared_ptr<DataShare::DataShareHelper> helper;
-    if (observer->GetUserId() == INVALID_USER_ID) {
-        uriString = AssembleUri(observer->GetKey());
-        helper = CreateDataShareHelper();
-    } else {
-        uriString = AssembleUserDbUri(observer->GetUserId(), observer->GetKey());
-        helper = CreateUserDbDataShareHelper(observer->GetUserId());
-    }
+    CreateDataShareHelperAndUri(observer->GetUserId(), observer->GetKey(), uriString, helper);
     if (helper == nullptr) {
         LOGE("helper is null");
         IPCSkeleton::SetCallingIdentity(callingIdentity);
@@ -327,6 +314,18 @@ ErrCode SettingDataManager::UnregisterObserverInner(const sptr<SettingDataObserv
     return ERR_OK;
 }
 
+void SettingDataManager::CreateDataShareHelperAndUri(const int32_t userId, const std::string& key,
+    std::string& uri, std::shared_ptr<DataShare::DataShareHelper>& helper) const
+{
+    if (userId == INVALID_USER_ID) {
+        uri = AssembleUri(key);
+        helper = CreateDataShareHelper();
+    } else {
+        uri = AssembleUserDbUri(userId, key);
+        helper = CreateUserDbDataShareHelper(userId);
+    }
+}
+
 std::shared_ptr<DataShare::DataShareHelper> SettingDataManager::CreateDataShareHelper() const
 {
     if (remoteObject_ == nullptr) {
@@ -335,12 +334,11 @@ std::shared_ptr<DataShare::DataShareHelper> SettingDataManager::CreateDataShareH
     }
     const auto [errCode, helper] =
         DataShare::DataShareHelper::Create(remoteObject_, SETTING_DATA_URI, SETTING_DATA_EXT_URI);
-    if (errCode == DataShare::E_OK) {
-        return helper;
-    } else {
+    if (errCode != DataShare::E_OK) {
         LOGE("create data share helper failed: %{public}d", errCode);
         return nullptr;
     }
+    return helper;
 }
 
 std::shared_ptr<DataShare::DataShareHelper> SettingDataManager::CreateUserDbDataShareHelper(const int32_t userId) const
@@ -352,12 +350,11 @@ std::shared_ptr<DataShare::DataShareHelper> SettingDataManager::CreateUserDbData
     std::string userUri = SETTING_DATA_USER_URI_PREFIX + std::to_string(userId) + SETTING_DATA_USER_URI_SUFFIX;
     const auto [errCode, helper] =
         DataShare::DataShareHelper::Create(remoteObject_, userUri, SETTING_DATA_EXT_URI);
-    if (errCode == DataShare::E_OK) {
-        return helper;
-    } else {
-        LOGE("create user data share helper failed: %{public}d", errCode);
+    if (errCode != DataShare::E_OK) {
+        LOGE("create user data share helper failed: %{public}d, userId: %{public}d", errCode, userId);
         return nullptr;
     }
+    return helper;
 }
 
 bool SettingDataManager::ReleaseDataShareHelper(const std::shared_ptr<DataShare::DataShareHelper>& helper)
