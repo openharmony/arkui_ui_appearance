@@ -14,14 +14,11 @@
 import("//build/ohos.gni")
 
 group("ui_appearance_packages") {
-    deps = [
-      "etc/para:ui_appearance.para",
-      "etc/para:ui_appearance.para.dac",
-      "sa_profile:arkui_ui_appearance_sa_profiles",
-      "interfaces/kits/napi:uiappearance",
-      "services:ui_appearance_service",
-    ]
+  deps = [
+    "etc/para:ui_appearance.para",
+    "etc/para:ui_appearance.para.dac",
+    "interfaces/kits/napi:uiappearance",
+    "sa_profile:arkui_ui_appearance_sa_profiles",
+    "services:ui_appearance_service",
+  ]
 }
-
-
-
