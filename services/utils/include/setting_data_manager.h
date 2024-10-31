@@ -53,14 +53,19 @@ public:
     bool IsValidKey(const std::string& key, int32_t userId = INVALID_USER_ID) const;
 
 private:
+    std::mutex initializeMutex_;
+    bool isInitialized_ = false;
     sptr<IRemoteObject> remoteObject_;
+
     std::mutex observersMutex_;
     std::map<std::string, sptr<SettingDataObserver>> observers_;
-    bool isInitialized_ = false;
 
     ErrCode RegisterObserverInner(const sptr<SettingDataObserver>& observer) const;
 
     ErrCode UnregisterObserverInner(const sptr<SettingDataObserver>& observer) const;
+
+    void CreateDataShareHelperAndUri(int32_t userId, const std::string& key,
+        std::string& uri, std::shared_ptr<DataShare::DataShareHelper>& helper) const;
 
     std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelper() const;
 
