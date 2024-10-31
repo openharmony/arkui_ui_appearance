@@ -26,7 +26,7 @@
 #include "system_ability_definition.h"
 #include "ui_appearance_ability.h"
 #include "ui_appearance_log.h"
-#include "ui_appearance_timer_manager.h"
+#include "alarm_timer_manager.h"
 
 using namespace testing::ext;
 static constexpr int UISERVER_UID = 3050;
@@ -61,9 +61,10 @@ public:
         return new UiAppearanceAbilityTest;
     }
 
-    static UiAppearanceTimerManager GetUiAppearanceTimerManagerTest()
+    static AlarmTimerManager& GetAlarmTimerManager()
     {
-        return UiAppearanceTimerManager();
+        static AlarmTimerManager instance;
+        return instance;
     }
 
 private:
@@ -173,39 +174,34 @@ HWTEST_F(DarkModeTest, ui_appearance_test_004, TestSize.Level0)
 
 /**
  * @tc.name: ui_appearance_test_005
- * @tc.desc: Test the ui_appearance_timer_manager
+ * @tc.desc: Test the alarm_timer_manager
  * @tc.type: FUNC
  */
 HWTEST_F(DarkModeTest, ui_appearance_test_005, TestSize.Level0)
 {
-    LOGI("Test the ui_appearance_timer_manager");
+    LOGI("Test the alarm_timer_manager");
 
-    bool result =
-        DarkModeTest::GetUiAppearanceTimerManagerTest().IsVaildScheduleTime(12, 10);
+    bool result = AlarmTimerManager::IsValidScheduleTime(12, 10);
     EXPECT_EQ(result, false);
 
-    result =
-        DarkModeTest::GetUiAppearanceTimerManagerTest().IsVaildScheduleTime(DAY_TO_MINUTE + 10, DAY_TO_MINUTE + 12);
+    result = AlarmTimerManager::IsValidScheduleTime(DAY_TO_MINUTE + 10, DAY_TO_MINUTE + 12);
     EXPECT_EQ(result, false);
 
-    result =
-        DarkModeTest::GetUiAppearanceTimerManagerTest().IsVaildScheduleTime(10, DAY_TO_MINUTE + 12);
+    result = AlarmTimerManager::IsValidScheduleTime(10, DAY_TO_MINUTE + 12);
     EXPECT_EQ(result, false);
 
-    result =
-        DarkModeTest::GetUiAppearanceTimerManagerTest().IsVaildScheduleTime(10, 12);
+    result = AlarmTimerManager::IsValidScheduleTime(10, 12);
     EXPECT_EQ(result, true);
 }
 
 /**
  * @tc.name: ui_appearance_test_006
- * @tc.desc: Test the ui_appearance_timer_manager
+ * @tc.desc: Test the alarm_timer_manager
  * @tc.type: FUNC
  */
-HWTEST_F(DarkModeTest, ui_appearance_test_006
-, TestSize.Level0)
+HWTEST_F(DarkModeTest, ui_appearance_test_006, TestSize.Level0)
 {
-    LOGI("Test the ui_appearance_timer_manager");
+    LOGI("Test the alarm_timer_manager");
 
     std::array<uint64_t, TRIGGER_ARRAY_SIZE> triggerTimeInterval = {0, 0};
     std::time_t timestamp = std::time(nullptr);
@@ -225,24 +221,24 @@ HWTEST_F(DarkModeTest, ui_appearance_test_006
     uint64_t step = DAY_TO_SECOND * SECOND_TO_MILLI;
 
     uint64_t startTimestamp = zeroTimestamp + (current + 1) * MINUTE_TO_SECOND * SECOND_TO_MILLI;
-    DarkModeTest::GetUiAppearanceTimerManagerTest().SetTimerTriggerTime(current + 1, current + 2, triggerTimeInterval);
+    AlarmTimerManager::SetTimerTriggerTime(current + 1, current + 2, triggerTimeInterval);
     EXPECT_EQ(triggerTimeInterval[0], startTimestamp);
 
     startTimestamp = zeroTimestamp + (current - 1) * MINUTE_TO_SECOND * SECOND_TO_MILLI;
-    DarkModeTest::GetUiAppearanceTimerManagerTest().SetTimerTriggerTime(current - 1, current + 2, triggerTimeInterval);
+    AlarmTimerManager::SetTimerTriggerTime(current - 1, current + 2, triggerTimeInterval);
     EXPECT_EQ(triggerTimeInterval[0], startTimestamp + step);
 }
 
 /**
  * @tc.name: ui_appearance_test_007
- * @tc.desc: Test the ui_appearance_timer_manager
+ * @tc.desc: Test the alarm_timer_manager
  * @tc.type: FUNC
  */
 HWTEST_F(DarkModeTest, ui_appearance_test_007, TestSize.Level0)
 {
-    LOGI("Test the ui_appearance_timer_manager");
+    LOGI("Test the alarm_timer_manager");
 
-    auto uiAppearanceTimerManager = DarkModeTest::GetUiAppearanceTimerManagerTest();
+    auto uiAppearanceTimerManager = DarkModeTest::GetAlarmTimerManager();
     int res = uiAppearanceTimerManager.SetScheduleTime(
             10, 12, 100, [](){}, [](){});
     EXPECT_EQ(res, 0);

@@ -31,13 +31,14 @@ namespace ArkUi::UiAppearance {
 class UiAppearanceEventSubscriber : public EventFwk::CommonEventSubscriber {
 public:
     explicit UiAppearanceEventSubscriber(const EventFwk::CommonEventSubscribeInfo& subscriberInfo,
-        const std::function<void(const int32_t)>& userSwitchCallback,  const std::function<void()>& timeChangeCallback);
+        const std::function<void(const int32_t)>& userSwitchCallback);
     ~UiAppearanceEventSubscriber() override = default;
     void OnReceiveEvent(const EventFwk::CommonEventData& data) override;
 
+    static void TimeChangeCallback();
+
 private:
     std::function<void(const int32_t)> userSwitchCallback_;
-    std::function<void()> timeChangeCallback_;
 };
 
 class UiAppearanceAbility : public SystemAbility, public UiAppearanceAbilityStub {

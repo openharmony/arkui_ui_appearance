@@ -15,7 +15,14 @@ import("//build/ohos.gni")
 
 config("ui_appearance_service_config") {
   visibility = [ ":*" ]
-  include_dirs = [ "include" ]
+  include_dirs = [
+    "include",
+    "utils/include/",
+  ]
+}
+
+config("ui_appearance_service_exception_config") {
+  cflags_cc = [ "-fexceptions" ]
 }
 
 ohos_shared_library("ui_appearance_service") {
@@ -26,24 +33,34 @@ ohos_shared_library("ui_appearance_service") {
   }
 
   sources = [
-    "src/alarm_timer.cpp",
-    "src/timer_manager_controller.cpp",
+    "src/dark_mode_manager.cpp",
     "src/ui_appearance_ability.cpp",
     "src/ui_appearance_ability_stub.cpp",
-    "src/ui_appearance_timer_manager.cpp",
+    "utils/src/alarm_timer.cpp",
+    "utils/src/alarm_timer_manager.cpp",
+    "utils/src/setting_data_manager.cpp",
+    "utils/src/setting_data_observer.cpp",
   ]
 
   public_configs = [ ":ui_appearance_service_config" ]
-  include_dirs = [ "include/" ]
-  deps = []
+
+  configs = [ ":ui_appearance_service_exception_config" ]
+
+  include_dirs = [
+    "include/",
+    "utils/include/",
+  ]
+
   external_deps = [
     "ability_base:configuration",
     "ability_runtime:app_manager",
+    "ability_runtime:dataobs_manager",
     "ability_runtime:wantagent_innerkits",
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "common_event_service:cesfwk_core",
     "common_event_service:cesfwk_innerkits",
+    "data_share:datashare_consumer",
     "hilog:libhilog",
     "init:libbegetutil",
     "ipc:ipc_single",
