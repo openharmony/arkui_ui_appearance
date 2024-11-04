@@ -80,8 +80,8 @@ ErrCode SettingDataManager::RegisterObserver(const std::string& key, const Setti
     const std::string observerName = GenerateObserverName(key, userId);
     const auto& iter = observers_.find(observerName);
     if (iter != observers_.end()) {
-        LOGW("observerName: %{public}s is exist", observerName.c_str());
-        return ERR_INVALID_OPERATION;
+        LOGD("observerName: %{public}s is exist", observerName.c_str());
+        return ERR_OK;
     }
 
     sptr<SettingDataObserver> observer = CreateObserver(key, updateFunc, userId);
