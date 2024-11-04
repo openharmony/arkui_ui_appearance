@@ -269,6 +269,11 @@ void UiAppearanceAbility::UpdateCurrentUserConfiguration(const int32_t userId)
 
 void UiAppearanceAbility::UserSwitchFunc(const int32_t userId)
 {
+    DarkModeManager& manager = DarkModeManager::GetInstance();
+    manager.OnSwitchUser(userId);
+    bool isDarkMode = false;
+    int32_t code = manager.LoadUserSettingData(userId, false, isDarkMode);
+
     std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
     if (isNeedDoCompatibleProcess_) {
         DoCompatibleProcess();
@@ -277,10 +282,7 @@ void UiAppearanceAbility::UserSwitchFunc(const int32_t userId)
         DoInitProcess();
     }
 
-    DarkModeManager& manager = DarkModeManager::GetInstance();
-    manager.OnSwitchUser(userId);
-    bool isDarkMode = false;
-    if (manager.LoadUserSettingData(userId, false, isDarkMode) == ERR_OK) {
+    if (code == ERR_OK) {
         usersParam_[userId].darkMode = isDarkMode ? ALWAYS_DARK : ALWAYS_LIGHT;
     }
 
@@ -321,6 +323,9 @@ void UiAppearanceAbility::OnAddSystemAbility(int32_t systemAbilityId, const std:
         return false;
     };
     isNeedDoCompatibleProcess_ = checkIfFirstUpgrade();
+    DarkModeManager::GetInstance().Initialize([this](bool isDarkMode, int32_t userId) {
+        UpdateDarkModeCallback(isDarkMode, userId);
+    });
     SubscribeCommonEvent();
     std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
     if (isNeedDoCompatibleProcess_ && !GetUserIds().empty()) {
@@ -337,9 +342,6 @@ void UiAppearanceAbility::OnAddSystemAbility(int32_t systemAbilityId, const std:
         }
         UpdateCurrentUserConfiguration(userId);
     }
-    DarkModeManager::GetInstance().Initialize([this] (bool isDarkMode, int32_t userId) {
-        UpdateDarkModeCallback(isDarkMode, userId);
-    });
 }
 
 void UiAppearanceAbility::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
@@ -474,13 +476,15 @@ int32_t UiAppearanceAbility::OnSetDarkMode(const int32_t userId, DarkMode mode)
         return SYS_ERR;
     }
 
-    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
-    if (IsUserExist(userId)) {
-        usersParam_[userId].darkMode = mode;
-    } else {
-        UiAppearanceParam tmpParam;
-        tmpParam.darkMode = mode;
-        usersParam_[userId] = tmpParam;
+    {
+        std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
+        if (IsUserExist(userId)) {
+            usersParam_[userId].darkMode = mode;
+        } else {
+            UiAppearanceParam tmpParam;
+            tmpParam.darkMode = mode;
+            usersParam_[userId] = tmpParam;
+        }
     }
 
     SetParameterWrap(PERSIST_DARKMODE_KEY, paramValue);
@@ -709,13 +713,15 @@ void UiAppearanceAbility::UpdateDarkModeCallback(const bool isDarkMode, const in
         return;
     }
 
-    std::unique_lock guard(usersParamMutex_);
-    if (IsUserExist(userId)) {
-        usersParam_[userId].darkMode = isDarkMode ? ALWAYS_DARK : ALWAYS_LIGHT;
-    } else {
-        UiAppearanceParam tmpParam;
-        tmpParam.darkMode = isDarkMode ? ALWAYS_DARK : ALWAYS_LIGHT;
-        usersParam_[userId] = tmpParam;
+    {
+        std::unique_lock guard(usersParamMutex_);
+        if (IsUserExist(userId)) {
+            usersParam_[userId].darkMode = isDarkMode ? ALWAYS_DARK : ALWAYS_LIGHT;
+        } else {
+            UiAppearanceParam tmpParam;
+            tmpParam.darkMode = isDarkMode ? ALWAYS_DARK : ALWAYS_LIGHT;
+            usersParam_[userId] = tmpParam;
+        }
     }
 
     SetParameterWrap(PERSIST_DARKMODE_KEY, paramValue);

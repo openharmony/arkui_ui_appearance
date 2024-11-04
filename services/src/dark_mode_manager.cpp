@@ -33,7 +33,6 @@ DarkModeManager &DarkModeManager::GetInstance()
 
 ErrCode DarkModeManager::Initialize(const std::function<void(bool, int32_t)>& updateCallback)
 {
-    LOGD("");
     LoadSettingDataObserversCallback();
     updateCallback_ = updateCallback;
     return ERR_OK;
@@ -63,20 +62,21 @@ ErrCode DarkModeManager::LoadUserSettingData(const int32_t userId, const bool ne
     return OnStateChangeLocked(userId, needUpdateCallback, isDarkMode);
 }
 
-void DarkModeManager::NotifyDarkModeUpdate(int32_t userId, bool isDarkMode)
+void DarkModeManager::NotifyDarkModeUpdate(const int32_t userId, const bool isDarkMode)
 {
+    SettingDataManager& manager = SettingDataManager::GetInstance();
     std::lock_guard lock(darkModeStatesMutex_);
     const DarkModeState& state = darkModeStates_[userId];
-    if (isDarkMode && state.settingMode == DARK_MODE_ALWAYS_LIGHT) {
-        LOGI("notify change to always dark, userId: %{public}d", userId);
-        SettingDataManager& manager = SettingDataManager::GetInstance();
-        manager.SetStringValue(SETTING_DARK_MODE_MODE, std::to_string(DARK_MODE_ALWAYS_DARK), userId);
-    } else if (!isDarkMode && state.settingMode == DARK_MODE_ALWAYS_DARK) {
-        LOGI("notify change to always light, userId: %{public}d", userId);
-        SettingDataManager& manager = SettingDataManager::GetInstance();
-        manager.SetStringValue(SETTING_DARK_MODE_MODE, std::to_string(DARK_MODE_ALWAYS_LIGHT), userId);
+    if (isDarkMode) {
+        if (state.settingMode == DARK_MODE_ALWAYS_LIGHT || state.settingMode == DARK_MODE_INVALID) {
+            LOGI("notify change to always dark, userId: %{public}d", userId);
+            manager.SetStringValue(SETTING_DARK_MODE_MODE, std::to_string(DARK_MODE_ALWAYS_DARK), userId);
+        } // else no need to change
     } else {
-        LOGD("no need to change, userId: %{public}d", userId);
+        if (state.settingMode == DARK_MODE_ALWAYS_DARK || state.settingMode == DARK_MODE_INVALID) {
+            LOGI("notify change to always light, userId: %{public}d", userId);
+            manager.SetStringValue(SETTING_DARK_MODE_MODE, std::to_string(DARK_MODE_ALWAYS_LIGHT), userId);
+        } // else no need to change
     }
 }
 
@@ -95,7 +95,7 @@ ErrCode DarkModeManager::OnSwitchUser(const int32_t userId)
     if (settingDataObserversUserId_ != INVALID_USER_ID) {
         LOGI("clear timers and unregister observers for userId: %{public}d", settingDataObserversUserId_);
         alarmTimerManager_.ClearTimerByUserId(settingDataObserversUserId_);
-        UnregisterSettingDataObserversLocked();
+        UnregisterSettingDataObserversLocked(settingDataObserversUserId_);
         settingDataObserversUserId_ = INVALID_USER_ID;
     }
 
@@ -106,14 +106,15 @@ ErrCode DarkModeManager::OnSwitchUser(const int32_t userId)
 
 ErrCode DarkModeManager::RestartTimer()
 {
-    return alarmTimerManager_.RestartTimerByUserId();
+    std::lock_guard lock(darkModeStatesMutex_);
+    return alarmTimerManager_.RestartAllTimer();
 }
 
 void DarkModeManager::Dump()
 {
     std::lock_guard observersGuard(settingDataObserversMutex_);
-    LOGD("settingData observers size: %{public}zu, userId: %{public}d, isAllReg: %{public}d",
-        settingDataObservers_.size(), settingDataObserversUserId_, settingDataObserversAllRegistered_);
+    LOGD("settingData observers size: %{public}zu, userId: %{public}d",
+        settingDataObservers_.size(), settingDataObserversUserId_);
 
     std::lock_guard stateGuard(darkModeStatesMutex_);
     LOGD("darkModeStates size: %{public}zu", darkModeStates_.size());
@@ -140,7 +141,7 @@ void DarkModeManager::LoadSettingDataObserversCallback()
     });
 }
 
-ErrCode DarkModeManager::RegisterSettingDataObserversLocked(const int32_t userId)
+ErrCode DarkModeManager::RegisterSettingDataObserversLocked(const int32_t userId) const
 {
     SettingDataManager& manager = SettingDataManager::GetInstance();
     size_t count = 0;
@@ -151,27 +152,22 @@ ErrCode DarkModeManager::RegisterSettingDataObserversLocked(const int32_t userId
     }
     if (count != 0) {
         LOGE("setting data observers are not all initialized");
-        settingDataObserversAllRegistered_ = false;
         return ERR_NO_INIT;
     }
     LOGD("setting data observers are all initialized");
-    settingDataObserversAllRegistered_ = true;
     return ERR_OK;
 }
 
-ErrCode DarkModeManager::UnregisterSettingDataObserversLocked()
+void DarkModeManager::UnregisterSettingDataObserversLocked(const int32_t userId) const
 {
     SettingDataManager& manager = SettingDataManager::GetInstance();
     for (const auto& observer : settingDataObservers_) {
-        manager.UnregisterObserver(observer.first, settingDataObserversUserId_);
+        manager.UnregisterObserver(observer.first, userId);
     }
-    settingDataObserversAllRegistered_ = false;
-    return ERR_OK;
 }
 
 void DarkModeManager::SettingDataDarkModeModeUpdateFunc(const std::string& key, const int32_t userId)
 {
-    LOGD("");
     SettingDataManager& manager = SettingDataManager::GetInstance();
     int32_t value = DARK_MODE_INVALID;
     ErrCode code = manager.GetInt32Value(key, value, userId);
@@ -197,7 +193,6 @@ void DarkModeManager::SettingDataDarkModeModeUpdateFunc(const std::string& key, 
 
 void DarkModeManager::SettingDataDarkModeStartTimeUpdateFunc(const std::string& key, const int32_t userId)
 {
-    LOGD("");
     SettingDataManager& manager = SettingDataManager::GetInstance();
     int32_t value = -1;
     manager.GetInt32Value(key, value, userId);
@@ -211,7 +206,6 @@ void DarkModeManager::SettingDataDarkModeStartTimeUpdateFunc(const std::string& 
 
 void DarkModeManager::SettingDataDarkModeEndTimeUpdateFunc(const std::string& key, const int32_t userId)
 {
-    LOGD("");
     SettingDataManager& manager = SettingDataManager::GetInstance();
     int32_t value = -1;
     manager.GetInt32Value(key, value, userId);
@@ -259,6 +253,7 @@ ErrCode DarkModeManager::OnStateChangeToCustomAutoMode(
 {
     ErrCode code = CreateOrUpdateTimers(state.settingStartTime, state.settingEndTime, userId);
     if (code != ERR_OK) {
+        alarmTimerManager_.ClearTimerByUserId(userId);
         return code;
     }
     DarkModeMode mode = DARK_MODE_INVALID;

@@ -57,9 +57,9 @@ private:
 
     void LoadSettingDataObserversCallback();
 
-    ErrCode RegisterSettingDataObserversLocked(int32_t userId);
+    ErrCode RegisterSettingDataObserversLocked(int32_t userId) const;
 
-    ErrCode UnregisterSettingDataObserversLocked();
+    void UnregisterSettingDataObserversLocked(int32_t userId) const;
 
     void SettingDataDarkModeModeUpdateFunc(const std::string& key, int32_t userId);
 
@@ -83,7 +83,6 @@ private:
     std::mutex settingDataObserversMutex_;
     std::vector<std::pair<std::string, std::function<void(const std::string&, int32_t)>>> settingDataObservers_;
     int32_t settingDataObserversUserId_ = -1;
-    bool settingDataObserversAllRegistered_ = false;
 
     AlarmTimerManager alarmTimerManager_;
     std::mutex darkModeStatesMutex_;
