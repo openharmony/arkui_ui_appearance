@@ -36,20 +36,25 @@ constexpr int32_t END_INDEX = 1;
 ErrCode AlarmTimerManager::SetScheduleTime(const uint64_t startTime, const uint64_t endTime,
     const uint32_t userId, const std::function<void()>& startCallback, const std::function<void()>& endCallback)
 {
-    LOGI("SetTimerTriggerTime");
     if (!IsValidScheduleTime(startTime, endTime)) {
+        LOGE("userId:%{public}d, start %{public}" PRIu64 ", end %{public}" PRIu64, userId, startTime, endTime);
         return ERR_INVALID_VALUE;
     }
     RecordInitialSetupTime(startTime, endTime, userId);
     std::array<uint64_t, TRIGGER_ARRAY_SIZE> triggerTimeInterval = { 0, 0 };
     SetTimerTriggerTime(startTime, endTime, triggerTimeInterval);
-    LOGE("SetTimerTriggerTime %{public}" PRIu64 " %{public}" PRIu64,
-        triggerTimeInterval[START_INDEX], triggerTimeInterval[END_INDEX]);
+    LOGI("userId: %{public}d, in %{public}" PRIu64 " %{public}" PRIu64 ", trigger %{public}" PRIu64 " %{public}" PRIu64,
+        userId, startTime, endTime, triggerTimeInterval[START_INDEX], triggerTimeInterval[END_INDEX]);
     SetTimer(0, userId, triggerTimeInterval[START_INDEX], startCallback);
     SetTimer(1, userId, triggerTimeInterval[END_INDEX], endCallback);
-    return timerIdMap_[userId][START_INDEX] > 0 && timerIdMap_[userId][END_INDEX] > 0
-               ? ERR_OK
-               : ERR_INVALID_OPERATION;
+    if (timerIdMap_[userId][START_INDEX] == 0 || timerIdMap_[userId][END_INDEX] == 0) {
+        LOGE("set timer fail, timerId: %{public}" PRIu64 " %{public}" PRIu64,
+            timerIdMap_[userId][START_INDEX], timerIdMap_[userId][END_INDEX]);
+        return ERR_INVALID_OPERATION;
+    }
+    LOGI("set timer success, timerId: %{public}" PRIu64 " %{public}" PRIu64,
+        timerIdMap_[userId][START_INDEX], timerIdMap_[userId][END_INDEX]);
+    return ERR_OK;
 }
 
 bool AlarmTimerManager::IsValidScheduleTime(const uint64_t startTime, const uint64_t endTime)
@@ -75,7 +80,6 @@ bool AlarmTimerManager::IsValidScheduleTime(const uint64_t startTime, const uint
 void AlarmTimerManager::SetTimerTriggerTime(const uint64_t startTime, const uint64_t endTime,
     std::array<uint64_t, TRIGGER_ARRAY_SIZE>& triggerTimeInterval)
 {
-    LOGI("SetTimerTriggerTime");
     std::time_t timestamp = std::time(nullptr);
     if (timestamp == static_cast<std::time_t>(-1)) {
         LOGE("fail to get timestamp");
@@ -106,10 +110,24 @@ void AlarmTimerManager::SetTimerTriggerTime(const uint64_t startTime, const uint
     }
 }
 
+void AlarmTimerManager::Dump() const
+{
+    LOGD("timerIdMap size: %{public}zu", timerIdMap_.size());
+    for (const auto& it : timerIdMap_) {
+        LOGD("userId:%{public}d, start %{public}" PRIu64 ", end %{public}" PRIu64,
+            it.first, it.second[0], it.second[1]);
+    }
+    LOGD("initialSetupTimeMap size: %{public}zu", initialSetupTimeMap_.size());
+    for (const auto& it : initialSetupTimeMap_) {
+        LOGD("userId:%{public}d, start %{public}" PRIu64 ", end %{public}" PRIu64,
+            it.first, it.second[0], it.second[1]);
+    }
+}
+
 void AlarmTimerManager::SetTimer(const int8_t index, const uint32_t userId, const uint64_t time,
     const std::function<void()>& callback)
 {
-    LOGI("SetDarkModeTimer %{public}d %{public}d %{public}" PRIu64, index, userId, time);
+    LOGD("SetTimer %{public}d %{public}d %{public}" PRIu64, index, userId, time);
     if (timerIdMap_.find(userId) == timerIdMap_.end()) {
         std::array<uint64_t, TRIGGER_ARRAY_SIZE> timerIds = { 0, 0 };
         timerIdMap_[userId] = timerIds;
@@ -195,17 +213,13 @@ bool AlarmTimerManager::IsWithinTimeInterval(const uint64_t startTime, const uin
 
     if (endTime <= DAY_TO_MINUTE) {
         if (startTime <= totalMinutes && totalMinutes < endTime) {
-            LOGI("inner");
             return true;
         }
-        LOGI("outter");
         return false;
     } else {
         if ((endTime - DAY_TO_MINUTE) <= totalMinutes && totalMinutes < startTime) {
-            LOGI("outter");
             return false;
         }
-        LOGI("inner");
         return true;
     }
 }
@@ -249,11 +263,8 @@ void AlarmTimerManager::RestartTimerByTimerId(const uint64_t timerId, const uint
 
 bool AlarmTimerManager::RestartAllTimer()
 {
-    LOGI("RestartAllTimer");
-
     bool res = true;
-
-    for (const std::pair<uint64_t, std::array<uint64_t, TRIGGER_ARRAY_SIZE>>& pair : timerIdMap_) {
+    for (const auto& pair : timerIdMap_) {
         uint64_t userId = pair.first;
         if (userId == 0) {
             LOGE("userId == 0: %{public}" PRIu64, userId);
