@@ -39,6 +39,8 @@ public:
 
     ErrCode GetInt32Value(const std::string& key, int32_t& value, int32_t userId = INVALID_USER_ID) const;
 
+    ErrCode GetInt32ValueStrictly(const std::string& key, int32_t& value, int32_t userId = INVALID_USER_ID) const;
+
     ErrCode GetBoolValue(const std::string& key, bool& value, int32_t userId = INVALID_USER_ID) const;
 
     ErrCode SetStringValue(const std::string& key, const std::string& value, int32_t userId = INVALID_USER_ID,

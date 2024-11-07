@@ -42,15 +42,15 @@ ErrCode DarkModeManager::LoadUserSettingData(const int32_t userId, const bool ne
 {
     SettingDataManager& manager = SettingDataManager::GetInstance();
     int32_t darkMode = DARK_MODE_INVALID;
-    manager.GetInt32Value(SETTING_DARK_MODE_MODE, darkMode, userId);
+    manager.GetInt32ValueStrictly(SETTING_DARK_MODE_MODE, darkMode, userId);
     if (darkMode < DARK_MODE_INVALID || darkMode >= DARK_MODE_SIZE) {
         LOGE("dark mode out of range: %{public}d, userId: %{public}d", darkMode, userId);
         darkMode = DARK_MODE_INVALID;
     }
     int32_t startTime = -1;
-    manager.GetInt32Value(SETTING_DARK_MODE_START_TIME, startTime, userId);
+    manager.GetInt32ValueStrictly(SETTING_DARK_MODE_START_TIME, startTime, userId);
     int32_t endTime = -1;
-    manager.GetInt32Value(SETTING_DARK_MODE_END_TIME, endTime, userId);
+    manager.GetInt32ValueStrictly(SETTING_DARK_MODE_END_TIME, endTime, userId);
 
     std::lock_guard lock(darkModeStatesMutex_);
     DarkModeState& state = darkModeStates_[userId];
@@ -83,12 +83,17 @@ void DarkModeManager::NotifyDarkModeUpdate(const int32_t userId, const bool isDa
 ErrCode DarkModeManager::OnSwitchUser(const int32_t userId)
 {
     SettingDataManager& manager = SettingDataManager::GetInstance();
-    if (manager.IsInitialized() == false) {
+    if (!manager.IsInitialized()) {
         ErrCode code = manager.Initialize();
         if (code != ERR_OK || manager.IsInitialized() == false) {
             LOGE("setting data manager is not initialized");
             return ERR_NO_INIT;
         }
+    }
+
+    if (userId <= INVALID_USER_ID || userId == settingDataObserversUserId_) {
+        LOGE("invalid userId: %{public}d", userId);
+        return ERR_INVALID_OPERATION;
     }
 
     std::lock_guard lock(settingDataObserversMutex_);
@@ -107,14 +112,29 @@ ErrCode DarkModeManager::OnSwitchUser(const int32_t userId)
 ErrCode DarkModeManager::RestartTimer()
 {
     std::lock_guard lock(darkModeStatesMutex_);
+    DarkModeMode mode = darkModeStates_[settingDataObserversUserId_].settingMode;
+    if (mode != DARK_MODE_CUSTOM_AUTO) {
+        LOGD("no need to restart timer.");
+        return ERR_OK;
+    }
+
+    int32_t startTime = darkModeStates_[settingDataObserversUserId_].settingStartTime;
+    int32_t endTime = darkModeStates_[settingDataObserversUserId_].settingEndTime;
+    if (AlarmTimerManager::IsWithinTimeInterval(startTime, endTime)) {
+        OnChangeDarkMode(DARK_MODE_ALWAYS_DARK, settingDataObserversUserId_);
+    } else {
+        OnChangeDarkMode(DARK_MODE_ALWAYS_LIGHT, settingDataObserversUserId_);
+    }
     return alarmTimerManager_.RestartAllTimer();
 }
 
 void DarkModeManager::Dump()
 {
-    std::lock_guard observersGuard(settingDataObserversMutex_);
-    LOGD("settingData observers size: %{public}zu, userId: %{public}d",
-        settingDataObservers_.size(), settingDataObserversUserId_);
+    {
+        std::lock_guard observersGuard(settingDataObserversMutex_);
+        LOGD("settingData observers size: %{public}zu, userId: %{public}d",
+            settingDataObservers_.size(), settingDataObserversUserId_);
+    }
 
     std::lock_guard stateGuard(darkModeStatesMutex_);
     LOGD("darkModeStates size: %{public}zu", darkModeStates_.size());
@@ -170,7 +190,7 @@ void DarkModeManager::SettingDataDarkModeModeUpdateFunc(const std::string& key, 
 {
     SettingDataManager& manager = SettingDataManager::GetInstance();
     int32_t value = DARK_MODE_INVALID;
-    ErrCode code = manager.GetInt32Value(key, value, userId);
+    ErrCode code = manager.GetInt32ValueStrictly(key, value, userId);
     if (code != ERR_OK) {
         LOGE("get dark mode value failed, key: %{public}s, userId: %{public}d, code: %{public}d, set to default",
             key.c_str(), userId, code);
@@ -195,7 +215,7 @@ void DarkModeManager::SettingDataDarkModeStartTimeUpdateFunc(const std::string& 
 {
     SettingDataManager& manager = SettingDataManager::GetInstance();
     int32_t value = -1;
-    manager.GetInt32Value(key, value, userId);
+    manager.GetInt32ValueStrictly(key, value, userId);
     std::lock_guard lock(darkModeStatesMutex_);
     LOGI("dark mode start time change, key: %{public}s, userId: %{public}d, from %{public}d to %{public}d",
         key.c_str(), userId, darkModeStates_[userId].settingStartTime, value);
@@ -208,7 +228,7 @@ void DarkModeManager::SettingDataDarkModeEndTimeUpdateFunc(const std::string& ke
 {
     SettingDataManager& manager = SettingDataManager::GetInstance();
     int32_t value = -1;
-    manager.GetInt32Value(key, value, userId);
+    manager.GetInt32ValueStrictly(key, value, userId);
     std::lock_guard lock(darkModeStatesMutex_);
     LOGI("dark mode end time change, key: %{public}s, userId: %{public}d, from %{public}d to %{public}d",
         key.c_str(), userId, darkModeStates_[userId].settingEndTime, value);
@@ -282,18 +302,18 @@ void DarkModeManager::OnChangeDarkMode(const DarkModeMode mode, const int32_t us
 
 ErrCode DarkModeManager::CreateOrUpdateTimers(int32_t startTime, int32_t endTime, int32_t userId)
 {
-    auto callback = [this, startTime, endTime, userId]() {
+    auto callback = [startTime, endTime, userId]() {
         LOGI("timer callback, startTime: %{public}d, endTime: %{public}d, userId: %{public}d",
             startTime, endTime, userId);
-        ErrCode code = CheckTimerCallbackParams(startTime, endTime, userId);
+        ErrCode code = GetInstance().CheckTimerCallbackParams(startTime, endTime, userId);
         if (code != ERR_OK) {
             LOGE("timer callback, params check failed: %{public}d", code);
             return;
         }
         if (AlarmTimerManager::IsWithinTimeInterval(startTime, endTime)) {
-            OnChangeDarkMode(DARK_MODE_ALWAYS_DARK, userId);
+            GetInstance().OnChangeDarkMode(DARK_MODE_ALWAYS_DARK, userId);
         } else {
-            OnChangeDarkMode(DARK_MODE_ALWAYS_LIGHT, userId);
+            GetInstance().OnChangeDarkMode(DARK_MODE_ALWAYS_LIGHT, userId);
         }
     };
     return alarmTimerManager_.SetScheduleTime(startTime, endTime, userId, callback, callback);
