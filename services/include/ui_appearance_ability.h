@@ -87,7 +87,7 @@ private:
     bool GetParameterWrap(const std::string& paramName, std::string& value);
     bool SetParameterWrap(const std::string& paramName, const std::string& value);
 
-    void UpdateCurrentUserConfiguration(const int32_t userId);
+    void UpdateCurrentUserConfiguration(const int32_t userId, const bool isForceUpdate);
     int32_t OnSetDarkMode(const int32_t userId, DarkMode mode);
     UiAppearanceAbility::DarkMode InitGetDarkMode(const int32_t userId);
     int32_t OnSetFontScale(const int32_t userId, std::string& fontScale);
@@ -106,6 +106,7 @@ private:
     std::map<int32_t, UiAppearanceParam> usersParam_;
     std::atomic<bool> isNeedDoCompatibleProcess_ = false;
     std::atomic<bool> isInitializationFinished_ = false;
+    std::set<int32_t> userSwitchUpdateConfigurationOnceFlag_;
 };
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS
