@@ -246,7 +246,7 @@ void UiAppearanceAbility::DoInitProcess()
     isInitializationFinished_ = true;
 }
 
-void UiAppearanceAbility::UpdateCurrentUserConfiguration(const int32_t userId)
+void UiAppearanceAbility::UpdateCurrentUserConfiguration(const int32_t userId, const bool isForceUpdate)
 {
     UiAppearanceParam tmpParam = usersParam_[userId];
     AppExecFwk::Configuration config;
@@ -260,7 +260,14 @@ void UiAppearanceAbility::UpdateCurrentUserConfiguration(const int32_t userId)
         LOGE("GetAppManagerInstance error userId:%{public}d", userId);
         return;
     }
-    appManagerInstance->UpdateConfiguration(config, userId);
+
+    if (isForceUpdate ||
+        userSwitchUpdateConfigurationOnceFlag_.find(userId) == userSwitchUpdateConfigurationOnceFlag_.end()) {
+        appManagerInstance->UpdateConfiguration(config, userId);
+        userSwitchUpdateConfigurationOnceFlag_.insert(userId);
+    } else {
+        appManagerInstance->UpdateConfiguration(config, 0);
+    }
     SetParameterWrap(PERSIST_DARKMODE_KEY, tmpParam.darkMode == DarkMode::ALWAYS_DARK ? DARK : LIGHT);
     SetParameterWrap(FONT_SCAL_FOR_USER0, tmpParam.fontScale);
     SetParameterWrap(FONT_Weight_SCAL_FOR_USER0, tmpParam.fontWeightScale);
@@ -282,11 +289,16 @@ void UiAppearanceAbility::UserSwitchFunc(const int32_t userId)
         DoInitProcess();
     }
 
+    bool isForceUpdate = false;
     if (code == ERR_OK) {
-        usersParam_[userId].darkMode = isDarkMode ? ALWAYS_DARK : ALWAYS_LIGHT;
+        DarkMode darkMode = isDarkMode ? ALWAYS_DARK : ALWAYS_LIGHT;
+        if (usersParam_[userId].darkMode != darkMode) {
+            usersParam_[userId].darkMode = darkMode;
+            isForceUpdate = true;
+        }
     }
 
-    UpdateCurrentUserConfiguration(userId);
+    UpdateCurrentUserConfiguration(userId, isForceUpdate);
 }
 
 void UiAppearanceAbility::SubscribeCommonEvent()
@@ -340,7 +352,7 @@ void UiAppearanceAbility::OnAddSystemAbility(int32_t systemAbilityId, const std:
             LOGW("GetForegroundOsAccountLocalId error: %{public}d.", errCode);
             userId = USER100;
         }
-        UpdateCurrentUserConfiguration(userId);
+        UpdateCurrentUserConfiguration(userId, false);
     }
 }
 
