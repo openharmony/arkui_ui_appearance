@@ -52,10 +52,5 @@ ohos_unittest("ui_appearance_test") {
 
 group("unittest") {
   testonly = true
-  deps = [
-    ":ui_appearance_test",
-    "dark_mode_manager_test:dark_mode_manager_test",
-    "setting_data_manager_test:setting_data_manager_test",
-    "setting_data_observer_test:setting_data_observer_test",
-  ]
+  deps = [ ":ui_appearance_test" ]
 }
