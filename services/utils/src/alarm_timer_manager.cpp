@@ -212,7 +212,10 @@ bool AlarmTimerManager::IsWithinTimeInterval(const uint64_t startTime, const uin
     }
 
     if (endTime <= DAY_TO_MINUTE) {
-        return (startTime <= totalMinutes && totalMinutes < endTime);
+        if (startTime <= totalMinutes && totalMinutes < endTime) {
+            return true;
+        }
+        return false;
     } else {
         if ((endTime - DAY_TO_MINUTE) <= totalMinutes && totalMinutes < startTime) {
             return false;
