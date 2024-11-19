@@ -30,7 +30,7 @@ namespace OHOS {
 namespace ArkUi::UiAppearance {
 class UiAppearanceEventSubscriber : public EventFwk::CommonEventSubscriber {
 public:
-    UiAppearanceEventSubscriber(const EventFwk::CommonEventSubscribeInfo& subscriberInfo,
+    explicit UiAppearanceEventSubscriber(const EventFwk::CommonEventSubscribeInfo& subscriberInfo,
         const std::function<void(const int32_t)>& userSwitchCallback);
     ~UiAppearanceEventSubscriber() override = default;
     void OnReceiveEvent(const EventFwk::CommonEventData& data) override;

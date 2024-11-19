@@ -737,7 +737,8 @@ void UiAppearanceAbility::UpdateDarkModeCallback(const bool isDarkMode, const in
     }
 
     SetParameterWrap(PERSIST_DARKMODE_KEY, paramValue);
-    if (!SetParameterWrap(DarkModeParamAssignUser(userId), paramValue)) {
+    bool isSetPara = SetParameterWrap(DarkModeParamAssignUser(userId), paramValue);
+    if (!isSetPara) {
         LOGE("set parameter failed");
     }
 }
