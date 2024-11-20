@@ -10,14 +10,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import("//build/test.gni")
+import("//foundation/arkui/ui_appearance/ui_appearance.gni")
 
 ohos_unittest("ui_appearance_test") {
   module_out_path = "ui_appearance/ui_appearance_test"
 
-  include_dirs = []
+  include_dirs = [
+    "${ui_appearance_services_path}/include/",
+    "${ui_appearance_services_utils_path}/include/",
+  ]
 
   sources = [
+    "${ui_appearance_services_path}/src/dark_mode_manager.cpp",
+    "${ui_appearance_services_path}/src/ui_appearance_ability.cpp",
+    "${ui_appearance_services_path}/src/ui_appearance_ability_stub.cpp",
+    "${ui_appearance_services_utils_path}/src/alarm_timer.cpp",
+    "${ui_appearance_services_utils_path}/src/alarm_timer_manager.cpp",
+    "${ui_appearance_services_utils_path}/src/setting_data_manager.cpp",
+    "${ui_appearance_services_utils_path}/src/setting_data_observer.cpp",
     "../mock/mock_accesstoken_kit.cpp",
     "../mock/mock_app_mgr_proxy.cpp",
     "../mock/mock_parameter.cpp",
@@ -29,21 +41,21 @@ ohos_unittest("ui_appearance_test") {
   if (target_cpu == "arm") {
     cflags += [ "-DBINDER_IPC_32BIT" ]
   }
-  deps = [ "../../services:ui_appearance_service" ]
 
   external_deps = [
     "ability_base:configuration",
-    "ability_base:want",
     "ability_runtime:app_manager",
+    "ability_runtime:dataobs_manager",
     "ability_runtime:wantagent_innerkits",
     "access_token:libaccesstoken_sdk",
-    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "common_event_service:cesfwk_core",
     "common_event_service:cesfwk_innerkits",
+    "data_share:datashare_consumer",
     "hilog:libhilog",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "os_account:os_account_innerkits",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "time_service:time_client",

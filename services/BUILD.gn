@@ -21,10 +21,6 @@ config("ui_appearance_service_config") {
   ]
 }
 
-config("ui_appearance_service_exception_config") {
-  cflags_cc = [ "-fexceptions" ]
-}
-
 ohos_shared_library("ui_appearance_service") {
   sanitize = {
     cfi = true  # Enable/disable control flow integrity detection
@@ -44,7 +40,16 @@ ohos_shared_library("ui_appearance_service") {
 
   public_configs = [ ":ui_appearance_service_config" ]
 
-  configs = [ ":ui_appearance_service_exception_config" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-fvisibility-inlines-hidden",
+    "-Oz",
+    "-fdata-sections",
+    "-ffunction-sections",
+    "-fno-asynchronous-unwind-tables",
+    "-fno-unwind-tables",
+  ]
+  ldflags = [ "-Wl,--gc-sections" ]
 
   include_dirs = [
     "include/",
@@ -90,6 +95,18 @@ ohos_shared_library("ui_appearance_client") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-fvisibility-inlines-hidden",
+    "-Oz",
+    "-fdata-sections",
+    "-ffunction-sections",
+    "-fno-asynchronous-unwind-tables",
+    "-fno-unwind-tables",
+  ]
+  ldflags = [ "-Wl,--gc-sections" ]
+
   subsystem_name = "arkui"
   innerapi_tags = [ "platformsdk" ]
   part_name = "ui_appearance"
