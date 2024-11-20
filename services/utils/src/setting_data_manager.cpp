@@ -15,6 +15,8 @@
 
 #include "setting_data_manager.h"
 
+#include <charconv>
+
 #include "ipc_skeleton_utils.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
@@ -160,9 +162,9 @@ ErrCode SettingDataManager::GetInt32Value(const std::string& key, int32_t& value
     if (code != ERR_OK) {
         return code;
     }
-    try {
-        value = std::stoi(valueString);
-    } catch (...) {
+
+    auto res = std::from_chars(valueString.c_str(), valueString.c_str() + valueString.size(), value);
+    if (res.ec != std::errc()) {
         LOGE("key: %{public}s, userId: %{public}d, value: %{public}s failed to convert to int",
             key.c_str(), userId, valueString.c_str());
         return ERR_INVALID_VALUE;
@@ -178,9 +180,8 @@ ErrCode SettingDataManager::GetInt32ValueStrictly(const std::string& key, int32_
         return code;
     }
     int32_t convertedValue;
-    try {
-        convertedValue = std::stoi(valueString);
-    } catch (...) {
+    auto res = std::from_chars(valueString.c_str(), valueString.c_str() + valueString.size(), convertedValue);
+    if (res.ec != std::errc()) {
         LOGE("key: %{public}s, userId: %{public}d, value: %{public}s failed to convert to int",
             key.c_str(), userId, valueString.c_str());
         return ERR_INVALID_VALUE;
