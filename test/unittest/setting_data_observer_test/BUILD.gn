@@ -1,0 +1,44 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+import("//foundation/arkui/ui_appearance/ui_appearance.gni")
+
+module_output_path = "ui_appearance/ui_appearance_test"
+
+ohos_unittest("setting_data_observer_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "${ui_appearance_test_mock_path}/mock_dataobs_manager/",
+    "${ui_appearance_services_utils_path}/include/",
+  ]
+
+  sources = [
+    "${ui_appearance_services_utils_path}/src/setting_data_observer.cpp",
+    "setting_data_observer_test.cpp",
+  ]
+
+  configs = []
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+  ]
+}
+
+group("unittest") {
+  testonly = true
+  deps = [ ":setting_data_observer_test" ]
+}
