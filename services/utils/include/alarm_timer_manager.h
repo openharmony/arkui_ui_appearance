@@ -35,11 +35,7 @@ public:
     ErrCode SetScheduleTime(uint64_t startTime, uint64_t endTime, uint32_t userId,
         const std::function<void()>& startCallback, const std::function<void()>& endCallback);
 
-    void SetTimer(int8_t index, uint32_t userId, uint64_t time, const std::function<void()>& callback);
-
     void ClearTimerByUserId(uint64_t userId);
-
-    bool RestartTimerByUserId(uint64_t userId = 0);
 
     bool RestartAllTimer();
 
@@ -50,11 +46,12 @@ public:
     static void SetTimerTriggerTime(uint64_t startTime, uint64_t endTime,
         std::array<uint64_t, TRIGGER_ARRAY_SIZE>& triggerTimeInterval);
 
-    void Dump() const;
+    void Dump();
 
 private:
     std::map<uint32_t, std::array<uint64_t, TRIGGER_ARRAY_SIZE>> timerIdMap_;
     std::map<uint32_t, std::array<uint64_t, TRIGGER_ARRAY_SIZE>> initialSetupTimeMap_;
+    std::mutex timerMapMutex_;
 
     static void RestartTimerByTimerId(uint64_t timerId, uint64_t time);
 
@@ -65,6 +62,10 @@ private:
     static void ClearTimer(uint64_t id);
 
     void RecordInitialSetupTime(uint64_t startTime, uint64_t endTime, uint32_t userId);
+
+    void SetTimer(int8_t index, uint32_t userId, uint64_t time, const std::function<void()>& callback);
+
+    bool RestartTimerByUserId(uint64_t userId);
 };
 } // namespace OHOS::ArkUi::UiAppearance
 #endif // UI_APPEARANCE_UTILS_ALARM_TIMER_MANAGER_H
