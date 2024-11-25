@@ -22,7 +22,6 @@
 
 #include "appmgr/app_mgr_proxy.h"
 #include "common_event_manager.h"
-#include "common_event_support.h"
 #include "system_ability.h"
 #include "ui_appearance_ability_stub.h"
 
