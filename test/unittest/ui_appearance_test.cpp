@@ -61,10 +61,9 @@ public:
         return new UiAppearanceAbilityTest;
     }
 
-    static AlarmTimerManager& GetAlarmTimerManager()
+    static std::shared_ptr<AlarmTimerManager> GetAlarmTimerManager()
     {
-        static AlarmTimerManager instance;
-        return instance;
+        return std::make_shared<AlarmTimerManager>();
     }
 
 private:
@@ -239,17 +238,14 @@ HWTEST_F(DarkModeTest, ui_appearance_test_007, TestSize.Level0)
     LOGI("Test the alarm_timer_manager");
 
     auto uiAppearanceTimerManager = DarkModeTest::GetAlarmTimerManager();
-    int res = uiAppearanceTimerManager.SetScheduleTime(
+    int res = uiAppearanceTimerManager->SetScheduleTime(
             10, 12, 100, [](){}, [](){});
     EXPECT_EQ(res, 0);
 
-    res = uiAppearanceTimerManager.RestartTimerByUserId(100);
+    res = uiAppearanceTimerManager->RestartAllTimer();
     EXPECT_EQ(res, 1);
 
-    res = uiAppearanceTimerManager.RestartAllTimer();
-    EXPECT_EQ(res, 1);
-
-    uiAppearanceTimerManager.ClearTimerByUserId(100);
+    uiAppearanceTimerManager->ClearTimerByUserId(100);
 }
 
 
