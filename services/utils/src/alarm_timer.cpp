@@ -14,7 +14,6 @@
  */
 
 #include "alarm_timer.h"
-#include "ui_appearance_log.h"
 
 namespace OHOS::ArkUi::UiAppearance {
 void AlarmTimer::OnTrigger()
