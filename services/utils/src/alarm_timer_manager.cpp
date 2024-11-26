@@ -36,6 +36,7 @@ constexpr int32_t END_INDEX = 1;
 ErrCode AlarmTimerManager::SetScheduleTime(const uint64_t startTime, const uint64_t endTime,
     const uint32_t userId, const std::function<void()>& startCallback, const std::function<void()>& endCallback)
 {
+    std::lock_guard<std::mutex> lock(timerMapMutex_);
     if (!IsValidScheduleTime(startTime, endTime)) {
         LOGE("userId:%{public}d, start %{public}" PRIu64 ", end %{public}" PRIu64, userId, startTime, endTime);
         return ERR_INVALID_VALUE;
@@ -110,8 +111,9 @@ void AlarmTimerManager::SetTimerTriggerTime(const uint64_t startTime, const uint
     }
 }
 
-void AlarmTimerManager::Dump() const
+void AlarmTimerManager::Dump()
 {
+    std::lock_guard<std::mutex> lock(timerMapMutex_);
     LOGD("timerIdMap size: %{public}zu", timerIdMap_.size());
     for (const auto& it : timerIdMap_) {
         LOGD("userId:%{public}d, start %{public}" PRIu64 ", end %{public}" PRIu64,
@@ -183,6 +185,7 @@ uint64_t AlarmTimerManager::UpdateTimer(const uint64_t id, const uint64_t time,
 
 void AlarmTimerManager::ClearTimerByUserId(const uint64_t userId)
 {
+    std::lock_guard<std::mutex> lock(timerMapMutex_);
     if (timerIdMap_.find(userId) == timerIdMap_.end()) {
         LOGE("timerIdMap_ fail to find Timer: %{public}" PRIu64, userId);
         return;
@@ -231,7 +234,8 @@ void AlarmTimerManager::RecordInitialSetupTime(const uint64_t startTime, const u
 bool AlarmTimerManager::RestartTimerByUserId(const uint64_t userId)
 {
     if (userId == 0) {
-        return RestartAllTimer();
+        LOGE("userId == 0");
+        return false;
     }
 
     if (timerIdMap_.find(userId) == timerIdMap_.end()
@@ -260,6 +264,7 @@ void AlarmTimerManager::RestartTimerByTimerId(const uint64_t timerId, const uint
 
 bool AlarmTimerManager::RestartAllTimer()
 {
+    std::lock_guard<std::mutex> lock(timerMapMutex_);
     bool res = true;
     for (const auto& pair : timerIdMap_) {
         uint64_t userId = pair.first;
