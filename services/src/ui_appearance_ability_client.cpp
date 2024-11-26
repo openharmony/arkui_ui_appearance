@@ -30,8 +30,8 @@ sptr<UiAppearanceAbilityClient> UiAppearanceAbilityClient::GetInstance()
     if (!instance_) {
         std::lock_guard<std::mutex> autoLock(instanceLock_);
         if (!instance_) {
-            instance_ = new UiAppearanceAbilityClient;
             uiAppearanceServiceProxy_ = CreateUiAppearanceServiceProxy();
+            instance_ = new UiAppearanceAbilityClient;
         }
     }
     return instance_;
