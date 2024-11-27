@@ -519,20 +519,22 @@ int32_t UiAppearanceAbility::SetDarkMode(DarkMode mode)
         LOGE("permission verification failed");
         return PERMISSION_ERR;
     }
-    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
-    auto userId = GetCallingUserId();
-    auto it = usersParam_.find(userId);
-    if (it != usersParam_.end()) {
-        if (mode != it->second.darkMode) {
-            return OnSetDarkMode(userId, mode);
-        } else {
-            LOGW("current color mode is %{public}d, no need to change", mode);
-        }
-    } else {
-        return OnSetDarkMode(userId, mode);
-    }
 
-    return SYS_ERR;
+    auto userId = GetCallingUserId();
+    DarkMode currentDarkMode = ALWAYS_LIGHT;
+    {
+        std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
+        auto it = usersParam_.find(userId);
+        if (it != usersParam_.end()) {
+            currentDarkMode = it->second.darkMode;
+        }
+    }
+    if (mode != currentDarkMode) {
+        return OnSetDarkMode(userId, mode);
+    } else {
+        LOGW("current color mode is %{public}d, no need to change", mode);
+        return SYS_ERR;
+    }
 }
 
 UiAppearanceAbility::DarkMode UiAppearanceAbility::InitGetDarkMode(const int32_t userId)
