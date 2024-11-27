@@ -302,7 +302,7 @@ void DarkModeManager::OnChangeDarkMode(const DarkModeMode mode, const int32_t us
 
 ErrCode DarkModeManager::CreateOrUpdateTimers(int32_t startTime, int32_t endTime, int32_t userId)
 {
-    auto callback = [startTime, endTime, userId]() {
+    auto callbackSetDark = [startTime, endTime, userId]() {
         LOGI("timer callback, startTime: %{public}d, endTime: %{public}d, userId: %{public}d",
             startTime, endTime, userId);
         ErrCode code = GetInstance().CheckTimerCallbackParams(startTime, endTime, userId);
@@ -310,13 +310,21 @@ ErrCode DarkModeManager::CreateOrUpdateTimers(int32_t startTime, int32_t endTime
             LOGE("timer callback, params check failed: %{public}d", code);
             return;
         }
-        if (AlarmTimerManager::IsWithinTimeInterval(startTime, endTime)) {
-            GetInstance().OnChangeDarkMode(DARK_MODE_ALWAYS_DARK, userId);
-        } else {
-            GetInstance().OnChangeDarkMode(DARK_MODE_ALWAYS_LIGHT, userId);
-        }
+        GetInstance().OnChangeDarkMode(DARK_MODE_ALWAYS_DARK, userId);
     };
-    return alarmTimerManager_.SetScheduleTime(startTime, endTime, userId, callback, callback);
+
+    auto callbackSetLight = [startTime, endTime, userId]() {
+        LOGI("timer callback, startTime: %{public}d, endTime: %{public}d, userId: %{public}d",
+            startTime, endTime, userId);
+        ErrCode code = GetInstance().CheckTimerCallbackParams(startTime, endTime, userId);
+        if (code != ERR_OK) {
+            LOGE("timer callback, params check failed: %{public}d", code);
+            return;
+        }
+        GetInstance().OnChangeDarkMode(DARK_MODE_ALWAYS_LIGHT, userId);
+    };
+
+    return alarmTimerManager_.SetScheduleTime(startTime, endTime, userId, callbackSetDark, callbackSetLight);
 }
 
 ErrCode DarkModeManager::CheckTimerCallbackParams(const int32_t startTime, const int32_t endTime, const int32_t userId)
