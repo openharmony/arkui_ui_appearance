@@ -517,13 +517,8 @@ protected:
         EXPECT_NE(startCallbackFunc, nullptr);
         EXPECT_NE(endCallbackFunc, nullptr);
 
-        AlarmTimerManager& alarmTimerManagerStaticInstance = AlarmTimerManager::GetInstance();
-        expectSet += EXPECT_CALL(alarmTimerManagerStaticInstance, MockIsWithinTimeInterval(startTime, endTime))
-            .Times(1).After(expectSet).WillOnce(Return(true));
         expectSet += EXPECT_CALL(*this, UpdateCallback(true, userId)).Times(1).After(expectSet);
         startCallbackFunc();
-        expectSet += EXPECT_CALL(alarmTimerManagerStaticInstance, MockIsWithinTimeInterval(startTime, endTime))
-            .Times(1).After(expectSet).WillOnce(Return(false));
         expectSet += EXPECT_CALL(*this, UpdateCallback(false, userId)).Times(1).After(expectSet);
         endCallbackFunc();
     }
