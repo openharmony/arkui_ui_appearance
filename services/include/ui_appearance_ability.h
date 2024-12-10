@@ -17,25 +17,30 @@
 #define UI_APPEARANCE_ABILITY_H
 
 #include <cstdint>
+#include <functional>
 #include <string>
 
 #include "appmgr/app_mgr_proxy.h"
 #include "common_event_manager.h"
-#include "common_event_support.h"
 #include "system_ability.h"
 #include "ui_appearance_ability_stub.h"
 
 namespace OHOS {
 namespace ArkUi::UiAppearance {
-class UserSwitchEventSubscriber : public EventFwk::CommonEventSubscriber {
+class UiAppearanceEventSubscriber : public EventFwk::CommonEventSubscriber {
 public:
-    explicit UserSwitchEventSubscriber(const EventFwk::CommonEventSubscribeInfo& subscriberInfo,
+    UiAppearanceEventSubscriber(const EventFwk::CommonEventSubscribeInfo& subscriberInfo,
         const std::function<void(const int32_t)>& userSwitchCallback);
-    ~UserSwitchEventSubscriber() override = default;
+    ~UiAppearanceEventSubscriber() override = default;
     void OnReceiveEvent(const EventFwk::CommonEventData& data) override;
+
+    static void TimeChangeCallback();
+
+    void BootCompetedCallback();
 
 private:
     std::function<void(const int32_t)> userSwitchCallback_;
+    std::once_flag bootCompleteFlag_;
 };
 
 class UiAppearanceAbility : public SystemAbility, public UiAppearanceAbilityStub {
@@ -68,7 +73,7 @@ private:
     sptr<AppExecFwk::IAppMgr> GetAppManagerInstance();
     bool VerifyAccessToken(const std::string& permissionName);
     void Init();
-    void SubscribeUserSwitchEvent();
+    void SubscribeCommonEvent();
     bool IsUserExist(const int32_t userId);
     bool UpdateConfiguration(const AppExecFwk::Configuration& configuration, const int32_t userId);
     void DoCompatibleProcess();
@@ -81,7 +86,7 @@ private:
     bool GetParameterWrap(const std::string& paramName, std::string& value);
     bool SetParameterWrap(const std::string& paramName, const std::string& value);
 
-    void UpdateCurrentUserConfiguration(const int32_t userId);
+    void UpdateCurrentUserConfiguration(const int32_t userId, const bool isForceUpdate);
     int32_t OnSetDarkMode(const int32_t userId, DarkMode mode);
     UiAppearanceAbility::DarkMode InitGetDarkMode(const int32_t userId);
     int32_t OnSetFontScale(const int32_t userId, std::string& fontScale);
@@ -93,11 +98,14 @@ private:
     std::string FontScaleParamAssignUser(const int32_t userId);
     std::string FontWeightScaleParamAssignUser(const int32_t userId);
 
-    std::shared_ptr<UserSwitchEventSubscriber> userSwitchSubscriber_;
+    void UpdateDarkModeCallback(bool isDarkMode, int32_t userId);
+
+    std::shared_ptr<UiAppearanceEventSubscriber> uiAppearanceEventSubscriber_;
     std::recursive_mutex usersParamMutex_;
     std::map<int32_t, UiAppearanceParam> usersParam_;
     std::atomic<bool> isNeedDoCompatibleProcess_ = false;
     std::atomic<bool> isInitializationFinished_ = false;
+    std::set<int32_t> userSwitchUpdateConfigurationOnceFlag_;
 };
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS

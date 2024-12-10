@@ -15,7 +15,6 @@
 
 #include "ui_appearance_ability_proxy.h"
 
-#include <string>
 #include "message_parcel.h"
 #include "ui_appearance_ipc_interface_code.h"
 #include "ui_appearance_log.h"
@@ -147,7 +146,7 @@ int32_t UiAppearanceAbilityProxy::GetFontWeightScale(std::string &fontWeightScal
     MessageOption option;
 
     if (!data.WriteInterfaceToken(GetDescriptor())) {
-        LOGE("##lmz Write descriptor failed!");
+        LOGE("##Write descriptor failed!");
         return SYS_ERR;
     }
 
