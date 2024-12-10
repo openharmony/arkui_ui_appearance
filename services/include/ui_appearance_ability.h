@@ -74,7 +74,6 @@ private:
     bool VerifyAccessToken(const std::string& permissionName);
     void Init();
     void SubscribeCommonEvent();
-    bool IsUserExist(const int32_t userId);
     bool UpdateConfiguration(const AppExecFwk::Configuration& configuration, const int32_t userId);
     void DoCompatibleProcess();
     int32_t GetCallingUserId();
@@ -101,11 +100,12 @@ private:
     void UpdateDarkModeCallback(bool isDarkMode, int32_t userId);
 
     std::shared_ptr<UiAppearanceEventSubscriber> uiAppearanceEventSubscriber_;
-    std::recursive_mutex usersParamMutex_;
+    std::mutex usersParamMutex_;
     std::map<int32_t, UiAppearanceParam> usersParam_;
     std::atomic<bool> isNeedDoCompatibleProcess_ = false;
     std::atomic<bool> isInitializationFinished_ = false;
     std::set<int32_t> userSwitchUpdateConfigurationOnceFlag_;
+    std::mutex userSwitchUpdateConfigurationOnceFlagMutex_;
 };
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS

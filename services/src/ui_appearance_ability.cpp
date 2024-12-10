@@ -46,6 +46,7 @@ static const std::string FONT_WEIGHT_SCAL_FOR_NONE = "persist.sys.font_wght_scal
 
 static const std::string FIRST_INITIALIZATION = "persist.uiAppearance.first_initialization";
 const static int32_t USER100 = 100;
+const static int32_t USER0 = 0;
 const static std::string FIRST_UPGRADE = "1";
 const static std::string NOT_FIRST_UPGRADE = "0";
 } // namespace
@@ -186,7 +187,6 @@ void UiAppearanceAbility::DoCompatibleProcess()
     };
 
     const std::vector<int32_t> userIds = GetUserIds();
-    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
     std::string darkMode = LIGHT;
     if (getOldParam(PERSIST_DARKMODE_KEY, darkMode)) {
         for (auto id : userIds) {
@@ -239,7 +239,11 @@ void UiAppearanceAbility::DoInitProcess()
         tmpParam.darkMode = darkValue == DARK ? DarkMode::ALWAYS_DARK : DarkMode::ALWAYS_LIGHT;
         tmpParam.fontScale = fontSize;
         tmpParam.fontWeightScale = fontWeight;
-        usersParam_[userId] = tmpParam;
+        {
+            std::lock_guard<std::mutex> guard(usersParamMutex_);
+            usersParam_[userId] = tmpParam;
+        }
+        
         LOGI("init userId:%{public}d, darkMode:%{public}s, fontSize:%{public}s, fontWeight:%{public}s", userId,
             darkValue.c_str(), fontSize.c_str(), fontWeight.c_str());
     }
@@ -248,7 +252,11 @@ void UiAppearanceAbility::DoInitProcess()
 
 void UiAppearanceAbility::UpdateCurrentUserConfiguration(const int32_t userId, const bool isForceUpdate)
 {
-    UiAppearanceParam tmpParam = usersParam_[userId];
+    UiAppearanceParam tmpParam;
+    {
+        std::lock_guard<std::mutex> guard(usersParamMutex_);
+        tmpParam = usersParam_[userId];
+    }
     AppExecFwk::Configuration config;
     config.AddItem(
         AAFwk::GlobalConfigurationKey::SYSTEM_COLORMODE, tmpParam.darkMode == DarkMode::ALWAYS_DARK ? DARK : LIGHT);
@@ -261,17 +269,22 @@ void UiAppearanceAbility::UpdateCurrentUserConfiguration(const int32_t userId, c
         return;
     }
 
-    if (isForceUpdate ||
-        userSwitchUpdateConfigurationOnceFlag_.find(userId) == userSwitchUpdateConfigurationOnceFlag_.end()) {
-        appManagerInstance->UpdateConfiguration(config, userId);
-        userSwitchUpdateConfigurationOnceFlag_.insert(userId);
-    } else {
-        appManagerInstance->UpdateConfiguration(config, 0);
+    {
+        std::lock_guard<std::mutex> onceFlagGuard(userSwitchUpdateConfigurationOnceFlagMutex_);
+        if (isForceUpdate ||
+            userSwitchUpdateConfigurationOnceFlag_.find(userId) == userSwitchUpdateConfigurationOnceFlag_.end()) {
+            appManagerInstance->UpdateConfiguration(config, userId);
+            LOGI("update userId:%{public}d configuration:%{public}s", userId, config.GetName().c_str());
+            userSwitchUpdateConfigurationOnceFlag_.insert(userId);
+        } else {
+            appManagerInstance->UpdateConfiguration(config, USER0);
+            LOGI("update userId:%{public}d configuration:%{public}s", USER0, config.GetName().c_str());
+        }
     }
+
     SetParameterWrap(PERSIST_DARKMODE_KEY, tmpParam.darkMode == DarkMode::ALWAYS_DARK ? DARK : LIGHT);
     SetParameterWrap(FONT_SCAL_FOR_USER0, tmpParam.fontScale);
     SetParameterWrap(FONT_Weight_SCAL_FOR_USER0, tmpParam.fontWeightScale);
-    LOGI("update userId:%{public}d configuration:%{public}s", userId, config.GetName().c_str());
 }
 
 void UiAppearanceAbility::UserSwitchFunc(const int32_t userId)
@@ -281,7 +294,6 @@ void UiAppearanceAbility::UserSwitchFunc(const int32_t userId)
     bool isDarkMode = false;
     int32_t code = manager.LoadUserSettingData(userId, false, isDarkMode);
 
-    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
     if (isNeedDoCompatibleProcess_) {
         DoCompatibleProcess();
     }
@@ -292,6 +304,7 @@ void UiAppearanceAbility::UserSwitchFunc(const int32_t userId)
     bool isForceUpdate = false;
     if (code == ERR_OK) {
         DarkMode darkMode = isDarkMode ? ALWAYS_DARK : ALWAYS_LIGHT;
+        std::lock_guard<std::mutex> guard(usersParamMutex_);
         if (usersParam_[userId].darkMode != darkMode) {
             usersParam_[userId].darkMode = darkMode;
             isForceUpdate = true;
@@ -339,7 +352,6 @@ void UiAppearanceAbility::OnAddSystemAbility(int32_t systemAbilityId, const std:
         UpdateDarkModeCallback(isDarkMode, userId);
     });
     SubscribeCommonEvent();
-    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
     if (isNeedDoCompatibleProcess_ && !GetUserIds().empty()) {
         DoCompatibleProcess();
     }
@@ -390,11 +402,6 @@ std::string UiAppearanceAbility::FontWeightScaleParamAssignUser(const int32_t us
 {
     return FONT_WEIGHT_SCAL_FOR_NONE + std::to_string(userId);
 }
-bool UiAppearanceAbility::IsUserExist(const int32_t userId)
-{
-    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
-    return usersParam_.find(userId) != usersParam_.end();
-}
 
 bool UiAppearanceAbility::GetParameterWrap(
     const std::string& paramName, std::string& value, const std::string& defaultValue)
@@ -421,7 +428,7 @@ bool UiAppearanceAbility::SetParameterWrap(const std::string& paramName, const s
         LOGE("set parameter %{public}s failed", paramName.c_str());
         return false;
     }
-    LOGI("set parameter %{public}s:%{public}s", paramName.c_str(), value.c_str());
+    LOGD("set parameter %{public}s:%{public}s", paramName.c_str(), value.c_str());
     return true;
 }
 
@@ -489,14 +496,8 @@ int32_t UiAppearanceAbility::OnSetDarkMode(const int32_t userId, DarkMode mode)
     }
 
     {
-        std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
-        if (IsUserExist(userId)) {
-            usersParam_[userId].darkMode = mode;
-        } else {
-            UiAppearanceParam tmpParam;
-            tmpParam.darkMode = mode;
-            usersParam_[userId] = tmpParam;
-        }
+        std::lock_guard<std::mutex> guard(usersParamMutex_);
+        usersParam_[userId].darkMode = mode;
     }
 
     SetParameterWrap(PERSIST_DARKMODE_KEY, paramValue);
@@ -523,7 +524,7 @@ int32_t UiAppearanceAbility::SetDarkMode(DarkMode mode)
     auto userId = GetCallingUserId();
     DarkMode currentDarkMode = ALWAYS_LIGHT;
     {
-        std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
+        std::lock_guard<std::mutex> guard(usersParamMutex_);
         auto it = usersParam_.find(userId);
         if (it != usersParam_.end()) {
             currentDarkMode = it->second.darkMode;
@@ -563,11 +564,15 @@ int32_t UiAppearanceAbility::GetDarkMode()
         LOGE("permission verification failed");
         return PERMISSION_ERR;
     }
-    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
-    auto it = usersParam_.find(GetCallingUserId());
-    if (it != usersParam_.end()) {
-        return it->second.darkMode;
+
+    {
+        std::lock_guard<std::mutex> guard(usersParamMutex_);
+        auto it = usersParam_.find(GetCallingUserId());
+        if (it != usersParam_.end()) {
+            return it->second.darkMode;
+        }
     }
+
     return DarkMode::ALWAYS_LIGHT;
 }
 
@@ -584,13 +589,9 @@ int32_t UiAppearanceAbility::OnSetFontScale(const int32_t userId, std::string& f
         return SYS_ERR;
     }
 
-    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
-    if (IsUserExist(userId)) {
+    {
+        std::lock_guard<std::mutex> guard(usersParamMutex_);
         usersParam_[userId].fontScale = fontScale;
-    } else {
-        UiAppearanceParam tmpParam;
-        tmpParam.fontScale = fontScale;
-        usersParam_[userId] = tmpParam;
     }
 
     SetParameterWrap(FONT_SCAL_FOR_USER0, fontScale);
@@ -626,12 +627,14 @@ int32_t UiAppearanceAbility::GetFontScale(std::string& fontScale)
         LOGE("permission verification failed");
         return PERMISSION_ERR;
     }
-    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
-    auto it = usersParam_.find(GetCallingUserId());
-    if (it != usersParam_.end()) {
-        fontScale = it->second.fontScale;
-    } else {
-        fontScale = BASE_SCALE;
+    {
+        std::lock_guard<std::mutex> guard(usersParamMutex_);
+        auto it = usersParam_.find(GetCallingUserId());
+        if (it != usersParam_.end()) {
+            fontScale = it->second.fontScale;
+        } else {
+            fontScale = BASE_SCALE;
+        }
     }
     LOGD("get font scale :%{public}s", fontScale.c_str());
     return SUCCEEDED;
@@ -650,13 +653,10 @@ int32_t UiAppearanceAbility::OnSetFontWeightScale(const int32_t userId, std::str
     if (!UpdateConfiguration(config, userId)) {
         return SYS_ERR;
     }
-    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
-    if (IsUserExist(userId)) {
+    
+    {
+        std::lock_guard<std::mutex> guard(usersParamMutex_);
         usersParam_[userId].fontWeightScale = fontWeightScale;
-    } else {
-        UiAppearanceParam tmpParam;
-        tmpParam.fontWeightScale = fontWeightScale;
-        usersParam_[userId] = tmpParam;
     }
 
     SetParameterWrap(FONT_Weight_SCAL_FOR_USER0, fontWeightScale);
@@ -693,13 +693,17 @@ int32_t UiAppearanceAbility::GetFontWeightScale(std::string& fontWeightScale)
         LOGE("permission verification failed");
         return PERMISSION_ERR;
     }
-    std::unique_lock<std::recursive_mutex> guard(usersParamMutex_);
-    auto it = usersParam_.find(GetCallingUserId());
-    if (it != usersParam_.end()) {
-        fontWeightScale = it->second.fontWeightScale;
-    } else {
-        fontWeightScale = BASE_SCALE;
+
+    {
+        std::lock_guard<std::mutex> guard(usersParamMutex_);
+        auto it = usersParam_.find(GetCallingUserId());
+        if (it != usersParam_.end()) {
+            fontWeightScale = it->second.fontWeightScale;
+        } else {
+            fontWeightScale = BASE_SCALE;
+        }
     }
+
     LOGD("get font weight scale :%{public}s", fontWeightScale.c_str());
     return SUCCEEDED;
 }
@@ -728,14 +732,8 @@ void UiAppearanceAbility::UpdateDarkModeCallback(const bool isDarkMode, const in
     }
 
     {
-        std::unique_lock guard(usersParamMutex_);
-        if (IsUserExist(userId)) {
-            usersParam_[userId].darkMode = isDarkMode ? ALWAYS_DARK : ALWAYS_LIGHT;
-        } else {
-            UiAppearanceParam tmpParam;
-            tmpParam.darkMode = isDarkMode ? ALWAYS_DARK : ALWAYS_LIGHT;
-            usersParam_[userId] = tmpParam;
-        }
+        std::lock_guard<std::mutex> guard(usersParamMutex_);
+        usersParam_[userId].darkMode = isDarkMode ? ALWAYS_DARK : ALWAYS_LIGHT;
     }
 
     SetParameterWrap(PERSIST_DARKMODE_KEY, paramValue);
