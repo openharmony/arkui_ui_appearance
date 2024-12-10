@@ -30,7 +30,7 @@ public:
     void OnRemoteDied(const wptr<IRemoteObject>& object) override;
 };
 
-class UiAppearanceAbilityClient : public RefBase {
+class __attribute__((visibility("default"))) UiAppearanceAbilityClient : public RefBase {
 public:
     UiAppearanceAbilityClient() = default;
     ~UiAppearanceAbilityClient() = default;
