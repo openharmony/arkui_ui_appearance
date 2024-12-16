@@ -50,14 +50,14 @@ int32_t UiAppearanceAbilityProxy::GetDarkMode()
     MessageParcel data, reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
+    if (UNLIKELY(!data.WriteInterfaceToken(GetDescriptor()))) {
         LOGE("Write descriptor failed!");
         return SYS_ERR;
     }
 
     auto res =
         Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::GET_DARK_MODE), data, reply, option);
-    if (res != ERR_NONE) {
+    if (UNLIKELY(res != ERR_NONE)) {
         LOGE("SendRequest failed.");
         return SYS_ERR;
     }
