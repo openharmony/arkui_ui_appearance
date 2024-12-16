@@ -27,7 +27,7 @@ namespace OHOS {
 namespace ArkUi::UiAppearance {
 sptr<UiAppearanceAbilityClient> UiAppearanceAbilityClient::GetInstance()
 {
-    if (!instance_) {
+    if (UNLIKELY(!instance_)) {
         std::lock_guard<std::mutex> autoLock(instanceLock_);
         if (!instance_) {
             uiAppearanceServiceProxy_ = CreateUiAppearanceServiceProxy();
@@ -37,9 +37,9 @@ sptr<UiAppearanceAbilityClient> UiAppearanceAbilityClient::GetInstance()
     return instance_;
 }
 
-sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::GetUiAppearanceServiceProxy()
+inline sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::GetUiAppearanceServiceProxy()
 {
-    if (uiAppearanceServiceProxy_ == nullptr) {
+    if (UNLIKELY(uiAppearanceServiceProxy_ == nullptr)) {
         LOGE("Redo CreateUiAppearanceServiceProxy");
         uiAppearanceServiceProxy_ = CreateUiAppearanceServiceProxy();
     }
@@ -57,7 +57,7 @@ int32_t UiAppearanceAbilityClient::SetDarkMode(UiAppearanceAbilityInterface::Dar
 
 int32_t UiAppearanceAbilityClient::GetDarkMode()
 {
-    if (!GetUiAppearanceServiceProxy()) {
+    if (UNLIKELY(!GetUiAppearanceServiceProxy())) {
         LOGE("GetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
         return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
     }
@@ -108,13 +108,13 @@ sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::CreateUiAppearance
 {
     sptr<ISystemAbilityManager> systemAbilityManager =
         SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (systemAbilityManager == nullptr) {
+    if (UNLIKELY(systemAbilityManager == nullptr)) {
         LOGE("Get SystemAbilityManager failed.");
         return nullptr;
     }
 
     sptr<IRemoteObject> systemAbility = systemAbilityManager->GetSystemAbility(ARKUI_UI_APPEARANCE_SERVICE_ID);
-    if (systemAbility == nullptr) {
+    if (UNLIKELY(systemAbility == nullptr)) {
         LOGE("Get SystemAbility failed.");
         return nullptr;
     }
@@ -123,11 +123,11 @@ sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::CreateUiAppearance
     systemAbility->AddDeathRecipient(deathRecipient_);
     sptr<UiAppearanceAbilityInterface> uiAppearanceServiceProxy =
         iface_cast<UiAppearanceAbilityInterface>(systemAbility);
-    if (uiAppearanceServiceProxy == nullptr) {
+    if (UNLIKELY(uiAppearanceServiceProxy == nullptr)) {
         LOGE("Get uiAppearanceServiceProxy from SA failed.");
         return nullptr;
     }
-    LOGI("Get uiAppearanceServiceProxy successful.");
+    LOGI("Get ServiceProxy successful.");
     return uiAppearanceServiceProxy;
 }
 

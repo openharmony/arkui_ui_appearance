@@ -91,7 +91,7 @@ ErrCode DarkModeManager::OnSwitchUser(const int32_t userId)
         }
     }
 
-    if (userId <= INVALID_USER_ID || userId == settingDataObserversUserId_) {
+    if (userId <= INVALID_USER_ID) {
         LOGE("invalid userId: %{public}d", userId);
         return ERR_INVALID_OPERATION;
     }
