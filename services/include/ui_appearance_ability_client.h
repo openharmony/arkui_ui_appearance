@@ -45,7 +45,7 @@ public:
     void OnRemoteSaDied(const wptr<IRemoteObject>& object);
 
 private:
-    sptr<UiAppearanceAbilityInterface> GetUiAppearanceServiceProxy();
+    inline sptr<UiAppearanceAbilityInterface> GetUiAppearanceServiceProxy();
     static sptr<UiAppearanceAbilityInterface> CreateUiAppearanceServiceProxy();
 
     static inline std::mutex instanceLock_;
