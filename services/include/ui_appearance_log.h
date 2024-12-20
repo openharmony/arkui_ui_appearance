@@ -29,7 +29,4 @@
 #define LOGI(fmt, ...) PRINT_LOG(INFO, fmt, ##__VA_ARGS__)
 #define LOGD(fmt, ...) PRINT_LOG(DEBUG, fmt, ##__VA_ARGS__)
 
-#define LIKELY(exp) (__builtin_expect((exp) != 0, true))  // NOLINT(cppcoreguidelines-macro-usage)
-#define UNLIKELY(exp) (__builtin_expect((exp) != 0, false))  // NOLINT(cppcoreguidelines-macro-usage)
-
 #endif // UI_APPEARANCE_LOG_H
