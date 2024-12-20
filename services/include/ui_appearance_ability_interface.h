@@ -44,7 +44,7 @@ public:
     virtual int32_t SetFontWeightScale(std::string &fontWeightScale) = 0;
 
 public:
-    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.UiAppea.Interface");
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.UiAppearance.UiAppearanceAbilityInterface");
 };
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS
