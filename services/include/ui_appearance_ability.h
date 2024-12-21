@@ -71,12 +71,12 @@ protected:
 
 private:
     sptr<AppExecFwk::IAppMgr> GetAppManagerInstance();
-    inline bool VerifyAccessToken(const std::string& permissionName) const;
+    bool VerifyAccessToken(const std::string& permissionName);
     void Init();
     void SubscribeCommonEvent();
     bool UpdateConfiguration(const AppExecFwk::Configuration& configuration, const int32_t userId);
     void DoCompatibleProcess();
-    inline int32_t GetCallingUserId() const;
+    int32_t GetCallingUserId();
     std::vector<int32_t> GetUserIds();
     void UserSwitchFunc(const int32_t userId);
     void DoInitProcess();

@@ -723,12 +723,13 @@ HWTEST_F(DarkModeManagerTest, OnSwitchUser_0300, TestSize.Level1)
 
 HWTEST_F(DarkModeManagerTest, OnSwitchUser_0400, TestSize.Level1)
 {
-    ExpectationSet expectSet;
-    SettingDataManager& dataManager = SettingDataManager::GetInstance();
-    expectSet += EXPECT_CALL(dataManager, IsInitialized()).Times(1).After(expectSet).WillOnce(Return(true));
-    DarkModeManager& manager = DarkModeManager::GetInstance();
-    manager.settingDataObserversUserId_ = TEST_USER100;
-    EXPECT_EQ(manager.OnSwitchUser(TEST_USER100), ERR_INVALID_OPERATION);
+    OnSwitchUserTest(TEST_USER1, TEST_USER1, true);
+    OnSwitchUserTest(TEST_USER100, TEST_USER100, true);
+    OnSwitchUserTest(TEST_USER101, TEST_USER101, true);
+
+    OnSwitchUserTest(TEST_USER1, TEST_USER1, false);
+    OnSwitchUserTest(TEST_USER100, TEST_USER100, false);
+    OnSwitchUserTest(TEST_USER101, TEST_USER101, false);
 }
 
 HWTEST_F(DarkModeManagerTest, OnSwitchUser_0500, TestSize.Level1)
