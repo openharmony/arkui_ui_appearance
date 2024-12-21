@@ -130,11 +130,11 @@ sptr<AppExecFwk::IAppMgr> UiAppearanceAbility::GetAppManagerInstance()
     return systemAbility;
 }
 
-inline bool UiAppearanceAbility::VerifyAccessToken(const std::string& permissionName) const
+bool UiAppearanceAbility::VerifyAccessToken(const std::string& permissionName)
 {
     auto callerToken = IPCSkeleton::GetCallingTokenID();
     int32_t ret = Security::AccessToken::AccessTokenKit::VerifyAccessToken(callerToken, permissionName);
-    if (LIKELY(ret == Security::AccessToken::PermissionState::PERMISSION_GRANTED)) {
+    if (ret == Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
         return true;
     }
     LOGE("permission %{private}s denied, callerToken : %{public}u", permissionName.c_str(), callerToken);
@@ -373,11 +373,13 @@ void UiAppearanceAbility::OnRemoveSystemAbility(int32_t systemAbilityId, const s
     LOGI("systemAbilityId = %{public}d removed.", systemAbilityId);
 }
 
-inline int32_t UiAppearanceAbility::GetCallingUserId() const
+int32_t UiAppearanceAbility::GetCallingUserId()
 {
-    constexpr static int32_t UID_TRANSFORM_DIVISOR = 200000;
+    const static int32_t UID_TRANSFORM_DIVISOR = 200000;
+
+    LOGD("CallingUid = %{public}d", OHOS::IPCSkeleton::GetCallingUid());
     int32_t userId = OHOS::IPCSkeleton::GetCallingUid() / UID_TRANSFORM_DIVISOR;
-    if (UNLIKELY(userId == 0)) {
+    if (userId == 0) {
         auto errNo = AccountSA::OsAccountManager::GetForegroundOsAccountLocalId(userId);
         if (errNo != 0) {
             LOGE("CallingUid = %{public}d, GetForegroundOsAccountLocalId error:%{public}d",
@@ -557,20 +559,18 @@ UiAppearanceAbility::DarkMode UiAppearanceAbility::InitGetDarkMode(const int32_t
 
 int32_t UiAppearanceAbility::GetDarkMode()
 {
-    const auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
-    if (UNLIKELY(!isCallingPerm)) {
+    auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
+    if (!isCallingPerm) {
         LOGE("permission verification failed");
         return PERMISSION_ERR;
     }
 
     {
-        usersParamMutex_.lock();
+        std::lock_guard<std::mutex> guard(usersParamMutex_);
         auto it = usersParam_.find(GetCallingUserId());
-        if (LIKELY(it != usersParam_.end())) {
-            usersParamMutex_.unlock();
+        if (it != usersParam_.end()) {
             return it->second.darkMode;
         }
-        usersParamMutex_.unlock();
     }
 
     return DarkMode::ALWAYS_LIGHT;

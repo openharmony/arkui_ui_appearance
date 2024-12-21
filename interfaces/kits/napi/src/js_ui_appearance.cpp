@@ -305,8 +305,14 @@ static napi_value JSGetDarkMode(napi_env env, napi_callback_info info)
 
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
+    size_t argc = 0;
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, nullptr, nullptr, nullptr));
+    if (argc != 0) {
+        NapiThrow(env, "requires no parameter.", UiAppearanceAbilityInterface::ErrCode::INVALID_ARG);
+        return result;
+    }
 
-    const auto mode = UiAppearanceAbilityClient::GetInstance()->GetDarkMode();
+    auto mode = UiAppearanceAbilityClient::GetInstance()->GetDarkMode();
     if (mode == UiAppearanceAbilityInterface::ErrCode::SYS_ERR) {
         NapiThrow(env, "get dark-mode failed.", UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
         return result;
