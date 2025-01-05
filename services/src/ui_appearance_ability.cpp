@@ -26,9 +26,9 @@
 #include "iservice_registry.h"
 #include "matching_skills.h"
 #include "os_account_manager.h"
-#include "syspara/parameter.h"
 #include "system_ability_definition.h"
 #include "ui_appearance_log.h"
+#include "parameter_wrap.h"
 
 namespace {
 static const std::string LIGHT = "light";
@@ -54,10 +54,9 @@ const static std::string NOT_FIRST_UPGRADE = "0";
 namespace OHOS {
 namespace ArkUi::UiAppearance {
 
-UiAppearanceEventSubscriber::UiAppearanceEventSubscriber(
-    const EventFwk::CommonEventSubscribeInfo& subscriberInfo,
-    const std::function<void(const int32_t)>& userSwitchCallback): EventFwk::CommonEventSubscriber(subscriberInfo),
-    userSwitchCallback_(userSwitchCallback)
+UiAppearanceEventSubscriber::UiAppearanceEventSubscriber(const EventFwk::CommonEventSubscribeInfo& subscriberInfo,
+    const std::function<void(const int32_t)>& userSwitchCallback)
+    : EventFwk::CommonEventSubscriber(subscriberInfo), userSwitchCallback_(userSwitchCallback)
 {}
 
 void UiAppearanceEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData& data)
@@ -76,6 +75,10 @@ void UiAppearanceEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData
         TimeChangeCallback();
     } else if (action == EventFwk::CommonEventSupport::COMMON_EVENT_BOOT_COMPLETED) {
         BootCompetedCallback();
+    } else if (action == EventFwk::CommonEventSupport::COMMON_EVENT_SCREEN_OFF) {
+        DarkModeManager::GetInstance().ScreenOffCallback();
+    } else if (action == EventFwk::CommonEventSupport::COMMON_EVENT_SCREEN_ON) {
+        DarkModeManager::GetInstance().ScreenOnCallback();
     }
 }
 
@@ -243,7 +246,6 @@ void UiAppearanceAbility::DoInitProcess()
             std::lock_guard<std::mutex> guard(usersParamMutex_);
             usersParam_[userId] = tmpParam;
         }
-        
         LOGI("init userId:%{public}d, darkMode:%{public}s, fontSize:%{public}s, fontWeight:%{public}s", userId,
             darkValue.c_str(), fontSize.c_str(), fontWeight.c_str());
     }
@@ -302,7 +304,7 @@ void UiAppearanceAbility::UserSwitchFunc(const int32_t userId)
     }
 
     bool isForceUpdate = false;
-    if (code == ERR_OK) {
+    if (code == ERR_OK && manager.IsColorModeNormal(userId)) {
         DarkMode darkMode = isDarkMode ? ALWAYS_DARK : ALWAYS_LIGHT;
         std::lock_guard<std::mutex> guard(usersParamMutex_);
         if (usersParam_[userId].darkMode != darkMode) {
@@ -321,12 +323,13 @@ void UiAppearanceAbility::SubscribeCommonEvent()
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_USER_SWITCHED);
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_TIME_CHANGED);
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_TIMEZONE_CHANGED);
+    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_SCREEN_ON);
+    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_SCREEN_OFF);
     EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
     subscribeInfo.SetThreadMode(EventFwk::CommonEventSubscribeInfo::COMMON);
 
     uiAppearanceEventSubscriber_ = std::make_shared<UiAppearanceEventSubscriber>(
-        subscribeInfo,
-        [this](const int32_t userId) { UserSwitchFunc(userId); });
+        subscribeInfo, [this](const int32_t userId) { UserSwitchFunc(userId); });
     bool subResult = EventFwk::CommonEventManager::SubscribeCommonEvent(uiAppearanceEventSubscriber_);
     if (!subResult) {
         LOGW("subscribe user switch event error");
@@ -348,9 +351,8 @@ void UiAppearanceAbility::OnAddSystemAbility(int32_t systemAbilityId, const std:
         return false;
     };
     isNeedDoCompatibleProcess_ = checkIfFirstUpgrade();
-    DarkModeManager::GetInstance().Initialize([this](bool isDarkMode, int32_t userId) {
-        UpdateDarkModeCallback(isDarkMode, userId);
-    });
+    DarkModeManager::GetInstance().Initialize(
+        [this](bool isDarkMode, int32_t userId) { UpdateDarkModeCallback(isDarkMode, userId); });
     SubscribeCommonEvent();
     if (isNeedDoCompatibleProcess_ && !GetUserIds().empty()) {
         DoCompatibleProcess();
@@ -401,35 +403,6 @@ std::string UiAppearanceAbility::FontScaleParamAssignUser(const int32_t userId)
 std::string UiAppearanceAbility::FontWeightScaleParamAssignUser(const int32_t userId)
 {
     return FONT_WEIGHT_SCAL_FOR_NONE + std::to_string(userId);
-}
-
-bool UiAppearanceAbility::GetParameterWrap(
-    const std::string& paramName, std::string& value, const std::string& defaultValue)
-{
-    char buf[256] = { 0 };
-    auto res = GetParameter(paramName.c_str(), defaultValue.c_str(), buf, sizeof(buf));
-    if (res <= 0) {
-        LOGE("get parameter %{public}s failed", paramName.c_str());
-        return false;
-    }
-    LOGI("get parameter %{public}s:%{public}s", paramName.c_str(), value.c_str());
-    value = buf;
-    return true;
-}
-bool UiAppearanceAbility::GetParameterWrap(const std::string& paramName, std::string& value)
-{
-    const auto defaultValue = value;
-    return GetParameterWrap(paramName, value, defaultValue);
-}
-bool UiAppearanceAbility::SetParameterWrap(const std::string& paramName, const std::string& value)
-{
-    auto res = SetParameter(paramName.c_str(), value.c_str());
-    if (res != 0) {
-        LOGE("set parameter %{public}s failed", paramName.c_str());
-        return false;
-    }
-    LOGD("set parameter %{public}s:%{public}s", paramName.c_str(), value.c_str());
-    return true;
 }
 
 bool UiAppearanceAbility::UpdateConfiguration(const AppExecFwk::Configuration& configuration, const int32_t userId)
@@ -494,6 +467,8 @@ int32_t UiAppearanceAbility::OnSetDarkMode(const int32_t userId, DarkMode mode)
     if (!UpdateConfiguration(config, userId)) {
         return SYS_ERR;
     }
+
+    DarkModeManager::GetInstance().DoSwitchTemporaryColorMode(userId, mode == ALWAYS_DARK ? true : false);
 
     {
         std::lock_guard<std::mutex> guard(usersParamMutex_);
