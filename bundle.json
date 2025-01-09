@@ -28,6 +28,7 @@
         "ability_base",
         "access_token",
         "c_utils",
+        "data_share",
         "hicollie",
         "hilog",
         "init",
@@ -35,6 +36,7 @@
         "napi",
         "safwk",
         "samgr",
+        "time_service",
         "os_account",
         "common_event_service"
       ],
@@ -47,7 +49,7 @@
       "inner_kits": [
       ],
       "test": [
-        "//foundation/arkui/ui_appearance/test/unittest:ui_appearance_test"
+        "//foundation/arkui/ui_appearance/test/unittest:unittest"
       ]
     }
   }
