@@ -15,7 +15,10 @@ import("//build/ohos.gni")
 
 config("ui_appearance_service_config") {
   visibility = [ ":*" ]
-  include_dirs = [ "include" ]
+  include_dirs = [
+    "include",
+    "utils/include/",
+  ]
 }
 
 ohos_shared_library("ui_appearance_service") {
@@ -26,26 +29,50 @@ ohos_shared_library("ui_appearance_service") {
   }
 
   sources = [
+    "src/dark_mode_manager.cpp",
     "src/ui_appearance_ability.cpp",
     "src/ui_appearance_ability_stub.cpp",
+    "utils/src/alarm_timer.cpp",
+    "utils/src/alarm_timer_manager.cpp",
+    "utils/src/setting_data_manager.cpp",
+    "utils/src/setting_data_observer.cpp",
   ]
 
   public_configs = [ ":ui_appearance_service_config" ]
-  include_dirs = [ "include/" ]
-  deps = []
+
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-fvisibility-inlines-hidden",
+    "-Oz",
+    "-fdata-sections",
+    "-ffunction-sections",
+    "-fno-asynchronous-unwind-tables",
+    "-fno-unwind-tables",
+  ]
+  ldflags = [ "-Wl,--gc-sections" ]
+
+  include_dirs = [
+    "include/",
+    "utils/include/",
+  ]
+
   external_deps = [
     "ability_base:configuration",
     "ability_runtime:app_manager",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:wantagent_innerkits",
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "common_event_service:cesfwk_core",
     "common_event_service:cesfwk_innerkits",
+    "data_share:datashare_consumer",
     "hilog:libhilog",
     "init:libbegetutil",
     "ipc:ipc_single",
     "os_account:os_account_innerkits",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "time_service:time_client",
   ]
   subsystem_name = "arkui"
   part_name = "ui_appearance"
@@ -68,6 +95,18 @@ ohos_shared_library("ui_appearance_client") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-fvisibility-inlines-hidden",
+    "-Oz",
+    "-fdata-sections",
+    "-ffunction-sections",
+    "-fno-asynchronous-unwind-tables",
+    "-fno-unwind-tables",
+  ]
+  ldflags = [ "-Wl,--gc-sections" ]
+
   subsystem_name = "arkui"
   innerapi_tags = [ "platformsdk" ]
   part_name = "ui_appearance"
