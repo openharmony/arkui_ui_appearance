@@ -22,13 +22,15 @@
 #include "errors.h"
 #include "nocopyable.h"
 #include "alarm_timer_manager.h"
+#include "dark_mode_temp_state_manager.h"
+#include "screen_switch_operator_manager.h"
 
 namespace OHOS::ArkUi::UiAppearance {
 class DarkModeManager final : public NoCopyable {
 public:
     static DarkModeManager &GetInstance();
 
-    ErrCode Initialize(const std::function<void(bool, int32_t)> &updateCallback);
+    ErrCode Initialize(const std::function<void(bool, int32_t)>& updateCallback);
 
     ErrCode LoadUserSettingData(int32_t userId, bool needUpdateCallback, bool &isDarkMode);
 
@@ -36,9 +38,19 @@ public:
 
     ErrCode OnSwitchUser(int32_t userId);
 
+    void ScreenOnCallback();
+
+    void ScreenOffCallback();
+
     ErrCode RestartTimer();
 
     void Dump();
+
+    bool GetSettingTime(const int32_t userId, int32_t& settingStartTime, int32_t& settingEndTime);
+
+    bool IsColorModeNormal(const int32_t userId);
+
+    void DoSwitchTemporaryColorMode(const int32_t userId, bool isDarkMode);
 
 private:
     enum DarkModeMode {
@@ -67,18 +79,24 @@ private:
 
     void SettingDataDarkModeEndTimeUpdateFunc(const std::string& key, int32_t userId);
 
-    ErrCode OnStateChangeLocked(int32_t userId, bool needUpdateCallback, bool &isDarkMode);
+    ErrCode OnStateChangeLocked(
+        int32_t userId, bool needUpdateCallback, bool& isDarkMode, const bool resetTempColorModeFlag);
 
-    ErrCode OnStateChangeToAllDayMode(int32_t userId, DarkModeMode darkMode, bool needUpdateCallback, bool &isDarkMode);
+    ErrCode OnStateChangeToAllDayMode(int32_t userId, DarkModeMode darkMode, bool needUpdateCallback, bool& isDarkMode,
+        const bool resetTempColorModeFlag);
 
-    ErrCode OnStateChangeToCustomAutoMode(
-        int32_t userId, const DarkModeState& state, bool needUpdateCallback, bool &isDarkMode);
+    ErrCode OnStateChangeToCustomAutoMode(int32_t userId, const DarkModeState& state, bool needUpdateCallback,
+        bool& isDarkMode, const bool resetTempColorModeFlag);
 
-    void OnChangeDarkMode(DarkModeMode mode, int32_t userId) const;
+    void OnChangeDarkMode(DarkModeMode mode, int32_t userId);
 
     ErrCode CreateOrUpdateTimers(int32_t startTime, int32_t endTime, int32_t userId);
 
     ErrCode CheckTimerCallbackParams(int32_t startTime, int32_t endTime, int32_t userId);
+
+    void UpdateDarkModeSchedule(const DarkModeMode isDarkMode, const int32_t userId, const bool resetTempColorModeFlag);
+
+    bool IsDarkModeCustomAuto(const int32_t userId);
 
     std::mutex settingDataObserversMutex_;
     std::vector<std::pair<std::string, std::function<void(const std::string&, int32_t)>>> settingDataObservers_;
@@ -89,6 +107,9 @@ private:
     std::map<int32_t, DarkModeState> darkModeStates_;
 
     std::function<void(bool, int32_t)> updateCallback_;
+
+    TemporaryColorModeManager temporaryColorModeMgr_;
+    ScreenSwitchOperatorManager screenSwitchOperatorMgr_;
 };
 } // namespace OHOS::ArkUi::UiAppearance
 
