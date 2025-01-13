@@ -81,10 +81,6 @@ private:
     void UserSwitchFunc(const int32_t userId);
     void DoInitProcess();
 
-    bool GetParameterWrap(const std::string& paramName, std::string& value, const std::string& defaultValue);
-    bool GetParameterWrap(const std::string& paramName, std::string& value);
-    bool SetParameterWrap(const std::string& paramName, const std::string& value);
-
     void UpdateCurrentUserConfiguration(const int32_t userId, const bool isForceUpdate);
     int32_t OnSetDarkMode(const int32_t userId, DarkMode mode);
     UiAppearanceAbility::DarkMode InitGetDarkMode(const int32_t userId);

@@ -30,10 +30,13 @@ ohos_shared_library("ui_appearance_service") {
 
   sources = [
     "src/dark_mode_manager.cpp",
+    "src/dark_mode_temp_state_manager.cpp",
+    "src/screen_switch_operator_manager.cpp",
     "src/ui_appearance_ability.cpp",
     "src/ui_appearance_ability_stub.cpp",
     "utils/src/alarm_timer.cpp",
     "utils/src/alarm_timer_manager.cpp",
+    "utils/src/parameter_wrap.cpp",
     "utils/src/setting_data_manager.cpp",
     "utils/src/setting_data_observer.cpp",
   ]

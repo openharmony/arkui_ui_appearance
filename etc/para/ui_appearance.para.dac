@@ -18,3 +18,6 @@ persist.ace.darkmode. = uiserver:servicectrl:0700
 persist.sys.font_scale_for_user. = uiserver:servicectrl:0700
 persist.sys.font_wght_scale_for_user. = uiserver:servicectrl:0700
 persist.uiAppearance.first_initialization = uiserver:servicectrl:0700
+persist.uiAppearance.dark_mode_temp_state_flag. = uiserver:servicectrl:0700
+persist.uiAppearance.dark_mode_temp_state_start_time. = uiserver:servicectrl:0700
+persist.uiAppearance.dark_mode_temp_state_end_time. = uiserver:servicectrl:0700
