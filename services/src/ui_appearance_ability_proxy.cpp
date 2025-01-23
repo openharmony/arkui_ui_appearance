@@ -38,7 +38,7 @@ int32_t UiAppearanceAbilityProxy::SetDarkMode(UiAppearanceAbilityInterface::Dark
     auto res =
         Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::SET_DARK_MODE), data, reply, option);
     if (res != ERR_NONE) {
-        LOGE("SendRequest failed.");
+        LOGE("SendRequest failed %{public}d", res);
         return SYS_ERR;
     }
 
@@ -58,7 +58,7 @@ int32_t UiAppearanceAbilityProxy::GetDarkMode()
     auto res =
         Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::GET_DARK_MODE), data, reply, option);
     if (res != ERR_NONE) {
-        LOGE("SendRequest failed.");
+        LOGE("SendRequest failed %{public}d", res);
         return SYS_ERR;
     }
 
@@ -81,7 +81,7 @@ int32_t UiAppearanceAbilityProxy::SetFontScale(std::string &fontScale)
     auto res =
         Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::SET_FONT_SCALE), data, reply, option);
     if (res != ERR_NONE) {
-        LOGE("SendRequest failed.");
+        LOGE("SendRequest failed %{public}d", res);
         return SYS_ERR;
     }
 
@@ -101,7 +101,7 @@ int32_t UiAppearanceAbilityProxy::GetFontScale(std::string &fontScale)
     auto res =
         Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::GET_FONT_SCALE), data, reply, option);
     if (res != ERR_NONE) {
-        LOGE("SendRequest failed.");
+        LOGE("SendRequest failed %{public}d", res);
         return SYS_ERR;
     }
 
@@ -133,7 +133,7 @@ int32_t UiAppearanceAbilityProxy::SetFontWeightScale(std::string& fontWeightScal
         Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::SET_FONT_Weight_SCALE),
             data, reply, option);
     if (res != ERR_NONE) {
-        LOGE("SendRequest failed.");
+        LOGE("SendRequest failed %{public}d", res);
         return SYS_ERR;
     }
 
@@ -154,7 +154,7 @@ int32_t UiAppearanceAbilityProxy::GetFontWeightScale(std::string &fontWeightScal
         Remote()->SendRequest(static_cast<uint32_t>(UiAppearanceInterfaceCode::GET_FONT_Weight_SCALE),
             data, reply, option);
     if (res != ERR_NONE) {
-        LOGE("SendRequest failed.");
+        LOGE("SendRequest failed %{public}d", res);
         return SYS_ERR;
     }
 
