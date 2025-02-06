@@ -32,7 +32,7 @@ public:
 
 class __attribute__((visibility("default"))) UiAppearanceAbilityClient : public RefBase {
 public:
-    UiAppearanceAbilityClient() = default;
+    UiAppearanceAbilityClient();
     ~UiAppearanceAbilityClient() = default;
     static sptr<UiAppearanceAbilityClient> GetInstance();
 
@@ -46,12 +46,10 @@ public:
 
 private:
     sptr<UiAppearanceAbilityInterface> GetUiAppearanceServiceProxy();
-    static sptr<UiAppearanceAbilityInterface> CreateUiAppearanceServiceProxy();
+    sptr<UiAppearanceAbilityInterface> CreateUiAppearanceServiceProxy();
 
-    static inline std::mutex instanceLock_;
-    static inline sptr<UiAppearanceAbilityClient> instance_;
-    static inline sptr<UiAppearanceAbilityInterface> uiAppearanceServiceProxy_;
-    static inline sptr<UiAppearanceDeathRecipient> deathRecipient_;
+    std::mutex serviceProxyLock_;
+    sptr<UiAppearanceAbilityInterface> uiAppearanceServiceProxy_;
 };
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS
