@@ -27,18 +27,18 @@ namespace OHOS {
 namespace ArkUi::UiAppearance {
 sptr<UiAppearanceAbilityClient> UiAppearanceAbilityClient::GetInstance()
 {
-    if (!instance_) {
-        std::lock_guard<std::mutex> autoLock(instanceLock_);
-        if (!instance_) {
-            uiAppearanceServiceProxy_ = CreateUiAppearanceServiceProxy();
-            instance_ = new UiAppearanceAbilityClient;
-        }
-    }
-    return instance_;
+    static sptr<UiAppearanceAbilityClient> instance = new UiAppearanceAbilityClient;
+    return instance;
+}
+
+UiAppearanceAbilityClient::UiAppearanceAbilityClient()
+{
+    GetUiAppearanceServiceProxy();
 }
 
 sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::GetUiAppearanceServiceProxy()
 {
+    std::lock_guard guard(serviceProxyLock_);
     if (uiAppearanceServiceProxy_ == nullptr) {
         LOGE("Redo CreateUiAppearanceServiceProxy");
         uiAppearanceServiceProxy_ = CreateUiAppearanceServiceProxy();
@@ -52,7 +52,7 @@ int32_t UiAppearanceAbilityClient::SetDarkMode(UiAppearanceAbilityInterface::Dar
         LOGE("SetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
         return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
     }
-    return uiAppearanceServiceProxy_->SetDarkMode(mode);
+    return GetUiAppearanceServiceProxy()->SetDarkMode(mode);
 }
 
 int32_t UiAppearanceAbilityClient::GetDarkMode()
@@ -61,7 +61,7 @@ int32_t UiAppearanceAbilityClient::GetDarkMode()
         LOGE("GetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
         return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
     }
-    return uiAppearanceServiceProxy_->GetDarkMode();
+    return GetUiAppearanceServiceProxy()->GetDarkMode();
 }
 
 int32_t UiAppearanceAbilityClient::SetFontScale(std::string &fontScale)
@@ -70,7 +70,7 @@ int32_t UiAppearanceAbilityClient::SetFontScale(std::string &fontScale)
         LOGE("SetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
         return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
     }
-    return uiAppearanceServiceProxy_->SetFontScale(fontScale);
+    return GetUiAppearanceServiceProxy()->SetFontScale(fontScale);
 }
 
 int32_t UiAppearanceAbilityClient::GetFontScale(std::string &fontScale)
@@ -81,7 +81,7 @@ int32_t UiAppearanceAbilityClient::GetFontScale(std::string &fontScale)
     }
     int id = HiviewDFX::XCollie::GetInstance().SetTimer(
         "GetFontScale", 10, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
-    auto res = uiAppearanceServiceProxy_->GetFontScale(fontScale);
+    auto res = GetUiAppearanceServiceProxy()->GetFontScale(fontScale);
     HiviewDFX::XCollie::GetInstance().CancelTimer(id);
     return res;
 }
@@ -92,7 +92,7 @@ int32_t UiAppearanceAbilityClient::SetFontWeightScale(std::string &fontWeightSca
         LOGE("SetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
         return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
     }
-    return uiAppearanceServiceProxy_->SetFontWeightScale(fontWeightScale);
+    return GetUiAppearanceServiceProxy()->SetFontWeightScale(fontWeightScale);
 }
 
 int32_t UiAppearanceAbilityClient::GetFontWeightScale(std::string &fontWeightScale)
@@ -101,7 +101,7 @@ int32_t UiAppearanceAbilityClient::GetFontWeightScale(std::string &fontWeightSca
         LOGE("GetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
         return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
     }
-    return uiAppearanceServiceProxy_->GetFontWeightScale(fontWeightScale);
+    return GetUiAppearanceServiceProxy()->GetFontWeightScale(fontWeightScale);
 }
 
 sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::CreateUiAppearanceServiceProxy()
@@ -119,7 +119,7 @@ sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::CreateUiAppearance
         return nullptr;
     }
 
-    deathRecipient_ = new UiAppearanceDeathRecipient;
+    sptr<UiAppearanceDeathRecipient> deathRecipient_ = new UiAppearanceDeathRecipient;
     systemAbility->AddDeathRecipient(deathRecipient_);
     sptr<UiAppearanceAbilityInterface> uiAppearanceServiceProxy =
         iface_cast<UiAppearanceAbilityInterface>(systemAbility);
@@ -134,6 +134,7 @@ sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::CreateUiAppearance
 void UiAppearanceAbilityClient::OnRemoteSaDied(const wptr<IRemoteObject>& remote)
 {
     // Used for new connections after the service may be disconnected.
+    std::lock_guard guard(serviceProxyLock_);
     uiAppearanceServiceProxy_ = CreateUiAppearanceServiceProxy();
 }
 

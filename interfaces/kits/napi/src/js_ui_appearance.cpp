@@ -30,11 +30,19 @@ const std::string PERMISSION_ERR_MSG =
     "An attempt was made to update configuration forbidden by permission: ohos.permission.UPDATE_CONFIGURATION.";
 const std::string INVALID_ARG_MSG = "The type of 'mode' must be DarkMode.";
 
-static const std::unordered_map<int32_t, std::string> ERROR_CODE_TO_MSG {
-    { UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR, "Permission denied. " },
-    { UiAppearanceAbilityInterface::ErrCode::INVALID_ARG, "Parameter error. " },
-    { UiAppearanceAbilityInterface::ErrCode::SYS_ERR, "Internal error. " },
-};
+std::string ParseErrCode(const int32_t errCode)
+{
+    switch (errCode) {
+        case UiAppearanceAbilityInterface::ErrCode::PERMISSION_ERR:
+            return "Permission denied. ";
+        case UiAppearanceAbilityInterface::ErrCode::INVALID_ARG:
+            return "Parameter error. ";
+        case UiAppearanceAbilityInterface::ErrCode::SYS_ERR:
+            return "Internal error. ";
+        default:
+            return "";
+    }
+}
 
 void NapiThrow(napi_env env, const std::string& message, int32_t errCode)
 {
@@ -43,8 +51,7 @@ void NapiThrow(napi_env env, const std::string& message, int32_t errCode)
     napi_create_string_utf8(env, strCode.c_str(), strCode.length(), &code);
 
     napi_value msg = nullptr;
-    auto iter = ERROR_CODE_TO_MSG.find(errCode);
-    std::string strMsg = (iter != ERROR_CODE_TO_MSG.end() ? iter->second : "") + message;
+    std::string strMsg = ParseErrCode(errCode) + message;
     LOGI("napi throw errCode %{public}d, strMsg %{public}s", errCode, strMsg.c_str());
     napi_create_string_utf8(env, strMsg.c_str(), strMsg.length(), &msg);
 
@@ -157,8 +164,7 @@ void JsUiAppearance::OnComplete(napi_env env, napi_status status, void* data)
         napi_create_string_utf8(env, strCode.c_str(), strCode.length(), &code);
 
         napi_value msg = nullptr;
-        auto iter = ERROR_CODE_TO_MSG.find(asyncContext->status);
-        std::string strMsg = (iter != ERROR_CODE_TO_MSG.end() ? iter->second : "") + asyncContext->errMsg;
+        std::string strMsg = ParseErrCode(asyncContext->status) + asyncContext->errMsg;
         LOGI("napi throw errCode %{public}d, strMsg %{public}s", asyncContext->status, strMsg.c_str());
         napi_create_string_utf8(env, strMsg.c_str(), strMsg.length(), &msg);
 
