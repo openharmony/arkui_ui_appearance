@@ -17,7 +17,7 @@
 #define UI_APPEARANCE_DARK_MODE_MANAGER_H
 
 #include <functional>
-#include <vector>
+#include <list>
 
 #include "errors.h"
 #include "nocopyable.h"
@@ -99,7 +99,7 @@ private:
     bool IsDarkModeCustomAuto(const int32_t userId);
 
     std::mutex settingDataObserversMutex_;
-    std::vector<std::pair<std::string, std::function<void(const std::string&, int32_t)>>> settingDataObservers_;
+    std::list<std::pair<std::string, std::function<void(const std::string&, int32_t)>>> settingDataObservers_;
     int32_t settingDataObserversUserId_ = -1;
 
     AlarmTimerManager alarmTimerManager_;

@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-#include <functional>
-#include <vector>
 #include <mutex>
 #include "screen_switch_operator_manager.h"
 
