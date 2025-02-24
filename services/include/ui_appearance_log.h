@@ -18,11 +18,12 @@
 
 #include "hilog/log.h"
 
-#define UIAPPERANCE_FILE_NAME (__builtin_strrchr(__FILE__, '/') ? __builtin_strrchr(__FILE__, '/') + 1 : __FILE__)
+#define UIAPPERANCE_FILE_NAME \
+    (__builtin_strrchr(__FILE_NAME__, '/') ? __builtin_strrchr(__FILE_NAME__, '/') + 1 : __FILE_NAME__)
 
 #define PRINT_LOG(level, fmt, ...) \
-    HILOG_IMPL(LOG_CORE, LOG_##level, 0xD003900, "UiAppearance", "[%{public}s:%{public}s:%{public}d]" fmt, \
-        UIAPPERANCE_FILE_NAME, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+    HILOG_IMPL(LOG_CORE, LOG_##level, 0xD003900, "UiAppearance", "[%{public}s:%{public}d]" fmt, \
+        UIAPPERANCE_FILE_NAME, __LINE__, ##__VA_ARGS__)
 
 #define LOGE(fmt, ...) PRINT_LOG(ERROR, fmt, ##__VA_ARGS__)
 #define LOGW(fmt, ...) PRINT_LOG(WARN, fmt, ##__VA_ARGS__)

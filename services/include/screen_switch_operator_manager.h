@@ -16,8 +16,6 @@
 #ifndef UI_APPEARANCE_SCREEN_SWITCH_OPERATOR_MANAGER_H
 #define UI_APPEARANCE_SCREEN_SWITCH_OPERATOR_MANAGER_H
 
-#include <functional>
-#include <vector>
 #include <mutex>
 
 
