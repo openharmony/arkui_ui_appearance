@@ -162,7 +162,7 @@ void UiAppearanceAbility::OnStop()
     LOGI("UiAppearanceAbility SA stop.");
 }
 
-std::vector<int32_t> UiAppearanceAbility::GetUserIds()
+std::list<int32_t> UiAppearanceAbility::GetUserIds()
 {
     std::vector<AccountSA::OsAccountInfo> infos;
     auto errCode = AccountSA::OsAccountManager::QueryAllCreatedOsAccounts(infos);
@@ -170,7 +170,7 @@ std::vector<int32_t> UiAppearanceAbility::GetUserIds()
         LOGW("QueryAllCreatedOsAccounts error: %{public}d.", errCode);
         return {};
     }
-    std::vector<int32_t> ids;
+    std::list<int32_t> ids;
     for (const auto& info : infos) {
         ids.push_back(info.GetLocalId());
     }
@@ -189,7 +189,7 @@ void UiAppearanceAbility::DoCompatibleProcess()
         return GetParameterWrap(paramName, value);
     };
 
-    const std::vector<int32_t> userIds = GetUserIds();
+    const std::list<int32_t> userIds = GetUserIds();
     std::string darkMode = LIGHT;
     if (getOldParam(PERSIST_DARKMODE_KEY, darkMode)) {
         for (auto id : userIds) {
@@ -227,7 +227,7 @@ void UiAppearanceAbility::DoCompatibleProcess()
 void UiAppearanceAbility::DoInitProcess()
 {
     LOGI("DoInitProcess");
-    const std::vector<int32_t> userIds = GetUserIds();
+    const std::list<int32_t> userIds = GetUserIds();
     for (auto userId : userIds) {
         std::string darkValue = LIGHT;
         GetParameterWrap(DarkModeParamAssignUser(userId), darkValue);

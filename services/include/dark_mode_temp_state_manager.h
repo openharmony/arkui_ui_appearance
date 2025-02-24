@@ -16,10 +16,6 @@
 #ifndef UI_APPEARANCE_DARK_MODE_TEMP_STATE_MANAGER_H
 #define UI_APPEARANCE_DARK_MODE_TEMP_STATE_MANAGER_H
 
-#include <functional>
-#include <vector>
-
-#include "errors.h"
 #include "map"
 #include "mutex"
 
