@@ -77,7 +77,7 @@ private:
     bool UpdateConfiguration(const AppExecFwk::Configuration& configuration, const int32_t userId);
     void DoCompatibleProcess();
     int32_t GetCallingUserId();
-    std::vector<int32_t> GetUserIds();
+    std::list<int32_t> GetUserIds();
     void UserSwitchFunc(const int32_t userId);
     void DoInitProcess();
 
