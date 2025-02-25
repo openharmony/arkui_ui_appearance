@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Huawei Device Co., Ltd.
+ * Copyright (C) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +19,8 @@
 #include <string>
 #include "iremote_object.h"
 #include "refbase.h"
-#include "ui_appearance_ability_interface.h"
+#include "iui_appearance_ability.h"
+#include "ui_appearance_types.h"
 
 namespace OHOS {
 namespace ArkUi::UiAppearance {
@@ -36,7 +37,7 @@ public:
     ~UiAppearanceAbilityClient() = default;
     static sptr<UiAppearanceAbilityClient> GetInstance();
 
-    int32_t SetDarkMode(UiAppearanceAbilityInterface::DarkMode mode);
+    int32_t SetDarkMode(DarkMode mode);
     int32_t GetDarkMode();
     int32_t GetFontScale(std::string& fontScale);
     int32_t SetFontScale(std::string& fontScale);
@@ -45,11 +46,11 @@ public:
     void OnRemoteSaDied(const wptr<IRemoteObject>& object);
 
 private:
-    sptr<UiAppearanceAbilityInterface> GetUiAppearanceServiceProxy();
-    sptr<UiAppearanceAbilityInterface> CreateUiAppearanceServiceProxy();
+    sptr<IUiAppearanceAbility> GetUiAppearanceServiceProxy();
+    sptr<IUiAppearanceAbility> CreateUiAppearanceServiceProxy();
 
     std::mutex serviceProxyLock_;
-    sptr<UiAppearanceAbilityInterface> uiAppearanceServiceProxy_;
+    sptr<IUiAppearanceAbility> uiAppearanceServiceProxy_;
 };
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS
