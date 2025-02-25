@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Huawei Device Co., Ltd.
+ * Copyright (C) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -95,15 +95,17 @@ HWTEST_F(DarkModeTest, ui_appearance_test_001, TestSize.Level0)
     LOGI("Test SetDarkMode and GetDarkMode APIs when setting dark/light.");
 
     auto test = DarkModeTest::GetUiAppearanceAbilityTest();
-    auto result = test->SetDarkMode(UiAppearanceAbilityInterface::DarkMode::ALWAYS_DARK);
+    int32_t result = -1;
+    test->SetDarkMode(DarkMode::ALWAYS_DARK, result);
     EXPECT_EQ(result, 0);
-    auto mode = test->GetDarkMode();
-    EXPECT_EQ(mode, UiAppearanceAbilityInterface::DarkMode::ALWAYS_DARK);
+    int32_t mode = -1;
+    test->GetDarkMode(mode);
+    EXPECT_EQ(mode, DarkMode::ALWAYS_DARK);
 
-    result = test->SetDarkMode(UiAppearanceAbilityInterface::DarkMode::ALWAYS_LIGHT);
+    test->SetDarkMode(DarkMode::ALWAYS_LIGHT, result);
     EXPECT_EQ(result, 0);
-    mode = test->GetDarkMode();
-    EXPECT_EQ(mode, UiAppearanceAbilityInterface::DarkMode::ALWAYS_LIGHT);
+    test->GetDarkMode(mode);
+    EXPECT_EQ(mode, DarkMode::ALWAYS_LIGHT);
 }
 
 /**
@@ -116,25 +118,27 @@ HWTEST_F(DarkModeTest, ui_appearance_test_002, TestSize.Level0)
     LOGI("Test SetDarkMode and GetDarkMode APIs when repeatedly setting dark/light.");
 
     auto test = DarkModeTest::GetUiAppearanceAbilityTest();
-    auto result = test->SetDarkMode(UiAppearanceAbilityInterface::DarkMode::ALWAYS_DARK);
-    EXPECT_EQ(result, UiAppearanceAbilityInterface::ErrCode::SUCCEEDED);
-    auto mode = test->GetDarkMode();
-    EXPECT_EQ(mode, UiAppearanceAbilityInterface::DarkMode::ALWAYS_DARK);
+    int32_t result = -1;
+    test->SetDarkMode(DarkMode::ALWAYS_DARK, result);
+    EXPECT_EQ(result, UiAppearanceAbilityErrCode::SUCCEEDED);
+    int32_t mode = -1;
+    test->GetDarkMode(mode);
+    EXPECT_EQ(mode, DarkMode::ALWAYS_DARK);
 
-    result = test->SetDarkMode(UiAppearanceAbilityInterface::DarkMode::ALWAYS_DARK);
-    EXPECT_EQ(result, UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
-    mode = test->GetDarkMode();
-    EXPECT_EQ(mode, UiAppearanceAbilityInterface::DarkMode::ALWAYS_DARK);
+    test->SetDarkMode(DarkMode::ALWAYS_DARK, result);
+    EXPECT_EQ(result, UiAppearanceAbilityErrCode::SYS_ERR);
+    test->GetDarkMode(mode);
+    EXPECT_EQ(mode, DarkMode::ALWAYS_DARK);
 
-    result = test->SetDarkMode(UiAppearanceAbilityInterface::DarkMode::ALWAYS_LIGHT);
-    EXPECT_EQ(result, UiAppearanceAbilityInterface::ErrCode::SUCCEEDED);
-    mode = test->GetDarkMode();
-    EXPECT_EQ(mode, UiAppearanceAbilityInterface::DarkMode::ALWAYS_LIGHT);
+    test->SetDarkMode(DarkMode::ALWAYS_LIGHT, result);
+    EXPECT_EQ(result, UiAppearanceAbilityErrCode::SUCCEEDED);
+    test->GetDarkMode(mode);
+    EXPECT_EQ(mode, DarkMode::ALWAYS_LIGHT);
 
-    result = test->SetDarkMode(UiAppearanceAbilityInterface::DarkMode::ALWAYS_LIGHT);
-    EXPECT_EQ(result, UiAppearanceAbilityInterface::ErrCode::SYS_ERR);
-    mode = test->GetDarkMode();
-    EXPECT_EQ(mode, UiAppearanceAbilityInterface::DarkMode::ALWAYS_LIGHT);
+    test->SetDarkMode(DarkMode::ALWAYS_LIGHT, result);
+    EXPECT_EQ(result, UiAppearanceAbilityErrCode::SYS_ERR);
+    test->GetDarkMode(mode);
+    EXPECT_EQ(mode, DarkMode::ALWAYS_LIGHT);
 }
 
 /**
@@ -146,8 +150,8 @@ HWTEST_F(DarkModeTest, ui_appearance_test_003, TestSize.Level0)
 {
     LOGI("Test the SetDarkMode API when setting an unexpected value.");
 
-    int result =
-        DarkModeTest::GetUiAppearanceAbilityTest()->SetDarkMode(UiAppearanceAbilityInterface::DarkMode::UNKNOWN);
+    int32_t result = -1;
+    DarkModeTest::GetUiAppearanceAbilityTest()->SetDarkMode(DarkMode::UNKNOWN, result);
     EXPECT_NE(result, 0);
 }
 
@@ -161,13 +165,12 @@ HWTEST_F(DarkModeTest, ui_appearance_test_004, TestSize.Level0)
     LOGI("Test the font API");
 
     std::string fontScale;
-    int result =
-        DarkModeTest::GetUiAppearanceAbilityTest()->GetFontScale(fontScale);
+    int32_t result = -1;
+    DarkModeTest::GetUiAppearanceAbilityTest()->GetFontScale(fontScale, result);
     EXPECT_EQ(result, 0);
 
     std::string fontWeightScale;
-    result =
-        DarkModeTest::GetUiAppearanceAbilityTest()->GetFontWeightScale(fontWeightScale);
+    DarkModeTest::GetUiAppearanceAbilityTest()->GetFontWeightScale(fontWeightScale, result);
     EXPECT_EQ(result, 0);
 }
 

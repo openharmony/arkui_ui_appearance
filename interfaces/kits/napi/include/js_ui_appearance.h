@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -33,8 +33,8 @@ struct AsyncContext {
     double jsFontScale = 0;
     double jsFontWeightScale = 0;
     std::string errMsg;
-    UiAppearanceAbilityInterface::ErrCode status;
-    UiAppearanceAbilityInterface::DarkMode mode;
+    UiAppearanceAbilityErrCode status;
+    DarkMode mode;
     std::string fontScale;
     std::string fontWeightScale;
 };
@@ -47,7 +47,7 @@ public:
     static void OnSetFontWeightScale(napi_env env, void* data);
     static napi_status CheckArgs(napi_env env, size_t argc, napi_value* argv);
     static napi_status CheckFontScaleArgs(napi_env env, size_t argc, napi_value* argv);
-    static UiAppearanceAbilityInterface::DarkMode ConvertJsDarkMode2Enum(int32_t jsVal);
+    static DarkMode ConvertJsDarkMode2Enum(int32_t jsVal);
 };
 
 napi_value JSSetDarkModeSync(napi_env env, napi_callback_info info);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Huawei Device Co., Ltd.
+ * Copyright (C) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,7 +36,7 @@ UiAppearanceAbilityClient::UiAppearanceAbilityClient()
     GetUiAppearanceServiceProxy();
 }
 
-sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::GetUiAppearanceServiceProxy()
+sptr<IUiAppearanceAbility> UiAppearanceAbilityClient::GetUiAppearanceServiceProxy()
 {
     std::lock_guard guard(serviceProxyLock_);
     if (uiAppearanceServiceProxy_ == nullptr) {
@@ -46,65 +46,94 @@ sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::GetUiAppearanceSer
     return uiAppearanceServiceProxy_;
 }
 
-int32_t UiAppearanceAbilityClient::SetDarkMode(UiAppearanceAbilityInterface::DarkMode mode)
+int32_t UiAppearanceAbilityClient::SetDarkMode(DarkMode mode)
 {
     if (!GetUiAppearanceServiceProxy()) {
         LOGE("SetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
-        return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
+        return UiAppearanceAbilityErrCode::SYS_ERR;
     }
-    return GetUiAppearanceServiceProxy()->SetDarkMode(mode);
+    int32_t funcRes = -1;
+    auto res = GetUiAppearanceServiceProxy()->SetDarkMode(mode, funcRes);
+    if (res != ERR_OK) {
+        return UiAppearanceAbilityErrCode::SYS_ERR;
+    }
+    return funcRes;
 }
 
 int32_t UiAppearanceAbilityClient::GetDarkMode()
 {
     if (!GetUiAppearanceServiceProxy()) {
         LOGE("GetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
-        return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
+        return UiAppearanceAbilityErrCode::SYS_ERR;
     }
-    return GetUiAppearanceServiceProxy()->GetDarkMode();
+    int32_t funcRes = -1;
+    auto res = GetUiAppearanceServiceProxy()->GetDarkMode(funcRes);
+    if (res != ERR_OK) {
+        return UiAppearanceAbilityErrCode::SYS_ERR;
+    }
+    return funcRes;
 }
 
 int32_t UiAppearanceAbilityClient::SetFontScale(std::string &fontScale)
 {
     if (!GetUiAppearanceServiceProxy()) {
         LOGE("SetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
-        return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
+        return UiAppearanceAbilityErrCode::SYS_ERR;
     }
-    return GetUiAppearanceServiceProxy()->SetFontScale(fontScale);
+    int32_t funcRes = -1;
+    auto res = GetUiAppearanceServiceProxy()->SetFontScale(fontScale, funcRes);
+    if (res != ERR_OK) {
+        return UiAppearanceAbilityErrCode::SYS_ERR;
+    }
+    return funcRes;
 }
 
 int32_t UiAppearanceAbilityClient::GetFontScale(std::string &fontScale)
 {
     if (!GetUiAppearanceServiceProxy()) {
         LOGE("GetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
-        return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
+        return UiAppearanceAbilityErrCode::SYS_ERR;
     }
     int id = HiviewDFX::XCollie::GetInstance().SetTimer(
         "GetFontScale", 10, nullptr, nullptr, HiviewDFX::XCOLLIE_FLAG_LOG);
-    auto res = GetUiAppearanceServiceProxy()->GetFontScale(fontScale);
+    int32_t funcRes = -1;
+    auto res = GetUiAppearanceServiceProxy()->GetFontScale(fontScale, funcRes);
     HiviewDFX::XCollie::GetInstance().CancelTimer(id);
-    return res;
+    if (res != ERR_OK) {
+        return UiAppearanceAbilityErrCode::SYS_ERR;
+    }
+    return funcRes;
 }
 
 int32_t UiAppearanceAbilityClient::SetFontWeightScale(std::string &fontWeightScale)
 {
     if (!GetUiAppearanceServiceProxy()) {
         LOGE("SetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
-        return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
+        return UiAppearanceAbilityErrCode::SYS_ERR;
     }
-    return GetUiAppearanceServiceProxy()->SetFontWeightScale(fontWeightScale);
+    int32_t funcRes = -1;
+    auto res = GetUiAppearanceServiceProxy()->SetFontWeightScale(fontWeightScale, funcRes);
+    if (res != ERR_OK) {
+        return UiAppearanceAbilityErrCode::SYS_ERR;
+    }
+    return funcRes;
 }
 
 int32_t UiAppearanceAbilityClient::GetFontWeightScale(std::string &fontWeightScale)
 {
     if (!GetUiAppearanceServiceProxy()) {
         LOGE("GetDarkMode quit because redoing CreateUiAppearanceServiceProxy failed.");
-        return UiAppearanceAbilityInterface::ErrCode::SYS_ERR;
+        return UiAppearanceAbilityErrCode::SYS_ERR;
     }
-    return GetUiAppearanceServiceProxy()->GetFontWeightScale(fontWeightScale);
+    int32_t funcRes = -1;
+    auto res = GetUiAppearanceServiceProxy()->GetFontWeightScale(fontWeightScale, funcRes);
+    if (res != ERR_OK) {
+        return UiAppearanceAbilityErrCode::SYS_ERR;
+    }
+    return funcRes;
 }
 
-sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::CreateUiAppearanceServiceProxy()
+sptr<IUiAppearanceAbility> UiAppearanceAbilityClient::CreateUiAppearanceServiceProxy()
 {
     sptr<ISystemAbilityManager> systemAbilityManager =
         SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -121,8 +150,8 @@ sptr<UiAppearanceAbilityInterface> UiAppearanceAbilityClient::CreateUiAppearance
 
     sptr<UiAppearanceDeathRecipient> deathRecipient_ = new UiAppearanceDeathRecipient;
     systemAbility->AddDeathRecipient(deathRecipient_);
-    sptr<UiAppearanceAbilityInterface> uiAppearanceServiceProxy =
-        iface_cast<UiAppearanceAbilityInterface>(systemAbility);
+    sptr<IUiAppearanceAbility> uiAppearanceServiceProxy =
+        iface_cast<IUiAppearanceAbility>(systemAbility);
     if (uiAppearanceServiceProxy == nullptr) {
         LOGE("Get uiAppearanceServiceProxy from SA failed.");
         return nullptr;
