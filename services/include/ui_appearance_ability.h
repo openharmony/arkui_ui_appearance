@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,6 +23,7 @@
 #include "appmgr/app_mgr_proxy.h"
 #include "common_event_manager.h"
 #include "system_ability.h"
+#include "ui_appearance_types.h"
 #include "ui_appearance_ability_stub.h"
 
 namespace OHOS {
@@ -55,12 +56,12 @@ public:
     UiAppearanceAbility(int32_t saId, bool runOnCreate);
     ~UiAppearanceAbility() = default;
 
-    int32_t SetDarkMode(DarkMode mode) override;
-    int32_t GetDarkMode() override;
-    int32_t GetFontScale(std::string& fontScale) override;
-    int32_t SetFontScale(std::string& fontScale) override;
-    int32_t GetFontWeightScale(std::string& fontWeightScale) override;
-    int32_t SetFontWeightScale(std::string& fontWeightScale) override;
+    ErrCode SetDarkMode(int32_t mode, int32_t& funcResult) override;
+    ErrCode GetDarkMode(int32_t& funcResult) override;
+    ErrCode GetFontScale(std::string& fontScale, int32_t& funcResult) override;
+    ErrCode SetFontScale(std::string& fontScale, int32_t& funcResult) override;
+    ErrCode GetFontWeightScale(std::string& fontWeightScale, int32_t& funcResult) override;
+    ErrCode SetFontWeightScale(std::string& fontWeightScale, int32_t& funcResult) override;
 
 protected:
     void OnStart() override;
@@ -83,7 +84,7 @@ private:
 
     void UpdateCurrentUserConfiguration(const int32_t userId, const bool isForceUpdate);
     int32_t OnSetDarkMode(const int32_t userId, DarkMode mode);
-    UiAppearanceAbility::DarkMode InitGetDarkMode(const int32_t userId);
+    DarkMode InitGetDarkMode(const int32_t userId);
     int32_t OnSetFontScale(const int32_t userId, std::string& fontScale);
     int32_t OnSetFontWeightScale(const int32_t userId, std::string& fontWeightScale);
     std::string DarkNodeConfigurationAssignUser(const int32_t userId);

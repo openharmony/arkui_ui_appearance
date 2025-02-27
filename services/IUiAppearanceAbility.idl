@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,21 +13,11 @@
  * limitations under the License.
  */
 
-#ifndef UI_APPEARANCE_IPC_INTERFACE_CODE_H
-#define UI_APPEARANCE_IPC_INTERFACE_CODE_H
-
-/* SAID: 7002 */
-namespace OHOS {
-namespace ArkUi::UiAppearance {
-enum class UiAppearanceInterfaceCode {
-    SET_DARK_MODE = 1,
-    GET_DARK_MODE = 2,
-    GET_FONT_SCALE = 3,
-    SET_FONT_SCALE = 4,
-    GET_FONT_Weight_SCALE = 5,
-    SET_FONT_Weight_SCALE = 6,
-};
-} // namespace ArkUi::UiAppearance
-} // namespace OHOS
-
-#endif // UI_APPEARANCE_IPC_INTERFACE_CODE_H
+interface OHOS.ArkUi.UiAppearance.IUiAppearanceAbility {
+    int SetDarkMode([in] int darkMode);
+    int GetDarkMode();
+    int GetFontScale([out] String fontScale);
+    int SetFontScale([out] String fontScale);
+    int GetFontWeightScale([out] String fontWeightScale);
+    int SetFontWeightScale([out] String fontWeightScale);
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -487,17 +487,19 @@ int32_t UiAppearanceAbility::OnSetDarkMode(const int32_t userId, DarkMode mode)
     return SUCCEEDED;
 }
 
-int32_t UiAppearanceAbility::SetDarkMode(DarkMode mode)
+ErrCode UiAppearanceAbility::SetDarkMode(int32_t mode, int32_t& funcResult)
 {
     // Verify permissions
+    DarkMode darkMode = static_cast<DarkMode>(mode);
     auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
     if (!isCallingPerm) {
         LOGE("permission verification failed");
-        return PERMISSION_ERR;
+        funcResult = PERMISSION_ERR;
+        return funcResult;
     }
 
     auto userId = GetCallingUserId();
-    DarkMode currentDarkMode = ALWAYS_LIGHT;
+    DarkMode currentDarkMode = DarkMode::ALWAYS_LIGHT;
     {
         std::lock_guard<std::mutex> guard(usersParamMutex_);
         auto it = usersParam_.find(userId);
@@ -505,15 +507,17 @@ int32_t UiAppearanceAbility::SetDarkMode(DarkMode mode)
             currentDarkMode = it->second.darkMode;
         }
     }
-    if (mode != currentDarkMode) {
-        return OnSetDarkMode(userId, mode);
+    if (darkMode != currentDarkMode) {
+        funcResult = OnSetDarkMode(userId, darkMode);
+        return funcResult;
     } else {
-        LOGW("current color mode is %{public}d, no need to change", mode);
-        return SYS_ERR;
+        LOGW("current color mode is %{public}d, no need to change", darkMode);
+        funcResult = SYS_ERR;
+        return funcResult;
     }
 }
 
-UiAppearanceAbility::DarkMode UiAppearanceAbility::InitGetDarkMode(const int32_t userId)
+DarkMode UiAppearanceAbility::InitGetDarkMode(const int32_t userId)
 {
     std::string valueGet = LIGHT;
 
@@ -532,23 +536,26 @@ UiAppearanceAbility::DarkMode UiAppearanceAbility::InitGetDarkMode(const int32_t
     return ALWAYS_LIGHT;
 }
 
-int32_t UiAppearanceAbility::GetDarkMode()
+ErrCode UiAppearanceAbility::GetDarkMode(int32_t& funcResult)
 {
     auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
     if (!isCallingPerm) {
         LOGE("permission verification failed");
-        return PERMISSION_ERR;
+        funcResult = PERMISSION_ERR;
+        return funcResult;
     }
 
     {
         std::lock_guard<std::mutex> guard(usersParamMutex_);
         auto it = usersParam_.find(GetCallingUserId());
         if (it != usersParam_.end()) {
-            return it->second.darkMode;
+            funcResult = it->second.darkMode;
+            return funcResult;
         }
     }
 
-    return DarkMode::ALWAYS_LIGHT;
+    funcResult = DarkMode::ALWAYS_LIGHT;
+    return funcResult;
 }
 
 int32_t UiAppearanceAbility::OnSetFontScale(const int32_t userId, std::string& fontScale)
@@ -579,28 +586,32 @@ int32_t UiAppearanceAbility::OnSetFontScale(const int32_t userId, std::string& f
     return SUCCEEDED;
 }
 
-int32_t UiAppearanceAbility::SetFontScale(std::string& fontScale)
+ErrCode UiAppearanceAbility::SetFontScale(std::string& fontScale, int32_t& funcResult)
 {
     // Verify permissions
     auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
     if (!isCallingPerm) {
         LOGE("permission verification failed");
-        return PERMISSION_ERR;
+        funcResult = PERMISSION_ERR;
+        return funcResult;
     }
     if (!fontScale.empty()) {
-        return OnSetFontScale(GetCallingUserId(), fontScale);
+        funcResult = OnSetFontScale(GetCallingUserId(), fontScale);
+        return funcResult;
     } else {
         LOGE("current fontScale is empty!");
     }
-    return SYS_ERR;
+    funcResult = SYS_ERR;
+    return funcResult;
 }
 
-int32_t UiAppearanceAbility::GetFontScale(std::string& fontScale)
+ErrCode UiAppearanceAbility::GetFontScale(std::string& fontScale, int32_t& funcResult)
 {
     auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
     if (!isCallingPerm) {
         LOGE("permission verification failed");
-        return PERMISSION_ERR;
+        funcResult = PERMISSION_ERR;
+        return funcResult;
     }
     {
         std::lock_guard<std::mutex> guard(usersParamMutex_);
@@ -612,7 +623,8 @@ int32_t UiAppearanceAbility::GetFontScale(std::string& fontScale)
         }
     }
     LOGD("get font scale :%{public}s", fontScale.c_str());
-    return SUCCEEDED;
+    funcResult = SUCCEEDED;
+    return funcResult;
 }
 
 int32_t UiAppearanceAbility::OnSetFontWeightScale(const int32_t userId, std::string& fontWeightScale)
@@ -645,28 +657,32 @@ int32_t UiAppearanceAbility::OnSetFontWeightScale(const int32_t userId, std::str
     return SUCCEEDED;
 }
 
-int32_t UiAppearanceAbility::SetFontWeightScale(std::string& fontWeightScale)
+ErrCode UiAppearanceAbility::SetFontWeightScale(std::string& fontWeightScale, int32_t& funcResult)
 {
     // Verify permissions
     auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
     if (!isCallingPerm) {
         LOGE("permission verification failed");
-        return PERMISSION_ERR;
+        funcResult = PERMISSION_ERR;
+        return funcResult;
     }
     if (!fontWeightScale.empty()) {
-        return OnSetFontWeightScale(GetCallingUserId(), fontWeightScale);
+        funcResult = OnSetFontWeightScale(GetCallingUserId(), fontWeightScale);
+        return funcResult;
     } else {
         LOGE("current fontWeightScale is empty!");
     }
-    return SYS_ERR;
+    funcResult = SYS_ERR;
+    return funcResult;
 }
 
-int32_t UiAppearanceAbility::GetFontWeightScale(std::string& fontWeightScale)
+ErrCode UiAppearanceAbility::GetFontWeightScale(std::string& fontWeightScale, int32_t& funcResult)
 {
     auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
     if (!isCallingPerm) {
         LOGE("permission verification failed");
-        return PERMISSION_ERR;
+        funcResult = PERMISSION_ERR;
+        return funcResult;
     }
 
     {
@@ -680,7 +696,8 @@ int32_t UiAppearanceAbility::GetFontWeightScale(std::string& fontWeightScale)
     }
 
     LOGD("get font weight scale :%{public}s", fontWeightScale.c_str());
-    return SUCCEEDED;
+    funcResult = SUCCEEDED;
+    return funcResult;
 }
 
 void UiAppearanceAbility::UpdateDarkModeCallback(const bool isDarkMode, const int32_t userId)
