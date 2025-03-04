@@ -205,6 +205,8 @@ void AlarmTimerManager::ClearTimerByUserId(const uint64_t userId)
 
 bool AlarmTimerManager::IsWithinTimeInterval(const uint64_t startTime, const uint64_t endTime)
 {
+    LOGI("IsWithinTimeInterval startTime: %{public}" PRIu64 " endTime: %{public}" PRIu64,
+        startTime, endTime);
     std::time_t timestamp = std::time(nullptr);
     if (timestamp == static_cast<std::time_t>(-1)) {
         LOGE("fail to get timestamp");
