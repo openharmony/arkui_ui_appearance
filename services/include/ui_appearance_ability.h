@@ -59,9 +59,9 @@ public:
     ErrCode SetDarkMode(int32_t mode, int32_t& funcResult) override;
     ErrCode GetDarkMode(int32_t& funcResult) override;
     ErrCode GetFontScale(std::string& fontScale, int32_t& funcResult) override;
-    ErrCode SetFontScale(std::string& fontScale, int32_t& funcResult) override;
+    ErrCode SetFontScale(const std::string& fontScale, int32_t& funcResult) override;
     ErrCode GetFontWeightScale(std::string& fontWeightScale, int32_t& funcResult) override;
-    ErrCode SetFontWeightScale(std::string& fontWeightScale, int32_t& funcResult) override;
+    ErrCode SetFontWeightScale(const std::string& fontWeightScale, int32_t& funcResult) override;
 
 protected:
     void OnStart() override;
@@ -85,8 +85,8 @@ private:
     void UpdateCurrentUserConfiguration(const int32_t userId, const bool isForceUpdate);
     int32_t OnSetDarkMode(const int32_t userId, DarkMode mode);
     DarkMode InitGetDarkMode(const int32_t userId);
-    int32_t OnSetFontScale(const int32_t userId, std::string& fontScale);
-    int32_t OnSetFontWeightScale(const int32_t userId, std::string& fontWeightScale);
+    int32_t OnSetFontScale(const int32_t userId, const std::string& fontScale);
+    int32_t OnSetFontWeightScale(const int32_t userId, const std::string& fontWeightScale);
     std::string DarkNodeConfigurationAssignUser(const int32_t userId);
     std::string FontScaleConfigurationAssignUser(const int32_t userId);
     std::string FontWeightScaleConfigurationAssignUser(const int32_t userId);
