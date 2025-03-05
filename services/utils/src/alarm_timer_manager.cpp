@@ -160,6 +160,7 @@ uint64_t AlarmTimerManager::InitTimer(const uint64_t time, const std::function<v
         ClearTimer(id);
         return 0;
     }
+    LOGI("success to StartTimer timer %{public}" PRIu64, id);
     return id;
 }
 
@@ -174,6 +175,7 @@ void AlarmTimerManager::ClearTimer(const uint64_t id)
     if (!ret) {
         LOGE("fail to DestroyTimer timer %{public}" PRIu64, id);
     }
+    LOGI("success to DestroyTimer timer %{public}" PRIu64, id);
 }
 
 uint64_t AlarmTimerManager::UpdateTimer(const uint64_t id, const uint64_t time,
@@ -203,6 +205,8 @@ void AlarmTimerManager::ClearTimerByUserId(const uint64_t userId)
 
 bool AlarmTimerManager::IsWithinTimeInterval(const uint64_t startTime, const uint64_t endTime)
 {
+    LOGI("IsWithinTimeInterval startTime: %{public}" PRIu64 " endTime: %{public}" PRIu64,
+        startTime, endTime);
     std::time_t timestamp = std::time(nullptr);
     if (timestamp == static_cast<std::time_t>(-1)) {
         LOGE("fail to get timestamp");
