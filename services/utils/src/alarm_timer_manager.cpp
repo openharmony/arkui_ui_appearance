@@ -149,6 +149,7 @@ uint64_t AlarmTimerManager::InitTimer(const uint64_t time, const std::function<v
     timerInfo->SetRepeat(true);
     timerInfo->SetInterval(DAY_TO_SECOND * SECOND_TO_MILLI);
     timerInfo->SetCallbackInfo(callback);
+    timerInfo->SetName("dark_mode_timer");
     uint64_t id = static_cast<uint64_t>(MiscServices::TimeServiceClient::GetInstance()->CreateTimer(timerInfo));
     if (id <= 0) {
         LOGE("fail to create timer %{public}" PRIu64, id);
