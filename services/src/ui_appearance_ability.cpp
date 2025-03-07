@@ -550,15 +550,15 @@ ErrCode UiAppearanceAbility::GetDarkMode(int32_t& funcResult)
         auto it = usersParam_.find(GetCallingUserId());
         if (it != usersParam_.end()) {
             funcResult = it->second.darkMode;
-            return funcResult;
+            return SUCCEEDED;
         }
     }
 
     funcResult = DarkMode::ALWAYS_LIGHT;
-    return funcResult;
+    return SUCCEEDED;
 }
 
-int32_t UiAppearanceAbility::OnSetFontScale(const int32_t userId, std::string& fontScale)
+int32_t UiAppearanceAbility::OnSetFontScale(const int32_t userId, const std::string& fontScale)
 {
     bool ret = false;
     AppExecFwk::Configuration config;
@@ -586,7 +586,7 @@ int32_t UiAppearanceAbility::OnSetFontScale(const int32_t userId, std::string& f
     return SUCCEEDED;
 }
 
-ErrCode UiAppearanceAbility::SetFontScale(std::string& fontScale, int32_t& funcResult)
+ErrCode UiAppearanceAbility::SetFontScale(const std::string& fontScale, int32_t& funcResult)
 {
     // Verify permissions
     auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
@@ -627,7 +627,7 @@ ErrCode UiAppearanceAbility::GetFontScale(std::string& fontScale, int32_t& funcR
     return funcResult;
 }
 
-int32_t UiAppearanceAbility::OnSetFontWeightScale(const int32_t userId, std::string& fontWeightScale)
+int32_t UiAppearanceAbility::OnSetFontWeightScale(const int32_t userId, const std::string& fontWeightScale)
 {
     bool ret = false;
     AppExecFwk::Configuration config;
@@ -657,7 +657,7 @@ int32_t UiAppearanceAbility::OnSetFontWeightScale(const int32_t userId, std::str
     return SUCCEEDED;
 }
 
-ErrCode UiAppearanceAbility::SetFontWeightScale(std::string& fontWeightScale, int32_t& funcResult)
+ErrCode UiAppearanceAbility::SetFontWeightScale(const std::string& fontWeightScale, int32_t& funcResult)
 {
     // Verify permissions
     auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);

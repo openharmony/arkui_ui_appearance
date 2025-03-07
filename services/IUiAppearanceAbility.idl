@@ -17,7 +17,7 @@ interface OHOS.ArkUi.UiAppearance.IUiAppearanceAbility {
     int SetDarkMode([in] int darkMode);
     int GetDarkMode();
     int GetFontScale([out] String fontScale);
-    int SetFontScale([out] String fontScale);
+    int SetFontScale([in] String fontScale);
     int GetFontWeightScale([out] String fontWeightScale);
-    int SetFontWeightScale([out] String fontWeightScale);
+    int SetFontWeightScale([in] String fontWeightScale);
 }
