@@ -32,6 +32,8 @@ constexpr int32_t MINUTE_TO_SECOND = 60;
 constexpr int32_t TIMER_TYPE_EXACT = 2 | 4;
 constexpr int32_t START_INDEX = 0;
 constexpr int32_t END_INDEX = 1;
+const std::string START_TIMER_NAME = "dark_mode_start_timer";
+const std::string END_TIMER_NAME = "dark_mode_end_timer";
 
 ErrCode AlarmTimerManager::SetScheduleTime(const uint64_t startTime, const uint64_t endTime,
     const uint32_t userId, const std::function<void()>& startCallback, const std::function<void()>& endCallback)
@@ -131,25 +133,28 @@ void AlarmTimerManager::SetTimer(const int8_t index, const uint32_t userId, cons
 {
     LOGD("SetTimer %{public}d %{public}d %{public}" PRIu64, index, userId, time);
     if (timerIdMap_.find(userId) == timerIdMap_.end()) {
+        LOGW("timerIdMap_ find userId null");
         std::array<uint64_t, TRIGGER_ARRAY_SIZE> timerIds = { 0, 0 };
         timerIdMap_[userId] = timerIds;
     }
 
     if (timerIdMap_[userId][index] > 0) {
-        timerIdMap_[userId][index] = UpdateTimer(timerIdMap_[userId][index], time, callback);
+        timerIdMap_[userId][index] =
+            UpdateTimer(timerIdMap_[userId][index], time, callback, index == 0 ? START_TIMER_NAME : END_TIMER_NAME);
     } else {
-        timerIdMap_[userId][index] = InitTimer(time, callback);
+        timerIdMap_[userId][index] = InitTimer(time, callback, index == 0 ? START_TIMER_NAME : END_TIMER_NAME);
     }
 }
 
-uint64_t AlarmTimerManager::InitTimer(const uint64_t time, const std::function<void()>& callback)
+uint64_t AlarmTimerManager::InitTimer(const uint64_t time, const std::function<void()>& callback,
+    const std::string timerName)
 {
     auto timerInfo = std::make_shared<AlarmTimer>();
     timerInfo->SetType(TIMER_TYPE_EXACT);
     timerInfo->SetRepeat(true);
     timerInfo->SetInterval(DAY_TO_SECOND * SECOND_TO_MILLI);
     timerInfo->SetCallbackInfo(callback);
-    timerInfo->SetName("dark_mode_timer");
+    timerInfo->SetName(timerName);
     uint64_t id = static_cast<uint64_t>(MiscServices::TimeServiceClient::GetInstance()->CreateTimer(timerInfo));
     if (id <= 0) {
         LOGE("fail to create timer %{public}" PRIu64, id);
@@ -180,10 +185,10 @@ void AlarmTimerManager::ClearTimer(const uint64_t id)
 }
 
 uint64_t AlarmTimerManager::UpdateTimer(const uint64_t id, const uint64_t time,
-    const std::function<void()>& callback)
+    const std::function<void()>& callback, const std::string timerName)
 {
     ClearTimer(id);
-    return InitTimer(time, callback);
+    return InitTimer(time, callback, timerName);
 }
 
 void AlarmTimerManager::ClearTimerByUserId(const uint64_t userId)
