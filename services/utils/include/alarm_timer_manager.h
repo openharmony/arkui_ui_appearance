@@ -55,9 +55,10 @@ private:
 
     static void RestartTimerByTimerId(uint64_t timerId, uint64_t time);
 
-    static uint64_t InitTimer(uint64_t time, const std::function<void()>& callback);
+    static uint64_t InitTimer(uint64_t time, const std::function<void()>& callback, const std::string timerName);
 
-    static uint64_t UpdateTimer(uint64_t id, uint64_t time, const std::function<void()>& callback);
+    static uint64_t UpdateTimer(uint64_t id, uint64_t time,
+        const std::function<void()>& callback, const std::string timerName);
 
     static void ClearTimer(uint64_t id);
 
