@@ -15,7 +15,7 @@ import("//build/test.gni")
 import("//foundation/arkui/ui_appearance/ui_appearance.gni")
 
 ohos_unittest("ui_appearance_test") {
-  module_out_path = "ui_appearance/ui_appearance_test"
+  module_out_path = "ui_appearance/ui_appearance"
 
   include_dirs = [
     "${ui_appearance_services_path}/include/",
