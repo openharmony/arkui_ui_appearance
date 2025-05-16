@@ -23,12 +23,14 @@ ohos_unittest("ui_appearance_test") {
   ]
 
   sources = [
+    "${ui_appearance_services_path}/src/background_app_color_switch_settings.cpp",
     "${ui_appearance_services_path}/src/dark_mode_manager.cpp",
     "${ui_appearance_services_path}/src/dark_mode_temp_state_manager.cpp",
     "${ui_appearance_services_path}/src/screen_switch_operator_manager.cpp",
     "${ui_appearance_services_path}/src/ui_appearance_ability.cpp",
     "${ui_appearance_services_utils_path}/src/alarm_timer.cpp",
     "${ui_appearance_services_utils_path}/src/alarm_timer_manager.cpp",
+    "${ui_appearance_services_utils_path}/src/json_utils.cpp",
     "${ui_appearance_services_utils_path}/src/parameter_wrap.cpp",
     "${ui_appearance_services_utils_path}/src/setting_data_manager.cpp",
     "${ui_appearance_services_utils_path}/src/setting_data_observer.cpp",
@@ -54,6 +56,7 @@ ohos_unittest("ui_appearance_test") {
     "c_utils:utils",
     "common_event_service:cesfwk_core",
     "common_event_service:cesfwk_innerkits",
+    "config_policy:configpolicy_util",
     "data_share:datashare_consumer",
     "hilog:libhilog",
     "init:libbegetutil",
@@ -62,6 +65,7 @@ ohos_unittest("ui_appearance_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "time_service:time_client",
+    "window_manager:session_manager_lite",
   ]
 }
 
