@@ -28,6 +28,7 @@
         "ability_base",
         "access_token",
         "c_utils",
+        "config_policy",
         "data_share",
         "hicollie",
         "hilog",
@@ -38,7 +39,8 @@
         "samgr",
         "time_service",
         "os_account",
-        "common_event_service"
+        "common_event_service",
+        "window_manager"
       ],
       "third_party": []
     },
