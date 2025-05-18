@@ -29,6 +29,12 @@
 #include "system_ability_definition.h"
 #include "ui_appearance_log.h"
 #include "parameter_wrap.h"
+#include "background_app_color_switch_settings.h"
+#include "session_manager_lite.h"
+#include "wm_common.h"
+#include "background_app_info.h"
+#include "configuration_policy.h"
+#include "scene_session_manager_lite.h"
 
 namespace {
 static const std::string LIGHT = "light";
@@ -53,7 +59,7 @@ const static std::string NOT_FIRST_UPGRADE = "0";
 
 namespace OHOS {
 namespace ArkUi::UiAppearance {
-
+using namespace OHOS::Rosen;
 UiAppearanceEventSubscriber::UiAppearanceEventSubscriber(const EventFwk::CommonEventSubscribeInfo& subscriberInfo,
     const std::function<void(const int32_t)>& userSwitchCallback)
     : EventFwk::CommonEventSubscriber(subscriberInfo), userSwitchCallback_(userSwitchCallback)
@@ -227,6 +233,7 @@ void UiAppearanceAbility::DoCompatibleProcess()
 void UiAppearanceAbility::DoInitProcess()
 {
     LOGI("DoInitProcess");
+    BackGroundAppColorSwitchSettings::GetInstance().Initialize();
     const std::list<int32_t> userIds = GetUserIds();
     for (auto userId : userIds) {
         std::string darkValue = LIGHT;
@@ -405,6 +412,59 @@ std::string UiAppearanceAbility::FontWeightScaleParamAssignUser(const int32_t us
     return FONT_WEIGHT_SCAL_FOR_NONE + std::to_string(userId);
 }
 
+bool UiAppearanceAbility::BackGroundAppColorSwitch(sptr<AppExecFwk::IAppMgr> appManagerInstance, const int32_t userId)
+{
+    if (!BackGroundAppColorSwitchSettings::GetInstance().IsSupportHotUpdate()) {
+        LOGI("not Support BackGround App Color Switch");
+        return false;
+    }
+    auto sceneSessionManager = SessionManagerLite::GetInstance().GetSceneSessionManagerLiteProxy();
+    if (sceneSessionManager == nullptr) {
+        LOGE("GetSceneSessionManagerLiteProxy null");
+        return false;
+    }
+    std::vector<RecentSessionInfo> recentMainSessionInfoList;
+    auto resultCode = sceneSessionManager->GetRecentMainSessionInfoList(recentMainSessionInfoList);
+    if (resultCode != WSError::WS_OK) {
+        LOGE("GetRecentMainSessionInfoList result:%{public}d size:%{public}zu.", resultCode,
+            recentMainSessionInfoList.size());
+        return false;
+    }
+
+    std::vector<AppExecFwk::BackgroundAppInfo> backgroundAppInfoVe;
+    for (const auto& sessionInfo : recentMainSessionInfoList) {
+        if (!BackGroundAppColorSwitchSettings::GetInstance().CheckInWhileList(sessionInfo.bundleName)) {
+            LOGD("not in whilelist bundleName:%{public}s appIndex :%{public}d.", sessionInfo.bundleName.c_str(),
+                sessionInfo.appIndex);
+            continue;
+        }
+        if (sessionInfo.sessionState != RecentSessionState::BACKGROUND) {
+        LOGD("not background, bundleName:%{public}s appIndex :%{public}d.", sessionInfo.bundleName.c_str(),
+                sessionInfo.appIndex);
+            continue;
+        }
+        LOGD("get sessionInfo bundleName:%{public}s appIndex :%{public}d.", sessionInfo.bundleName.c_str(),
+            sessionInfo.appIndex);
+        AppExecFwk::BackgroundAppInfo appInfo;
+        appInfo.bandleName = sessionInfo.bundleName;
+        appInfo.appIndex = sessionInfo.appIndex;
+        backgroundAppInfoVe.push_back(appInfo);
+    }
+
+    AppExecFwk::ConfigurationPolicy policy;
+    policy.maxCountPerBatch  = BackGroundAppColorSwitchSettings::GetInstance().GetTaskQuantity();
+    policy.intervalTime = BackGroundAppColorSwitchSettings::GetInstance().GetDurationMillisecond();
+    LOGI("BackGroundAppColorSwitch settings maxCountPerBatch :%{public}d intervalTime :%{public}d.",
+        BackGroundAppColorSwitchSettings::GetInstance().GetTaskQuantity(),
+        BackGroundAppColorSwitchSettings::GetInstance().GetDurationMillisecond());
+    auto result = appManagerInstance->UpdateConfigurationForBackgroundApp(backgroundAppInfoVe, policy, userId);
+    if (!result) {
+        LOGE("UpdateConfigurationForBackgroundApp fail result :%{public}d.", result);
+        return false;
+    }
+    return true;
+}
+
 bool UiAppearanceAbility::UpdateConfiguration(const AppExecFwk::Configuration& configuration, const int32_t userId)
 {
     auto appManagerInstance = GetAppManagerInstance();
@@ -430,9 +490,11 @@ bool UiAppearanceAbility::UpdateConfiguration(const AppExecFwk::Configuration& c
             return false;
         } else {
             LOGW("uiappearance is different against configuration. Forced to use the configuration, error is "
-                 "%{public}d.",
+                "%{public}d.",
                 errcode);
         }
+    } else if (!configuration.GetItem(AAFwk::GlobalConfigurationKey::SYSTEM_COLORMODE).empty()) {
+        BackGroundAppColorSwitch(appManagerInstance, userId);
     }
     return true;
 }

@@ -62,8 +62,10 @@ ohos_shared_library("ui_appearance_service") {
     "src/dark_mode_temp_state_manager.cpp",
     "src/screen_switch_operator_manager.cpp",
     "src/ui_appearance_ability.cpp",
+    "src/background_app_color_switch_settings.cpp",
     "utils/src/alarm_timer.cpp",
     "utils/src/alarm_timer_manager.cpp",
+    "utils/src/json_utils.cpp",
     "utils/src/parameter_wrap.cpp",
     "utils/src/setting_data_manager.cpp",
     "utils/src/setting_data_observer.cpp",
@@ -99,6 +101,7 @@ ohos_shared_library("ui_appearance_service") {
     "c_utils:utils",
     "common_event_service:cesfwk_core",
     "common_event_service:cesfwk_innerkits",
+    "config_policy:configpolicy_util",
     "data_share:datashare_consumer",
     "hilog:libhilog",
     "init:libbegetutil",
@@ -107,6 +110,8 @@ ohos_shared_library("ui_appearance_service") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "time_service:time_client",
+    "window_manager:scene_session_manager",
+    "window_manager:session_manager_lite"
   ]
   subsystem_name = "arkui"
   part_name = "ui_appearance"
