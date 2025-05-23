@@ -61,6 +61,7 @@ ohos_shared_library("ui_appearance_service") {
     "src/dark_mode_manager.cpp",
     "src/dark_mode_temp_state_manager.cpp",
     "src/screen_switch_operator_manager.cpp",
+    "src/smart_gesture_manager.cpp",
     "src/ui_appearance_ability.cpp",
     "src/background_app_color_switch_settings.cpp",
     "utils/src/alarm_timer.cpp",
