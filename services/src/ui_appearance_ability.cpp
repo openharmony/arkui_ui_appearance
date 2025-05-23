@@ -26,6 +26,7 @@
 #include "iservice_registry.h"
 #include "matching_skills.h"
 #include "os_account_manager.h"
+#include "smart_gesture_manager.h"
 #include "system_ability_definition.h"
 #include "ui_appearance_log.h"
 #include "parameter_wrap.h"
@@ -109,6 +110,9 @@ void UiAppearanceEventSubscriber::BootCompetedCallback()
         manager.OnSwitchUser(userId);
         bool isDarkMode = false;
         manager.LoadUserSettingData(userId, true, isDarkMode);
+        SmartGestureManager &smartGestureManager = SmartGestureManager::GetInstance();
+        smartGestureManager.RegisterSettingDataObserver();
+        smartGestureManager.UpdateSmartGestureInitialValue();
     });
 }
 
@@ -360,6 +364,8 @@ void UiAppearanceAbility::OnAddSystemAbility(int32_t systemAbilityId, const std:
     isNeedDoCompatibleProcess_ = checkIfFirstUpgrade();
     DarkModeManager::GetInstance().Initialize(
         [this](bool isDarkMode, int32_t userId) { UpdateDarkModeCallback(isDarkMode, userId); });
+    SmartGestureManager::GetInstance().Initialize(
+        [this](bool isAutoMode, int32_t userId) { UpdateSmartGestureModeCallback(isAutoMode, userId); });
     SubscribeCommonEvent();
     if (isNeedDoCompatibleProcess_ && !GetUserIds().empty()) {
         DoCompatibleProcess();
@@ -760,6 +766,25 @@ ErrCode UiAppearanceAbility::GetFontWeightScale(std::string& fontWeightScale, in
     LOGD("get font weight scale :%{public}s", fontWeightScale.c_str());
     funcResult = SUCCEEDED;
     return funcResult;
+}
+
+void UiAppearanceAbility::UpdateSmartGestureModeCallback(bool isAutoMode, int32_t userId)
+{
+    bool ret = false;
+    AppExecFwk::Configuration config;
+    if (isAutoMode) {
+        ret = config.AddItem(AAFwk::GlobalConfigurationKey::SYSTEM_SMART_GESTURE_SWITCH,
+            AppExecFwk::ConfigurationInner::SMART_GESTURE_AUTO);
+    } else {
+        ret = config.AddItem(AAFwk::GlobalConfigurationKey::SYSTEM_SMART_GESTURE_SWITCH,
+            AppExecFwk::ConfigurationInner::SMART_GESTURE_DISABLE);
+    }
+    if (!ret) {
+        LOGE("AddItem failed, isAutoMode: %{public}d, userId: %{public}d", isAutoMode, userId);
+        return;
+    }
+
+    UpdateConfiguration(config, userId);
 }
 
 void UiAppearanceAbility::UpdateDarkModeCallback(const bool isDarkMode, const int32_t userId)

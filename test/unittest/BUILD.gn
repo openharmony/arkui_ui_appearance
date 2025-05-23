@@ -27,6 +27,7 @@ ohos_unittest("ui_appearance_test") {
     "${ui_appearance_services_path}/src/dark_mode_manager.cpp",
     "${ui_appearance_services_path}/src/dark_mode_temp_state_manager.cpp",
     "${ui_appearance_services_path}/src/screen_switch_operator_manager.cpp",
+    "${ui_appearance_services_path}/src/smart_gesture_manager.cpp",
     "${ui_appearance_services_path}/src/ui_appearance_ability.cpp",
     "${ui_appearance_services_utils_path}/src/alarm_timer.cpp",
     "${ui_appearance_services_utils_path}/src/alarm_timer_manager.cpp",

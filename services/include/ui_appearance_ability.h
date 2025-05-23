@@ -94,6 +94,7 @@ private:
     std::string FontScaleParamAssignUser(const int32_t userId);
     std::string FontWeightScaleParamAssignUser(const int32_t userId);
 
+    void UpdateSmartGestureModeCallback(bool isAutoMode, int32_t userId);
     void UpdateDarkModeCallback(bool isDarkMode, int32_t userId);
     bool BackGroundAppColorSwitch(sptr<AppExecFwk::IAppMgr> appManagerInstance, const int32_t userId);
 
