@@ -77,5 +77,6 @@ group("unittest") {
     "dark_mode_manager_test:dark_mode_manager_test",
     "setting_data_manager_test:setting_data_manager_test",
     "setting_data_observer_test:setting_data_observer_test",
+    "smart_gesture_manager_test:smart_gesture_manager_test",
   ]
 }
