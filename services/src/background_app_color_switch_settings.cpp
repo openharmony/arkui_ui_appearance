@@ -120,4 +120,10 @@ void BackGroundAppColorSwitchSettings::Reset()
     durationMillisecond_ = -1;
     isAllowListEnable_ = false;
 }
+
+std::unordered_set<std::string> BackGroundAppColorSwitchSettings::GetWhileList()
+{
+    std::lock_guard lock(policyMutex_);
+    return allowList_;
+}
 } // namespace OHOS::ArkUi::UiAppearance

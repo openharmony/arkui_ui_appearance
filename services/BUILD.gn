@@ -110,9 +110,7 @@ ohos_shared_library("ui_appearance_service") {
     "os_account:os_account_innerkits",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "time_service:time_client",
-    "window_manager:scene_session_manager",
-    "window_manager:session_manager_lite"
+    "time_service:time_client"
   ]
   subsystem_name = "arkui"
   part_name = "ui_appearance"
