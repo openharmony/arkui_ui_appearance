@@ -38,6 +38,8 @@ public:
     int32_t GetDurationMillisecond();
 
     bool CheckInWhileList(const std::string& bundleName);
+
+    std::unordered_set<std::string> GetWhileList();
 private:
     std::mutex policyMutex_;
     bool isAllowListEnable_ = false;

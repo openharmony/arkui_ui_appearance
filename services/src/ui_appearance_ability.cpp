@@ -31,11 +31,8 @@
 #include "ui_appearance_log.h"
 #include "parameter_wrap.h"
 #include "background_app_color_switch_settings.h"
-#include "session_manager_lite.h"
-#include "wm_common.h"
 #include "background_app_info.h"
 #include "configuration_policy.h"
-#include "scene_session_manager_lite.h"
 
 namespace {
 static const std::string LIGHT = "light";
@@ -60,7 +57,6 @@ const static std::string NOT_FIRST_UPGRADE = "0";
 
 namespace OHOS {
 namespace ArkUi::UiAppearance {
-using namespace OHOS::Rosen;
 UiAppearanceEventSubscriber::UiAppearanceEventSubscriber(const EventFwk::CommonEventSubscribeInfo& subscriberInfo,
     const std::function<void(const int32_t)>& userSwitchCallback)
     : EventFwk::CommonEventSubscriber(subscriberInfo), userSwitchCallback_(userSwitchCallback)
@@ -424,37 +420,18 @@ bool UiAppearanceAbility::BackGroundAppColorSwitch(sptr<AppExecFwk::IAppMgr> app
         LOGI("not Support BackGround App Color Switch");
         return false;
     }
-    auto sceneSessionManager = SessionManagerLite::GetInstance().GetSceneSessionManagerLiteProxy();
-    if (sceneSessionManager == nullptr) {
-        LOGE("GetSceneSessionManagerLiteProxy null");
-        return false;
-    }
-    std::vector<RecentSessionInfo> recentMainSessionInfoList;
-    auto resultCode = sceneSessionManager->GetRecentMainSessionInfoList(recentMainSessionInfoList);
-    if (resultCode != WSError::WS_OK) {
-        LOGE("GetRecentMainSessionInfoList result:%{public}d size:%{public}zu.", resultCode,
-            recentMainSessionInfoList.size());
-        return false;
-    }
 
     std::vector<AppExecFwk::BackgroundAppInfo> backgroundAppInfoVe;
-    for (const auto& sessionInfo : recentMainSessionInfoList) {
-        if (!BackGroundAppColorSwitchSettings::GetInstance().CheckInWhileList(sessionInfo.bundleName)) {
-            LOGD("not in whilelist bundleName:%{public}s appIndex :%{public}d.", sessionInfo.bundleName.c_str(),
-                sessionInfo.appIndex);
-            continue;
-        }
-        if (sessionInfo.sessionState != RecentSessionState::BACKGROUND) {
-        LOGD("not background, bundleName:%{public}s appIndex :%{public}d.", sessionInfo.bundleName.c_str(),
-                sessionInfo.appIndex);
-            continue;
-        }
-        LOGD("get sessionInfo bundleName:%{public}s appIndex :%{public}d.", sessionInfo.bundleName.c_str(),
-            sessionInfo.appIndex);
+    for (const auto& whiteListItem : BackGroundAppColorSwitchSettings::GetInstance().GetWhileList()) {
         AppExecFwk::BackgroundAppInfo appInfo;
-        appInfo.bandleName = sessionInfo.bundleName;
-        appInfo.appIndex = sessionInfo.appIndex;
+        appInfo.bandleName = whiteListItem;
+        appInfo.appIndex = 0;
         backgroundAppInfoVe.push_back(appInfo);
+    }
+
+    if (backgroundAppInfoVe.empty()) {
+        LOGD("no need backGround app color Switch");
+        return true;
     }
 
     AppExecFwk::ConfigurationPolicy policy;
