@@ -143,6 +143,7 @@ void JsUiAppearance::OnComplete(napi_env env, napi_status status, void* data)
     }
     AsyncContext* asyncContext = static_cast<AsyncContext*>(data);
     if (asyncContext == nullptr) {
+        napi_close_handle_scope(env, scope);
         NapiThrow(env, "asyncContext is null.", UiAppearanceAbilityErrCode::SYS_ERR);
         return;
     }
