@@ -323,12 +323,7 @@ static napi_value JSGetDarkMode(napi_env env, napi_callback_info info)
         NapiThrow(env, "get dark-mode failed.", UiAppearanceAbilityErrCode::SYS_ERR);
         return result;
     }
-    if (mode == UiAppearanceAbilityErrCode::PERMISSION_ERR) {
-        NapiThrow(env,
-            "An attempt was made to get configuration forbidden by permission: ohos.permission.UPDATE_CONFIGURATION.",
-            UiAppearanceAbilityErrCode::PERMISSION_ERR);
-        return result;
-    }
+
     NAPI_CALL(env, napi_create_int32(env, mode, &result));
     return result;
 }
@@ -351,12 +346,7 @@ static napi_value JSGetFontScale(napi_env env, napi_callback_info info)
         NapiThrow(env, "get font-scale failed.", UiAppearanceAbilityErrCode::SYS_ERR);
         return result;
     }
-    if (ret == UiAppearanceAbilityErrCode::PERMISSION_ERR) {
-        NapiThrow(env,
-            "An attempt was made to get configuration forbidden by permission: ohos.permission.UPDATE_CONFIGURATION.",
-            UiAppearanceAbilityErrCode::PERMISSION_ERR);
-        return result;
-    }
+
     double fontScaleNumber = std::stod(fontScale);
     NAPI_CALL(env, napi_create_double(env, fontScaleNumber, &result));
     return result;
@@ -424,12 +414,7 @@ static napi_value JSGetFontWeightScale(napi_env env, napi_callback_info info)
         NapiThrow(env, "get font-Weight-scale failed.", UiAppearanceAbilityErrCode::SYS_ERR);
         return result;
     }
-    if (ret == UiAppearanceAbilityErrCode::PERMISSION_ERR) {
-        NapiThrow(env,
-            "An attempt was made to get configuration forbidden by permission: ohos.permission.UPDATE_CONFIGURATION.",
-            UiAppearanceAbilityErrCode::PERMISSION_ERR);
-        return result;
-    }
+
     double fontWeightScaleNumber = std::stod(fontWeightScale);
     NAPI_CALL(env, napi_create_double(env, fontWeightScaleNumber, &result));
     return result;
