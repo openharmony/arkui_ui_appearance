@@ -583,13 +583,6 @@ DarkMode UiAppearanceAbility::InitGetDarkMode(const int32_t userId)
 
 ErrCode UiAppearanceAbility::GetDarkMode(int32_t& funcResult)
 {
-    auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
-    if (!isCallingPerm) {
-        LOGE("permission verification failed");
-        funcResult = PERMISSION_ERR;
-        return funcResult;
-    }
-
     {
         std::lock_guard<std::mutex> guard(usersParamMutex_);
         auto it = usersParam_.find(GetCallingUserId());
@@ -652,12 +645,6 @@ ErrCode UiAppearanceAbility::SetFontScale(const std::string& fontScale, int32_t&
 
 ErrCode UiAppearanceAbility::GetFontScale(std::string& fontScale, int32_t& funcResult)
 {
-    auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
-    if (!isCallingPerm) {
-        LOGE("permission verification failed");
-        funcResult = PERMISSION_ERR;
-        return funcResult;
-    }
     {
         std::lock_guard<std::mutex> guard(usersParamMutex_);
         auto it = usersParam_.find(GetCallingUserId());
@@ -723,13 +710,6 @@ ErrCode UiAppearanceAbility::SetFontWeightScale(const std::string& fontWeightSca
 
 ErrCode UiAppearanceAbility::GetFontWeightScale(std::string& fontWeightScale, int32_t& funcResult)
 {
-    auto isCallingPerm = VerifyAccessToken(PERMISSION_UPDATE_CONFIGURATION);
-    if (!isCallingPerm) {
-        LOGE("permission verification failed");
-        funcResult = PERMISSION_ERR;
-        return funcResult;
-    }
-
     {
         std::lock_guard<std::mutex> guard(usersParamMutex_);
         auto it = usersParam_.find(GetCallingUserId());
