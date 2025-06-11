@@ -90,7 +90,8 @@ HWTEST_F(SmartGestureManagerTest, RegisterSettingDataObserver_0200, TestSize.Lev
 {
     SettingDataManager& settingDataManager = SettingDataManager::GetInstance();
     ExpectationSet expectSet;
-    expectSet += EXPECT_CALL(settingDataManager, MockRegisterObserver(SETTING_SMART_GESTURE_SWITCH_KEY, _, INVALID_USER_ID))
+    expectSet += EXPECT_CALL(
+        settingDataManager, MockRegisterObserver(SETTING_SMART_GESTURE_SWITCH_KEY, _, INVALID_USER_ID))
         .Times(1).After(expectSet).WillOnce(Return(ERR_INVALID_OPERATION));
     SmartGestureManager& manager = SmartGestureManager::GetInstance();
     auto result = manager.RegisterSettingDataObserver();
