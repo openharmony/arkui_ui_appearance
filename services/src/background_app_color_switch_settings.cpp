@@ -73,13 +73,13 @@ ErrCode BackGroundAppColorSwitchSettings::Initialize()
         LOGW("BackGroundAppColorSwitchSettings unable to query duration");
         return ERR_INVALID_VALUE;
     }
-    durationMillisecond_ = strategy.at(DURATION).get<uint32_t>();
+    durationMillisecond_ = strategy.at(DURATION).get<int32_t>();
 
     if (!strategy.contains(PERTASK_NUMBER) || !strategy.at(PERTASK_NUMBER).is_number()) {
         LOGW("BackGroundAppColorSwitchSettings unable to query perTaskNumber");
         return ERR_INVALID_VALUE;
     }
-    taskQuantity_ = strategy.at(PERTASK_NUMBER).get<uint32_t>();
+    taskQuantity_ = strategy.at(PERTASK_NUMBER).get<int32_t>();
     if (taskQuantity_ <= 0 || durationMillisecond_ <= 0) {
         LOGW("settings error, taskQuantity_:%{public}d durationMillisecond_:%{public}d",
             taskQuantity_, durationMillisecond_);

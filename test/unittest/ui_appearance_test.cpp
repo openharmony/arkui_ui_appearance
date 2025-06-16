@@ -24,7 +24,11 @@
 #include "accesstoken_kit.h"
 #include "syspara/parameter.h"
 #include "system_ability_definition.h"
+#define private public
+#define protected public
 #include "ui_appearance_ability.h"
+#undef private
+#undef protected
 #include "ui_appearance_log.h"
 #include "alarm_timer_manager.h"
 
@@ -251,6 +255,19 @@ HWTEST_F(DarkModeTest, ui_appearance_test_007, TestSize.Level0)
     uiAppearanceTimerManager->ClearTimerByUserId(100);
 }
 
+/**
+ * @tc.name: ui_appearance_test_008
+ * @tc.desc: Test the alarm_timer_manager
+ * @tc.type: FUNC
+ */
+HWTEST_F(DarkModeTest, ui_appearance_test_008, TestSize.Level0)
+{
+    LOGI("Test OnRemoveSystemAbility.");
 
+    auto test = DarkModeTest::GetUiAppearanceAbilityTest();
+    test->userSwitchUpdateConfigurationOnceFlag_.insert(100);
+    test->OnRemoveSystemAbility(APP_MGR_SERVICE_ID, "");
+    EXPECT_EQ(0, test->userSwitchUpdateConfigurationOnceFlag_.size());
+}
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS
