@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -32,11 +32,28 @@ namespace {
 const std::string SETTING_DARK_MODE_MODE = "settings.uiappearance.darkmode_mode";
 const std::string SETTING_DARK_MODE_START_TIME = "settings.uiappearance.darkmode_starttime";
 const std::string SETTING_DARK_MODE_END_TIME = "settings.uiappearance.darkmode_endtime";
-constexpr int32_t SETTING_NUM = 3;
+const std::string SETTING_DARK_MODE_SUN_SET = "settings.display.sun_set";
+const std::string SETTING_DARK_MODE_SUN_RISE = "settings.display.sun_rise";
+constexpr int32_t SETTING_NUM = 5;
 constexpr int32_t TEST_USER100 = 100;
 constexpr int32_t TEST_USER101 = 101;
 constexpr int32_t TEST_USER1 = 1;
 constexpr ErrCode TEST_ERROR = 123456;
+constexpr int32_t TEST_DARK_MODE_STATE_NEGATIVE_TWO = -2;
+constexpr int32_t TEST_DARK_MODE_STATE_NEGATIVE_ONE = -1;
+constexpr int32_t TEST_DARK_MODE_STATE_ZERO = 0;
+constexpr int32_t TEST_DARK_MODE_STATE_ONE = 1;
+constexpr int32_t TEST_DARK_MODE_STATE_TWO = 2;
+constexpr int32_t TEST_DARK_MODE_STATE_THREE = 3;
+constexpr int32_t TEST_DARK_MODE_STATE_FOUR = 4;
+constexpr int32_t TEST_DARK_MODE_STATE_FIVE = 5;
+struct DarkModeState {
+    int32_t settingMode = -1;
+    int32_t settingStartTime = -1;
+    int32_t settingEndTime = -1;
+    int32_t settingSunsetTime = 1080;
+    int32_t settingSunriseTime = 1860;
+};
 using DarkModeMode = DarkModeManager::DarkModeMode;
 }
 
@@ -74,11 +91,11 @@ protected:
         manager.updateCallback_ = nullptr;
     }
 
-    void LoadUserSettingDataInvalidDarkModeTest(const int32_t userId, const int32_t darkMode,
-        const int32_t startTime, const int32_t endTime, const DarkModeMode expectDarkMode) const
+    void LoadUserSettingDataInvalidDarkModeTest(
+        const int32_t userId, const DarkModeState darkModeState, const DarkModeMode expectDarkMode) const
     {
         ExpectationSet expectSet;
-        LoadUserSettingDataGetInt32ValueTest(userId, darkMode, startTime, endTime, expectSet);
+        LoadUserSettingDataGetInt32ValueTest(userId, darkModeState, expectSet);
         EXPECT_CALL(*this, UpdateCallback(_, _)).Times(0);
 
         DarkModeManager& manager = DarkModeManager::GetInstance();
@@ -86,15 +103,17 @@ protected:
         EXPECT_EQ(manager.LoadUserSettingData(userId, true, isDarkMode), ERR_INVALID_OPERATION);
         EXPECT_EQ(isDarkMode, false);
         EXPECT_EQ(manager.darkModeStates_[userId].settingMode, expectDarkMode);
-        EXPECT_EQ(manager.darkModeStates_[userId].settingStartTime, startTime);
-        EXPECT_EQ(manager.darkModeStates_[userId].settingEndTime, endTime);
+        EXPECT_EQ(manager.darkModeStates_[userId].settingStartTime, darkModeState.settingStartTime);
+        EXPECT_EQ(manager.darkModeStates_[userId].settingEndTime, darkModeState.settingEndTime);
+        EXPECT_EQ(manager.darkModeStates_[userId].settingSunsetTime, darkModeState.settingSunsetTime);
+        EXPECT_EQ(manager.darkModeStates_[userId].settingSunriseTime, darkModeState.settingSunriseTime);
     }
 
-    void LoadUserSettingDataAllDayModeTest(const int32_t userId, const bool needUpdateCallback, const int32_t darkMode,
-        const int32_t startTime, const int32_t endTime, const DarkModeMode expectDarkMode) const
+    void LoadUserSettingDataAllDayModeTest(const int32_t userId, const bool needUpdateCallback,
+        const DarkModeState darkModeState, const DarkModeMode expectDarkMode) const
     {
         ExpectationSet expectSet;
-        LoadUserSettingDataGetInt32ValueTest(userId, darkMode, startTime, endTime, expectSet);
+        LoadUserSettingDataGetInt32ValueTest(userId, darkModeState, expectSet);
 
         bool expectIsDarkMode = expectDarkMode == DarkModeMode::DARK_MODE_ALWAYS_DARK;
         DarkModeManager& manager = DarkModeManager::GetInstance();
@@ -109,19 +128,29 @@ protected:
         EXPECT_EQ(manager.LoadUserSettingData(userId, needUpdateCallback, isDarkMode), ERR_OK);
         EXPECT_EQ(isDarkMode, expectIsDarkMode);
         EXPECT_EQ(manager.darkModeStates_[userId].settingMode, expectDarkMode);
-        EXPECT_EQ(manager.darkModeStates_[userId].settingStartTime, startTime);
-        EXPECT_EQ(manager.darkModeStates_[userId].settingEndTime, endTime);
+        EXPECT_EQ(manager.darkModeStates_[userId].settingStartTime, darkModeState.settingStartTime);
+        EXPECT_EQ(manager.darkModeStates_[userId].settingEndTime, darkModeState.settingEndTime);
+        EXPECT_EQ(manager.darkModeStates_[userId].settingSunsetTime, darkModeState.settingSunsetTime);
+        EXPECT_EQ(manager.darkModeStates_[userId].settingSunriseTime, darkModeState.settingSunriseTime);
     }
 
-    void LoadUserSettingDataCustomAutoModeSetTimerFailTest(const int32_t userId, const int32_t darkMode,
-        const int32_t startTime, const int32_t endTime, const DarkModeMode expectDarkMode) const
+    void LoadUserSettingDataCustomAutoModeSetTimerFailTest(
+        const int32_t userId, const DarkModeState darkModeState, const DarkModeMode expectDarkMode) const
     {
         ExpectationSet expectSet;
-        LoadUserSettingDataGetInt32ValueTest(userId, darkMode, startTime, endTime, expectSet);
+        LoadUserSettingDataGetInt32ValueTest(userId, darkModeState, expectSet);
 
         DarkModeManager& manager = DarkModeManager::GetInstance();
-        expectSet += EXPECT_CALL(manager.alarmTimerManager_, SetScheduleTime(startTime, endTime, userId, _, _))
-            .Times(1).After(expectSet).WillOnce(Return(TEST_ERROR));
+        if (expectDarkMode == DarkModeMode::DARK_MODE_CUSTOM_AUTO) {
+            expectSet += EXPECT_CALL(manager.alarmTimerManager_, SetScheduleTime(
+                darkModeState.settingStartTime, darkModeState.settingEndTime, userId, _, _))
+                .Times(1).After(expectSet).WillOnce(Return(TEST_ERROR));
+        } else {
+            expectSet += EXPECT_CALL(manager.alarmTimerManager_, SetScheduleTime(
+                darkModeState.settingSunsetTime, darkModeState.settingSunriseTime, userId, _, _))
+                .Times(1).After(expectSet).WillOnce(Return(TEST_ERROR));
+        }
+        
         expectSet += EXPECT_CALL(manager.alarmTimerManager_, ClearTimerByUserId(userId)).Times(1).After(expectSet);
         EXPECT_CALL(*this, UpdateCallback(_, _)).Times(0);
 
@@ -129,23 +158,36 @@ protected:
         EXPECT_EQ(manager.LoadUserSettingData(userId, true, isDarkMode), TEST_ERROR);
         EXPECT_EQ(isDarkMode, false);
         EXPECT_EQ(manager.darkModeStates_[userId].settingMode, expectDarkMode);
-        EXPECT_EQ(manager.darkModeStates_[userId].settingStartTime, startTime);
-        EXPECT_EQ(manager.darkModeStates_[userId].settingEndTime, endTime);
+        EXPECT_EQ(manager.darkModeStates_[userId].settingStartTime, darkModeState.settingStartTime);
+        EXPECT_EQ(manager.darkModeStates_[userId].settingEndTime, darkModeState.settingEndTime);
+        EXPECT_EQ(manager.darkModeStates_[userId].settingSunsetTime, darkModeState.settingSunsetTime);
+        EXPECT_EQ(manager.darkModeStates_[userId].settingSunriseTime, darkModeState.settingSunriseTime);
     }
 
     void LoadUserSettingDataCustomAutoModeTest(const int32_t userId, const bool needUpdateCallback,
-        const int32_t darkMode, const int32_t startTime, const int32_t endTime,
-        const DarkModeMode expectDarkMode, const bool expectWithin) const
+        const DarkModeState darkModeState, const DarkModeMode expectDarkMode, const bool expectWithin) const
     {
         ExpectationSet expectSet;
-        LoadUserSettingDataGetInt32ValueTest(userId, darkMode, startTime, endTime, expectSet);
+        LoadUserSettingDataGetInt32ValueTest(userId, darkModeState, expectSet);
 
         DarkModeManager& manager = DarkModeManager::GetInstance();
-        expectSet += EXPECT_CALL(manager.alarmTimerManager_, SetScheduleTime(startTime, endTime, userId, _, _))
-            .Times(1).After(expectSet).WillOnce(Return(ERR_OK));
         AlarmTimerManager& alarmTimerManagerStaticInstance = AlarmTimerManager::GetInstance();
-        expectSet += EXPECT_CALL(alarmTimerManagerStaticInstance, MockIsWithinTimeInterval(startTime, endTime))
-            .Times(1).After(expectSet).WillOnce(Return(expectWithin));
+        if (expectDarkMode == DarkModeMode::DARK_MODE_CUSTOM_AUTO) {
+            expectSet += EXPECT_CALL(manager.alarmTimerManager_, SetScheduleTime(
+                darkModeState.settingStartTime, darkModeState.settingEndTime, userId, _, _))
+                .Times(1).After(expectSet).WillOnce(Return(ERR_OK));
+            expectSet += EXPECT_CALL(alarmTimerManagerStaticInstance, MockIsWithinTimeInterval(
+                darkModeState.settingStartTime, darkModeState.settingEndTime))
+                .Times(1).After(expectSet).WillOnce(Return(expectWithin));
+        } else {
+            expectSet += EXPECT_CALL(manager.alarmTimerManager_, SetScheduleTime(
+                darkModeState.settingSunsetTime, darkModeState.settingSunriseTime, userId, _, _))
+                .Times(1).After(expectSet).WillOnce(Return(ERR_OK));
+            expectSet += EXPECT_CALL(alarmTimerManagerStaticInstance, MockIsWithinTimeInterval(
+                darkModeState.settingSunsetTime, darkModeState.settingSunriseTime))
+                .Times(1).After(expectSet).WillOnce(Return(expectWithin));
+        }
+
         if (needUpdateCallback) {
             expectSet += EXPECT_CALL(*this, UpdateCallback(expectWithin, userId)).Times(1).After(expectSet);
         } else {
@@ -156,8 +198,10 @@ protected:
         EXPECT_EQ(manager.LoadUserSettingData(userId, needUpdateCallback, isDarkMode), ERR_OK);
         EXPECT_EQ(isDarkMode, expectWithin);
         EXPECT_EQ(manager.darkModeStates_[userId].settingMode, expectDarkMode);
-        EXPECT_EQ(manager.darkModeStates_[userId].settingStartTime, startTime);
-        EXPECT_EQ(manager.darkModeStates_[userId].settingEndTime, endTime);
+        EXPECT_EQ(manager.darkModeStates_[userId].settingStartTime, darkModeState.settingStartTime);
+        EXPECT_EQ(manager.darkModeStates_[userId].settingEndTime, darkModeState.settingEndTime);
+        EXPECT_EQ(manager.darkModeStates_[userId].settingSunsetTime, darkModeState.settingSunsetTime);
+        EXPECT_EQ(manager.darkModeStates_[userId].settingSunriseTime, darkModeState.settingSunriseTime);
     }
 
     void NotifyDarkModeUpdateTest(const int32_t userId, const DarkModeMode origMode,
@@ -196,6 +240,10 @@ protected:
                 .Times(1).After(input).WillOnce(Return(ERR_OK));
             expectSet += EXPECT_CALL(dataManager, MockUnregisterObserver(SETTING_DARK_MODE_END_TIME, origUserId))
                 .Times(1).After(input).WillOnce(Return(ERR_OK));
+            expectSet += EXPECT_CALL(dataManager, MockUnregisterObserver(SETTING_DARK_MODE_SUN_SET, origUserId))
+                .Times(1).After(input).WillOnce(Return(ERR_OK));
+            expectSet += EXPECT_CALL(dataManager, MockUnregisterObserver(SETTING_DARK_MODE_SUN_RISE, origUserId))
+                .Times(1).After(input).WillOnce(Return(ERR_OK));
         }
 
         ExpectationSet input = expectSet;
@@ -204,6 +252,10 @@ protected:
         expectSet += EXPECT_CALL(dataManager, MockRegisterObserver(SETTING_DARK_MODE_START_TIME, _, userId))
             .Times(1).After(input).WillOnce(Return(ERR_OK));
         expectSet += EXPECT_CALL(dataManager, MockRegisterObserver(SETTING_DARK_MODE_END_TIME, _, userId))
+            .Times(1).After(input).WillOnce(Return(ERR_OK));
+        expectSet += EXPECT_CALL(dataManager, MockRegisterObserver(SETTING_DARK_MODE_SUN_SET, _, userId))
+            .Times(1).After(input).WillOnce(Return(ERR_OK));
+        expectSet += EXPECT_CALL(dataManager, MockRegisterObserver(SETTING_DARK_MODE_SUN_RISE, _, userId))
             .Times(1).After(input).WillOnce(Return(ERR_OK));
 
         EXPECT_EQ(manager.OnSwitchUser(userId), registerObsFail ? ERR_NO_INIT : ERR_OK);
@@ -526,29 +578,41 @@ protected:
     MOCK_METHOD(void, UpdateCallback, (bool, int32_t), (const));
 
 private:
-    void LoadUserSettingDataGetInt32ValueTest(const int32_t userId, const int32_t darkMode,
-        const int32_t startTime, const int32_t endTime, ExpectationSet& expectSet) const
+    void LoadUserSettingDataGetInt32ValueTest(
+        const int32_t userId, const DarkModeState darkModeState, ExpectationSet& expectSet) const
     {
         ExpectationSet input = expectSet;
         SettingDataManager& settingDataManager = SettingDataManager::GetInstance();
-        auto checkSettingDarkModeMode = [darkMode](Unused, int32_t& value, Unused) {
-            value = darkMode;
+        auto checkSettingDarkModeMode = [darkModeState](Unused, int32_t& value, Unused) {
+            value = darkModeState.settingMode;
             return ERR_OK;
         };
         expectSet += EXPECT_CALL(settingDataManager, MockGetInt32ValueStrictly(SETTING_DARK_MODE_MODE, _, userId))
             .Times(1).After(input).WillOnce(Invoke(checkSettingDarkModeMode));
-        auto checkSettingDarkModeStartTime = [startTime](Unused, int32_t& value, Unused) {
-            value = startTime;
+        auto checkSettingDarkModeStartTime = [darkModeState](Unused, int32_t& value, Unused) {
+            value = darkModeState.settingStartTime;
             return ERR_OK;
         };
         expectSet += EXPECT_CALL(settingDataManager, MockGetInt32ValueStrictly(SETTING_DARK_MODE_START_TIME, _, userId))
             .Times(1).After(input).WillOnce(Invoke(checkSettingDarkModeStartTime));
-        auto checkSettingDarkModeEndTime = [endTime](Unused, int32_t& value, Unused) {
-            value = endTime;
+        auto checkSettingDarkModeEndTime = [darkModeState](Unused, int32_t& value, Unused) {
+            value = darkModeState.settingEndTime;
             return ERR_OK;
         };
         expectSet += EXPECT_CALL(settingDataManager, MockGetInt32ValueStrictly(SETTING_DARK_MODE_END_TIME, _, userId))
             .Times(1).After(input).WillOnce(Invoke(checkSettingDarkModeEndTime));
+        auto checkSettingDarkModeSunsetTime = [darkModeState](Unused, int32_t& value, Unused) {
+            value = darkModeState.settingSunsetTime;
+            return ERR_OK;
+        };
+        expectSet += EXPECT_CALL(settingDataManager, MockGetInt32ValueStrictly(SETTING_DARK_MODE_SUN_SET, _, userId))
+            .Times(1).After(input).WillOnce(Invoke(checkSettingDarkModeSunsetTime));
+        auto checkSettingDarkModeSunriseTime = [darkModeState](Unused, int32_t& value, Unused) {
+            value = darkModeState.settingSunriseTime;
+            return ERR_OK;
+        };
+        expectSet += EXPECT_CALL(settingDataManager, MockGetInt32ValueStrictly(SETTING_DARK_MODE_SUN_RISE, _, userId))
+            .Times(1).After(input).WillOnce(Invoke(checkSettingDarkModeSunriseTime));
     }
 
     void GetUpdateFuncMap(const int32_t userId, ExpectationSet& expectSet,
@@ -570,12 +634,18 @@ private:
             .Times(1).WillOnce(Invoke(checkRegisterObserver));
         expectSet += EXPECT_CALL(settingDataManager, MockRegisterObserver(SETTING_DARK_MODE_END_TIME, _, userId))
             .Times(1).WillOnce(Invoke(checkRegisterObserver));
+        expectSet += EXPECT_CALL(settingDataManager, MockRegisterObserver(SETTING_DARK_MODE_SUN_SET, _, userId))
+            .Times(1).WillOnce(Invoke(checkRegisterObserver));
+        expectSet += EXPECT_CALL(settingDataManager, MockRegisterObserver(SETTING_DARK_MODE_SUN_RISE, _, userId))
+            .Times(1).WillOnce(Invoke(checkRegisterObserver));
         EXPECT_EQ(manager.OnSwitchUser(userId), ERR_OK);
         EXPECT_EQ(manager.settingDataObserversUserId_, userId);
         EXPECT_EQ(updateFuncMap.size(), SETTING_NUM);
         EXPECT_NE(updateFuncMap[SETTING_DARK_MODE_MODE], nullptr);
         EXPECT_NE(updateFuncMap[SETTING_DARK_MODE_START_TIME], nullptr);
         EXPECT_NE(updateFuncMap[SETTING_DARK_MODE_END_TIME], nullptr);
+        EXPECT_NE(updateFuncMap[SETTING_DARK_MODE_SUN_SET], nullptr);
+        EXPECT_NE(updateFuncMap[SETTING_DARK_MODE_SUN_RISE], nullptr);
     }
 };
 
@@ -620,63 +690,217 @@ HWTEST_F(DarkModeManagerInitializeTest, InitializeTest_0100, TestSize.Level1)
 
 HWTEST_F(DarkModeManagerTest, LoadUserSettingData_0100, TestSize.Level1)
 {
-    LoadUserSettingDataInvalidDarkModeTest(INVALID_USER_ID, -2, -2, 1, DarkModeMode::DARK_MODE_INVALID);
-    LoadUserSettingDataInvalidDarkModeTest(INVALID_USER_ID, -1, -1, 0, DarkModeMode::DARK_MODE_INVALID);
-    LoadUserSettingDataInvalidDarkModeTest(INVALID_USER_ID, 3, 0, -1, DarkModeMode::DARK_MODE_INVALID);
-    LoadUserSettingDataInvalidDarkModeTest(INVALID_USER_ID, 4, 1, -2, DarkModeMode::DARK_MODE_INVALID);
+    DarkModeState darkModeState;
+    darkModeState.settingMode = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_ONE;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_ONE;
+    LoadUserSettingDataInvalidDarkModeTest(INVALID_USER_ID, darkModeState, DarkModeMode::DARK_MODE_INVALID);
+    LoadUserSettingDataInvalidDarkModeTest(TEST_USER1, darkModeState, DarkModeMode::DARK_MODE_INVALID);
+    LoadUserSettingDataInvalidDarkModeTest(TEST_USER100, darkModeState, DarkModeMode::DARK_MODE_INVALID);
 
-    LoadUserSettingDataInvalidDarkModeTest(TEST_USER1, -2, -2, 1, DarkModeMode::DARK_MODE_INVALID);
-    LoadUserSettingDataInvalidDarkModeTest(TEST_USER1, -1, -1, 0, DarkModeMode::DARK_MODE_INVALID);
-    LoadUserSettingDataInvalidDarkModeTest(TEST_USER1, 3, 0, -1, DarkModeMode::DARK_MODE_INVALID);
-    LoadUserSettingDataInvalidDarkModeTest(TEST_USER1, 4, 1, -2, DarkModeMode::DARK_MODE_INVALID);
+    darkModeState.settingMode = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_ZERO;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_ZERO;
+    LoadUserSettingDataInvalidDarkModeTest(INVALID_USER_ID, darkModeState, DarkModeMode::DARK_MODE_INVALID);
+    LoadUserSettingDataInvalidDarkModeTest(TEST_USER1, darkModeState, DarkModeMode::DARK_MODE_INVALID);
+    LoadUserSettingDataInvalidDarkModeTest(TEST_USER100, darkModeState, DarkModeMode::DARK_MODE_INVALID);
 
-    LoadUserSettingDataInvalidDarkModeTest(TEST_USER100, -2, -2, 1, DarkModeMode::DARK_MODE_INVALID);
-    LoadUserSettingDataInvalidDarkModeTest(TEST_USER100, -1, -1, 0, DarkModeMode::DARK_MODE_INVALID);
-    LoadUserSettingDataInvalidDarkModeTest(TEST_USER100, 3, 0, -1, DarkModeMode::DARK_MODE_INVALID);
-    LoadUserSettingDataInvalidDarkModeTest(TEST_USER100, 4, 1, -2, DarkModeMode::DARK_MODE_INVALID);
+    darkModeState.settingMode = TEST_DARK_MODE_STATE_FOUR;
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_ZERO;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_ZERO;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    LoadUserSettingDataInvalidDarkModeTest(INVALID_USER_ID, darkModeState, DarkModeMode::DARK_MODE_INVALID);
+    LoadUserSettingDataInvalidDarkModeTest(TEST_USER1, darkModeState, DarkModeMode::DARK_MODE_INVALID);
+    LoadUserSettingDataInvalidDarkModeTest(TEST_USER100, darkModeState, DarkModeMode::DARK_MODE_INVALID);
+
+    darkModeState.settingMode = TEST_DARK_MODE_STATE_FIVE;
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_ONE;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_ONE;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    LoadUserSettingDataInvalidDarkModeTest(INVALID_USER_ID, darkModeState, DarkModeMode::DARK_MODE_INVALID);
+    LoadUserSettingDataInvalidDarkModeTest(TEST_USER1, darkModeState, DarkModeMode::DARK_MODE_INVALID);
+    LoadUserSettingDataInvalidDarkModeTest(TEST_USER100, darkModeState, DarkModeMode::DARK_MODE_INVALID);
 }
 
 HWTEST_F(DarkModeManagerTest, LoadUserSettingData_0200, TestSize.Level1)
 {
-    LoadUserSettingDataAllDayModeTest(INVALID_USER_ID, true, 0, -2, 1, DarkModeMode::DARK_MODE_ALWAYS_LIGHT);
-    LoadUserSettingDataAllDayModeTest(INVALID_USER_ID, false, 0, -1, 0, DarkModeMode::DARK_MODE_ALWAYS_LIGHT);
-    LoadUserSettingDataAllDayModeTest(INVALID_USER_ID, true, 1, 0, -1, DarkModeMode::DARK_MODE_ALWAYS_DARK);
-    LoadUserSettingDataAllDayModeTest(INVALID_USER_ID, false, 1, 1, -2, DarkModeMode::DARK_MODE_ALWAYS_DARK);
+    DarkModeState darkModeState;
+    darkModeState.settingMode = TEST_DARK_MODE_STATE_ZERO;
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_ONE;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_ONE;
+    LoadUserSettingDataAllDayModeTest(INVALID_USER_ID, true, darkModeState, DarkModeMode::DARK_MODE_ALWAYS_LIGHT);
+    LoadUserSettingDataAllDayModeTest(TEST_USER1, true, darkModeState, DarkModeMode::DARK_MODE_ALWAYS_LIGHT);
+    LoadUserSettingDataAllDayModeTest(TEST_USER100, true, darkModeState, DarkModeMode::DARK_MODE_ALWAYS_LIGHT);
 
-    LoadUserSettingDataAllDayModeTest(TEST_USER1, true, 0, -2, 1, DarkModeMode::DARK_MODE_ALWAYS_LIGHT);
-    LoadUserSettingDataAllDayModeTest(TEST_USER1, false, 0, -1, 0, DarkModeMode::DARK_MODE_ALWAYS_LIGHT);
-    LoadUserSettingDataAllDayModeTest(TEST_USER1, true, 1, 0, -1, DarkModeMode::DARK_MODE_ALWAYS_DARK);
-    LoadUserSettingDataAllDayModeTest(TEST_USER1, false, 1, 1, -2, DarkModeMode::DARK_MODE_ALWAYS_DARK);
+    darkModeState.settingMode = TEST_DARK_MODE_STATE_ZERO;
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_ZERO;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_ZERO;
+    LoadUserSettingDataAllDayModeTest(INVALID_USER_ID, false, darkModeState, DarkModeMode::DARK_MODE_ALWAYS_LIGHT);
+    LoadUserSettingDataAllDayModeTest(TEST_USER1, false, darkModeState, DarkModeMode::DARK_MODE_ALWAYS_LIGHT);
+    LoadUserSettingDataAllDayModeTest(TEST_USER100, false, darkModeState, DarkModeMode::DARK_MODE_ALWAYS_LIGHT);
 
-    LoadUserSettingDataAllDayModeTest(TEST_USER100, true, 0, -2, 1, DarkModeMode::DARK_MODE_ALWAYS_LIGHT);
-    LoadUserSettingDataAllDayModeTest(TEST_USER100, false, 0, -1, 0, DarkModeMode::DARK_MODE_ALWAYS_LIGHT);
-    LoadUserSettingDataAllDayModeTest(TEST_USER100, true, 1, 0, -1, DarkModeMode::DARK_MODE_ALWAYS_DARK);
-    LoadUserSettingDataAllDayModeTest(TEST_USER100, false, 1, 1, -2, DarkModeMode::DARK_MODE_ALWAYS_DARK);
+    darkModeState.settingMode = TEST_DARK_MODE_STATE_ONE;
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_ZERO;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_ZERO;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    LoadUserSettingDataAllDayModeTest(INVALID_USER_ID, true, darkModeState, DarkModeMode::DARK_MODE_ALWAYS_DARK);
+    LoadUserSettingDataAllDayModeTest(TEST_USER1, true, darkModeState, DarkModeMode::DARK_MODE_ALWAYS_DARK);
+    LoadUserSettingDataAllDayModeTest(TEST_USER100, true, darkModeState, DarkModeMode::DARK_MODE_ALWAYS_DARK);
+
+    darkModeState.settingMode = TEST_DARK_MODE_STATE_ONE;
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_ONE;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_ONE;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    LoadUserSettingDataAllDayModeTest(INVALID_USER_ID, false, darkModeState, DarkModeMode::DARK_MODE_ALWAYS_DARK);
+    LoadUserSettingDataAllDayModeTest(TEST_USER1, false, darkModeState, DarkModeMode::DARK_MODE_ALWAYS_DARK);
+    LoadUserSettingDataAllDayModeTest(TEST_USER100, false, darkModeState, DarkModeMode::DARK_MODE_ALWAYS_DARK);
 }
 
 HWTEST_F(DarkModeManagerTest, LoadUserSettingData_0300, TestSize.Level1)
 {
-    LoadUserSettingDataCustomAutoModeSetTimerFailTest(INVALID_USER_ID, 2, -2, 1, DarkModeMode::DARK_MODE_CUSTOM_AUTO);
-    LoadUserSettingDataCustomAutoModeSetTimerFailTest(TEST_USER1, 2, -1, 0, DarkModeMode::DARK_MODE_CUSTOM_AUTO);
-    LoadUserSettingDataCustomAutoModeSetTimerFailTest(TEST_USER100, 2, 0, -1, DarkModeMode::DARK_MODE_CUSTOM_AUTO);
+    DarkModeState darkModeState;
+    darkModeState.settingMode = TEST_DARK_MODE_STATE_TWO;
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_ONE;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_ONE;
+    LoadUserSettingDataCustomAutoModeSetTimerFailTest(
+        INVALID_USER_ID, darkModeState, DarkModeMode::DARK_MODE_CUSTOM_AUTO);
+    darkModeState.settingMode = TEST_DARK_MODE_STATE_THREE;
+    LoadUserSettingDataCustomAutoModeSetTimerFailTest(
+        INVALID_USER_ID, darkModeState, DarkModeMode::DARK_MODE_SUNRISE_SUNSET);
+
+    darkModeState.settingMode = TEST_DARK_MODE_STATE_TWO;
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_ZERO;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_ZERO;
+    LoadUserSettingDataCustomAutoModeSetTimerFailTest(
+        TEST_USER1, darkModeState, DarkModeMode::DARK_MODE_CUSTOM_AUTO);
+    darkModeState.settingMode = TEST_DARK_MODE_STATE_THREE;
+    LoadUserSettingDataCustomAutoModeSetTimerFailTest(
+        TEST_USER1, darkModeState, DarkModeMode::DARK_MODE_SUNRISE_SUNSET);
+
+    darkModeState.settingMode = TEST_DARK_MODE_STATE_TWO;
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_ZERO;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_ZERO;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    LoadUserSettingDataCustomAutoModeSetTimerFailTest(
+        TEST_USER100, darkModeState, DarkModeMode::DARK_MODE_CUSTOM_AUTO);
+    darkModeState.settingMode = TEST_DARK_MODE_STATE_THREE;
+    LoadUserSettingDataCustomAutoModeSetTimerFailTest(
+        TEST_USER100, darkModeState, DarkModeMode::DARK_MODE_SUNRISE_SUNSET);
 }
 
 HWTEST_F(DarkModeManagerTest, LoadUserSettingData_0400, TestSize.Level1)
 {
-    LoadUserSettingDataCustomAutoModeTest(INVALID_USER_ID, true, 2, -2, 1, DarkModeMode::DARK_MODE_CUSTOM_AUTO, true);
-    LoadUserSettingDataCustomAutoModeTest(INVALID_USER_ID, false, 2, -1, 0, DarkModeMode::DARK_MODE_CUSTOM_AUTO, true);
-    LoadUserSettingDataCustomAutoModeTest(INVALID_USER_ID, true, 2, 0, -1, DarkModeMode::DARK_MODE_CUSTOM_AUTO, false);
-    LoadUserSettingDataCustomAutoModeTest(INVALID_USER_ID, false, 2, 1, -2, DarkModeMode::DARK_MODE_CUSTOM_AUTO, false);
+    DarkModeState darkModeState;
+    darkModeState.settingMode = TEST_DARK_MODE_STATE_TWO;
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_ONE;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_ONE;
+    LoadUserSettingDataCustomAutoModeTest(
+        INVALID_USER_ID, true, darkModeState, DarkModeMode::DARK_MODE_CUSTOM_AUTO, true);
+    LoadUserSettingDataCustomAutoModeTest(
+        TEST_USER1, true, darkModeState, DarkModeMode::DARK_MODE_CUSTOM_AUTO, true);
+    LoadUserSettingDataCustomAutoModeTest(
+        TEST_USER100, true, darkModeState, DarkModeMode::DARK_MODE_CUSTOM_AUTO, true);
 
-    LoadUserSettingDataCustomAutoModeTest(TEST_USER1, true, 2, -2, 1, DarkModeMode::DARK_MODE_CUSTOM_AUTO, true);
-    LoadUserSettingDataCustomAutoModeTest(TEST_USER1, false, 2, -1, 0, DarkModeMode::DARK_MODE_CUSTOM_AUTO, true);
-    LoadUserSettingDataCustomAutoModeTest(TEST_USER1, true, 2, 0, -1, DarkModeMode::DARK_MODE_CUSTOM_AUTO, false);
-    LoadUserSettingDataCustomAutoModeTest(TEST_USER1, false, 2, 1, -2, DarkModeMode::DARK_MODE_CUSTOM_AUTO, false);
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_ZERO;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_ZERO;
+    LoadUserSettingDataCustomAutoModeTest(
+        INVALID_USER_ID, false, darkModeState, DarkModeMode::DARK_MODE_CUSTOM_AUTO, true);
+    LoadUserSettingDataCustomAutoModeTest(
+        TEST_USER1, false, darkModeState, DarkModeMode::DARK_MODE_CUSTOM_AUTO, true);
+    LoadUserSettingDataCustomAutoModeTest(
+        TEST_USER100, false, darkModeState, DarkModeMode::DARK_MODE_CUSTOM_AUTO, true);
 
-    LoadUserSettingDataCustomAutoModeTest(TEST_USER100, true, 2, -2, 1, DarkModeMode::DARK_MODE_CUSTOM_AUTO, true);
-    LoadUserSettingDataCustomAutoModeTest(TEST_USER100, false, 2, -1, 0, DarkModeMode::DARK_MODE_CUSTOM_AUTO, true);
-    LoadUserSettingDataCustomAutoModeTest(TEST_USER100, true, 2, 0, -1, DarkModeMode::DARK_MODE_CUSTOM_AUTO, false);
-    LoadUserSettingDataCustomAutoModeTest(TEST_USER100, false, 2, 1, -2, DarkModeMode::DARK_MODE_CUSTOM_AUTO, false);
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_ZERO;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_ZERO;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    LoadUserSettingDataCustomAutoModeTest(
+        INVALID_USER_ID, true, darkModeState, DarkModeMode::DARK_MODE_CUSTOM_AUTO, false);
+    LoadUserSettingDataCustomAutoModeTest(
+        TEST_USER1, true, darkModeState, DarkModeMode::DARK_MODE_CUSTOM_AUTO, false);
+    LoadUserSettingDataCustomAutoModeTest(
+        TEST_USER100, true, darkModeState, DarkModeMode::DARK_MODE_CUSTOM_AUTO, false);
+
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_ONE;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_ONE;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    LoadUserSettingDataCustomAutoModeTest(
+        INVALID_USER_ID, false, darkModeState, DarkModeMode::DARK_MODE_CUSTOM_AUTO, false);
+    LoadUserSettingDataCustomAutoModeTest(
+        TEST_USER1, false, darkModeState, DarkModeMode::DARK_MODE_CUSTOM_AUTO, false);
+    LoadUserSettingDataCustomAutoModeTest(
+        TEST_USER100, false, darkModeState, DarkModeMode::DARK_MODE_CUSTOM_AUTO, false);
+}
+
+HWTEST_F(DarkModeManagerTest, LoadUserSettingData_0500, TestSize.Level1)
+{
+    DarkModeState darkModeState;
+    darkModeState.settingMode = TEST_DARK_MODE_STATE_THREE;
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_ONE;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_ONE;
+    LoadUserSettingDataCustomAutoModeTest(
+        INVALID_USER_ID, true, darkModeState, DarkModeMode::DARK_MODE_SUNRISE_SUNSET, true);
+    LoadUserSettingDataCustomAutoModeTest(
+        TEST_USER1, true, darkModeState, DarkModeMode::DARK_MODE_SUNRISE_SUNSET, true);
+    LoadUserSettingDataCustomAutoModeTest(
+        TEST_USER100, true, darkModeState, DarkModeMode::DARK_MODE_SUNRISE_SUNSET, true);
+
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_ZERO;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_ZERO;
+    LoadUserSettingDataCustomAutoModeTest(
+        INVALID_USER_ID, false, darkModeState, DarkModeMode::DARK_MODE_SUNRISE_SUNSET, true);
+    LoadUserSettingDataCustomAutoModeTest(
+        TEST_USER1, false, darkModeState, DarkModeMode::DARK_MODE_SUNRISE_SUNSET, true);
+    LoadUserSettingDataCustomAutoModeTest(
+        TEST_USER100, false, darkModeState, DarkModeMode::DARK_MODE_SUNRISE_SUNSET, true);
+
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_ZERO;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_ZERO;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_NEGATIVE_ONE;
+    LoadUserSettingDataCustomAutoModeTest(
+        INVALID_USER_ID, true, darkModeState, DarkModeMode::DARK_MODE_SUNRISE_SUNSET, false);
+    LoadUserSettingDataCustomAutoModeTest(
+        TEST_USER1, true, darkModeState, DarkModeMode::DARK_MODE_SUNRISE_SUNSET, false);
+    LoadUserSettingDataCustomAutoModeTest(
+        TEST_USER100, true, darkModeState, DarkModeMode::DARK_MODE_SUNRISE_SUNSET, false);
+
+    darkModeState.settingStartTime = TEST_DARK_MODE_STATE_ONE;
+    darkModeState.settingEndTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    darkModeState.settingSunsetTime = TEST_DARK_MODE_STATE_ONE;
+    darkModeState.settingSunriseTime = TEST_DARK_MODE_STATE_NEGATIVE_TWO;
+    LoadUserSettingDataCustomAutoModeTest(
+        INVALID_USER_ID, true, darkModeState, DarkModeMode::DARK_MODE_SUNRISE_SUNSET, false);
+    LoadUserSettingDataCustomAutoModeTest(
+        TEST_USER1, true, darkModeState, DarkModeMode::DARK_MODE_SUNRISE_SUNSET, false);
+    LoadUserSettingDataCustomAutoModeTest(
+        TEST_USER100, true, darkModeState, DarkModeMode::DARK_MODE_SUNRISE_SUNSET, false);
 }
 
 HWTEST_F(DarkModeManagerTest, NotifyDarkModeUpdate_0100, TestSize.Level1)
@@ -689,6 +913,8 @@ HWTEST_F(DarkModeManagerTest, NotifyDarkModeUpdate_0100, TestSize.Level1)
     NotifyDarkModeUpdateTest(INVALID_USER_ID, DarkModeMode::DARK_MODE_ALWAYS_DARK, false, true);
     NotifyDarkModeUpdateTest(INVALID_USER_ID, DarkModeMode::DARK_MODE_CUSTOM_AUTO, true, false);
     NotifyDarkModeUpdateTest(INVALID_USER_ID, DarkModeMode::DARK_MODE_CUSTOM_AUTO, false, false);
+    NotifyDarkModeUpdateTest(INVALID_USER_ID, DarkModeMode::DARK_MODE_SUNRISE_SUNSET, true, false);
+    NotifyDarkModeUpdateTest(INVALID_USER_ID, DarkModeMode::DARK_MODE_SUNRISE_SUNSET, false, false);
 }
 
 HWTEST_F(DarkModeManagerTest, OnSwitchUser_0100, TestSize.Level1)
@@ -784,16 +1010,19 @@ HWTEST_F(DarkModeManagerTest, ModeUpdateFunc_0100, TestSize.Level1)
     ModeUpdateFuncFailTest(TEST_USER1, DarkModeMode::DARK_MODE_ALWAYS_DARK);
     ModeUpdateFuncFailTest(TEST_USER1, DarkModeMode::DARK_MODE_ALWAYS_LIGHT);
     ModeUpdateFuncFailTest(TEST_USER1, DarkModeMode::DARK_MODE_CUSTOM_AUTO);
+    ModeUpdateFuncFailTest(TEST_USER1, DarkModeMode::DARK_MODE_SUNRISE_SUNSET);
     ModeUpdateFuncFailTest(TEST_USER1, DarkModeMode::DARK_MODE_SIZE);
     ModeUpdateFuncFailTest(TEST_USER100, DarkModeMode::DARK_MODE_INVALID);
     ModeUpdateFuncFailTest(TEST_USER100, DarkModeMode::DARK_MODE_ALWAYS_DARK);
     ModeUpdateFuncFailTest(TEST_USER100, DarkModeMode::DARK_MODE_ALWAYS_LIGHT);
     ModeUpdateFuncFailTest(TEST_USER100, DarkModeMode::DARK_MODE_CUSTOM_AUTO);
+    ModeUpdateFuncFailTest(TEST_USER100, DarkModeMode::DARK_MODE_SUNRISE_SUNSET);
     ModeUpdateFuncFailTest(TEST_USER100, DarkModeMode::DARK_MODE_SIZE);
     ModeUpdateFuncFailTest(TEST_USER101, DarkModeMode::DARK_MODE_INVALID);
     ModeUpdateFuncFailTest(TEST_USER101, DarkModeMode::DARK_MODE_ALWAYS_DARK);
     ModeUpdateFuncFailTest(TEST_USER101, DarkModeMode::DARK_MODE_ALWAYS_LIGHT);
     ModeUpdateFuncFailTest(TEST_USER101, DarkModeMode::DARK_MODE_CUSTOM_AUTO);
+    ModeUpdateFuncFailTest(TEST_USER101, DarkModeMode::DARK_MODE_SUNRISE_SUNSET);
     ModeUpdateFuncFailTest(TEST_USER101, DarkModeMode::DARK_MODE_SIZE);
 }
 
