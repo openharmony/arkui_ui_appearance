@@ -382,6 +382,10 @@ void UiAppearanceAbility::OnAddSystemAbility(int32_t systemAbilityId, const std:
 void UiAppearanceAbility::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
 {
     LOGI("systemAbilityId = %{public}d removed.", systemAbilityId);
+    if (systemAbilityId == APP_MGR_SERVICE_ID) {
+        std::lock_guard<std::mutex> onceFlagGuard(userSwitchUpdateConfigurationOnceFlagMutex_);
+        userSwitchUpdateConfigurationOnceFlag_.clear();
+    }
 }
 
 int32_t UiAppearanceAbility::GetCallingUserId()
