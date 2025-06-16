@@ -30,8 +30,6 @@ static const std::string TEMPORARY_STATE_START_TIME_PARAM_STRING =
 static const std::string TEMPORARY_STATE_END_TIME_PARAM_STRING = "persist.uiAppearance.dark_mode_temp_state_end_time.";
 static const std::string TEMPORARY_COLOR_MODE_TEMPORARY_STRING = "1";
 static const std::string TEMPORARY_COLOR_MODE_NORMAL_STRING = "0";
-constexpr int32_t DAY_TO_MINUTE = 24 * 60;
-constexpr int32_t HOUR_TO_MINUTE = 60;
 constexpr int32_t MINUTE_TO_SECOND = 60;
 } // namespace
 
