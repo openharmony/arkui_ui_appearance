@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,6 +23,8 @@ namespace {
 const std::string SETTING_DARK_MODE_MODE = "settings.uiappearance.darkmode_mode";
 const std::string SETTING_DARK_MODE_START_TIME = "settings.uiappearance.darkmode_starttime";
 const std::string SETTING_DARK_MODE_END_TIME = "settings.uiappearance.darkmode_endtime";
+const std::string SETTING_DARK_MODE_SUN_SET = "settings.display.sun_set";
+const std::string SETTING_DARK_MODE_SUN_RISE = "settings.display.sun_rise";
 const static int32_t USER100 = 100;
 }
 
@@ -52,12 +54,18 @@ ErrCode DarkModeManager::LoadUserSettingData(const int32_t userId, const bool ne
     manager.GetInt32ValueStrictly(SETTING_DARK_MODE_START_TIME, startTime, userId);
     int32_t endTime = -1;
     manager.GetInt32ValueStrictly(SETTING_DARK_MODE_END_TIME, endTime, userId);
+    int32_t sunsetTime = SUNSET_TIME_DEFAULT;
+    manager.GetInt32ValueStrictly(SETTING_DARK_MODE_SUN_SET, sunsetTime, userId);
+    int32_t sunriseTime = SUNRISE_TIME_DEFAULT;
+    manager.GetInt32ValueStrictly(SETTING_DARK_MODE_SUN_RISE, sunriseTime, userId);
 
     std::lock_guard lock(darkModeStatesMutex_);
     DarkModeState& state = darkModeStates_[userId];
     state.settingMode = static_cast<DarkModeMode>(darkMode);
     state.settingStartTime = startTime;
     state.settingEndTime = endTime;
+    state.settingSunsetTime = sunsetTime;
+    state.settingSunriseTime = sunriseTime;
     LOGI("load user setting data, userId: %{public}d, mode: %{public}d, start: %{public}d, end : %{public}d",
         userId, darkMode, startTime, endTime);
     temporaryColorModeMgr_.InitData(userId);
@@ -137,7 +145,7 @@ ErrCode DarkModeManager::OnSwitchUser(const int32_t userId)
 
 void DarkModeManager::DoSwitchTemporaryColorMode(const int32_t userId, bool isDarkMode)
 {
-    if (IsDarkModeCustomAuto(userId)) {
+    if (IsDarkModeCustomAuto(userId) || IsDarkModeSunsetSunrise(userId)) {
         screenSwitchOperatorMgr_.ResetScreenOffOperateInfo();
         int32_t settingStartTime = 0;
         int32_t settingEndTime = 0;
@@ -183,13 +191,20 @@ ErrCode DarkModeManager::RestartTimer()
 {
     std::lock_guard lock(darkModeStatesMutex_);
     DarkModeMode mode = darkModeStates_[settingDataObserversUserId_].settingMode;
-    if (mode != DARK_MODE_CUSTOM_AUTO) {
+    int32_t startTime = -1;
+    int32_t endTime = -1;
+
+    if (mode == DARK_MODE_SUNRISE_SUNSET) {
+        startTime = darkModeStates_[settingDataObserversUserId_].settingSunsetTime;
+        endTime = darkModeStates_[settingDataObserversUserId_].settingSunriseTime;
+    } else if (mode == DARK_MODE_CUSTOM_AUTO) {
+        startTime = darkModeStates_[settingDataObserversUserId_].settingStartTime;
+        endTime = darkModeStates_[settingDataObserversUserId_].settingEndTime;
+    } else {
         LOGD("no need to restart timer.");
         return ERR_OK;
     }
 
-    int32_t startTime = darkModeStates_[settingDataObserversUserId_].settingStartTime;
-    int32_t endTime = darkModeStates_[settingDataObserversUserId_].settingEndTime;
     if (AlarmTimerManager::IsWithinTimeInterval(startTime, endTime)) {
         UpdateDarkModeSchedule(DARK_MODE_ALWAYS_DARK, settingDataObserversUserId_, false);
     } else {
@@ -204,13 +219,24 @@ bool DarkModeManager::IsDarkModeCustomAuto(const int32_t userId)
     return darkModeStates_[userId].settingMode == DARK_MODE_CUSTOM_AUTO;
 }
 
+bool DarkModeManager::IsDarkModeSunsetSunrise(const int32_t userId)
+{
+    std::lock_guard lock(darkModeStatesMutex_);
+    return darkModeStates_[userId].settingMode == DARK_MODE_SUNRISE_SUNSET;
+}
+
 bool DarkModeManager::GetSettingTime(const int32_t userId, int32_t& settingStartTime, int32_t& settingEndTime)
 {
     std::lock_guard lock(darkModeStatesMutex_);
     auto it = darkModeStates_.find(userId);
     if (it != darkModeStates_.end()) {
-        settingStartTime = it->second.settingStartTime;
-        settingEndTime = it->second.settingEndTime;
+        if (it->second.settingMode == DARK_MODE_CUSTOM_AUTO) {
+            settingStartTime = it->second.settingStartTime;
+            settingEndTime = it->second.settingEndTime;
+        } else {
+            settingStartTime = it->second.settingSunsetTime;
+            settingEndTime = it->second.settingSunriseTime;
+        }
         return true;
     }
     return false;
@@ -251,6 +277,12 @@ void DarkModeManager::LoadSettingDataObserversCallback()
     });
     settingDataObservers_.emplace_back(SETTING_DARK_MODE_END_TIME, [&](const std::string& key, int32_t userId) {
         SettingDataDarkModeEndTimeUpdateFunc(key, userId);
+    });
+    settingDataObservers_.emplace_back(SETTING_DARK_MODE_SUN_SET, [&](const std::string& key, int32_t userId) {
+        SettingDataDarkModeSunsetTimeUpdateFunc(key, userId);
+    });
+    settingDataObservers_.emplace_back(SETTING_DARK_MODE_SUN_RISE, [&](const std::string& key, int32_t userId) {
+        SettingDataDarkModeSunriseTimeUpdateFunc(key, userId);
     });
 }
 
@@ -330,6 +362,42 @@ void DarkModeManager::SettingDataDarkModeEndTimeUpdateFunc(const std::string& ke
     OnStateChangeLocked(userId, true, isDarkMode, true);
 }
 
+void DarkModeManager::SettingDataDarkModeSunsetTimeUpdateFunc(const std::string& key, const int32_t userId)
+{
+    SettingDataManager& manager = SettingDataManager::GetInstance();
+    int32_t value = SUNSET_TIME_DEFAULT;
+    manager.GetInt32ValueStrictly(key, value, userId);
+    std::lock_guard lock(darkModeStatesMutex_);
+    LOGI("dark mode sunset time change, key: %{public}s, userId: %{public}d, from %{public}d to %{public}d",
+        key.c_str(), userId, darkModeStates_[userId].settingSunsetTime, value);
+    if (value >= darkModeStates_[userId].settingSunriseTime) {
+        darkModeStates_[userId].settingSunsetTime = SUNSET_TIME_DEFAULT;
+        darkModeStates_[userId].settingSunriseTime = SUNRISE_TIME_DEFAULT;
+    } else {
+        darkModeStates_[userId].settingSunsetTime = value;
+    }
+    bool isDarkMode = false;
+    OnStateChangeLocked(userId, true, isDarkMode, false);
+}
+
+void DarkModeManager::SettingDataDarkModeSunriseTimeUpdateFunc(const std::string& key, const int32_t userId)
+{
+    SettingDataManager& manager = SettingDataManager::GetInstance();
+    int32_t value = SUNRISE_TIME_DEFAULT;
+    manager.GetInt32ValueStrictly(key, value, userId);
+    std::lock_guard lock(darkModeStatesMutex_);
+    LOGI("dark mode sunrise time change, key: %{public}s, userId: %{public}d, from %{public}d to %{public}d",
+        key.c_str(), userId, darkModeStates_[userId].settingSunriseTime, value);
+    if (value <= darkModeStates_[userId].settingSunsetTime) {
+        darkModeStates_[userId].settingSunsetTime = SUNSET_TIME_DEFAULT;
+        darkModeStates_[userId].settingSunriseTime = SUNRISE_TIME_DEFAULT;
+    } else {
+        darkModeStates_[userId].settingSunriseTime = value;
+    }
+    bool isDarkMode = false;
+    OnStateChangeLocked(userId, true, isDarkMode, false);
+}
+
 ErrCode DarkModeManager::OnStateChangeLocked(
     const int32_t userId, const bool needUpdateCallback, bool& isDarkMode, const bool resetTempColorModeFlag)
 {
@@ -342,6 +410,7 @@ ErrCode DarkModeManager::OnStateChangeLocked(
                 userId, state.settingMode, needUpdateCallback, isDarkMode, resetTempColorModeFlag);
             break;
         case DARK_MODE_CUSTOM_AUTO:
+        case DARK_MODE_SUNRISE_SUNSET:
             code = OnStateChangeToCustomAutoMode(userId, state, needUpdateCallback, isDarkMode, resetTempColorModeFlag);
             break;
         default:
@@ -366,13 +435,23 @@ ErrCode DarkModeManager::OnStateChangeToAllDayMode(const int32_t userId, const D
 ErrCode DarkModeManager::OnStateChangeToCustomAutoMode(const int32_t userId, const DarkModeState& state,
     const bool needUpdateCallback, bool& isDarkMode, const bool resetTempColorModeFlag)
 {
-    ErrCode code = CreateOrUpdateTimers(state.settingStartTime, state.settingEndTime, userId);
+    int32_t startTime = -1;
+    int32_t endTime = -1;
+    if (state.settingMode == DARK_MODE_SUNRISE_SUNSET) {
+        startTime = state.settingSunsetTime;
+        endTime = state.settingSunriseTime;
+    } else {
+        startTime = state.settingStartTime;
+        endTime = state.settingEndTime;
+    }
+
+    ErrCode code = CreateOrUpdateTimers(startTime, endTime, userId);
     if (code != ERR_OK) {
         alarmTimerManager_.ClearTimerByUserId(userId);
         return code;
     }
     DarkModeMode mode = DARK_MODE_INVALID;
-    if (AlarmTimerManager::IsWithinTimeInterval(state.settingStartTime, state.settingEndTime)) {
+    if (AlarmTimerManager::IsWithinTimeInterval(startTime, endTime)) {
         isDarkMode = true;
         mode = DARK_MODE_ALWAYS_DARK;
     } else {
@@ -429,17 +508,30 @@ ErrCode DarkModeManager::CheckTimerCallbackParams(const int32_t startTime, const
 {
     std::lock_guard lock(darkModeStatesMutex_);
     DarkModeState& state = darkModeStates_[userId];
-    if (state.settingMode != DARK_MODE_CUSTOM_AUTO) {
+    if (state.settingMode == DARK_MODE_CUSTOM_AUTO) {
+        if (state.settingStartTime != startTime) {
+            LOGE("timer callback, param wrong, startTime: %{public}d, setting: %{public}d",
+                startTime, state.settingStartTime);
+            return ERR_INVALID_OPERATION;
+        }
+        if (state.settingEndTime != endTime) {
+            LOGE("timer callback, param wrong, endTime: %{public}d, setting: %{public}d",
+                endTime, state.settingEndTime);
+            return ERR_INVALID_OPERATION;
+        }
+    } else if (state.settingMode == DARK_MODE_SUNRISE_SUNSET) {
+        if (state.settingSunsetTime != startTime) {
+            LOGE("timer callback, param wrong, sunsetTime: %{public}d, setting: %{public}d",
+                startTime, state.settingSunsetTime);
+            return ERR_INVALID_OPERATION;
+        }
+        if (state.settingSunriseTime != endTime) {
+            LOGE("timer callback, param wrong, sunriseTime: %{public}d, setting: %{public}d",
+                endTime, state.settingSunriseTime);
+            return ERR_INVALID_OPERATION;
+        }
+    } else {
         LOGE("timer callback, param wrong, setting mode: %{public}d", state.settingMode);
-        return ERR_INVALID_OPERATION;
-    }
-    if (state.settingStartTime != startTime) {
-        LOGE("timer callback, param wrong, startTime: %{public}d, setting: %{public}d",
-            startTime, state.settingStartTime);
-        return ERR_INVALID_OPERATION;
-    }
-    if (state.settingEndTime != endTime) {
-        LOGE("timer callback, param wrong, endTime: %{public}d, setting: %{public}d", endTime, state.settingEndTime);
         return ERR_INVALID_OPERATION;
     }
     return ERR_OK;
