@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,6 +26,10 @@
 #include "screen_switch_operator_manager.h"
 
 namespace OHOS::ArkUi::UiAppearance {
+constexpr int32_t HOUR_TO_MINUTE = 60;
+constexpr int32_t DAY_TO_MINUTE = 24 * 60;
+constexpr int32_t SUNSET_TIME_DEFAULT = 18 * HOUR_TO_MINUTE;
+constexpr int32_t SUNRISE_TIME_DEFAULT = 7 * HOUR_TO_MINUTE + DAY_TO_MINUTE;
 class DarkModeManager final : public NoCopyable {
 public:
     static DarkModeManager &GetInstance();
@@ -58,6 +62,7 @@ private:
         DARK_MODE_ALWAYS_LIGHT = 0,
         DARK_MODE_ALWAYS_DARK = 1,
         DARK_MODE_CUSTOM_AUTO = 2,
+        DARK_MODE_SUNRISE_SUNSET = 3,
         DARK_MODE_SIZE,
     };
 
@@ -65,6 +70,8 @@ private:
         DarkModeMode settingMode = DARK_MODE_INVALID;
         int32_t settingStartTime = -1;
         int32_t settingEndTime = -1;
+        int32_t settingSunsetTime = SUNSET_TIME_DEFAULT;   // Default sunset Time 6pm
+        int32_t settingSunriseTime = SUNRISE_TIME_DEFAULT; // Default sunrise time: 7am the next day
     };
 
     void LoadSettingDataObserversCallback();
@@ -78,6 +85,10 @@ private:
     void SettingDataDarkModeStartTimeUpdateFunc(const std::string& key, int32_t userId);
 
     void SettingDataDarkModeEndTimeUpdateFunc(const std::string& key, int32_t userId);
+
+    void SettingDataDarkModeSunsetTimeUpdateFunc(const std::string& key, int32_t userId);
+
+    void SettingDataDarkModeSunriseTimeUpdateFunc(const std::string& key, int32_t userId);
 
     ErrCode OnStateChangeLocked(
         int32_t userId, bool needUpdateCallback, bool& isDarkMode, const bool resetTempColorModeFlag);
@@ -97,6 +108,8 @@ private:
     void UpdateDarkModeSchedule(const DarkModeMode isDarkMode, const int32_t userId, const bool resetTempColorModeFlag);
 
     bool IsDarkModeCustomAuto(const int32_t userId);
+
+    bool IsDarkModeSunsetSunrise(const int32_t userId);
 
     std::mutex settingDataObserversMutex_;
     std::list<std::pair<std::string, std::function<void(const std::string&, int32_t)>>> settingDataObservers_;
