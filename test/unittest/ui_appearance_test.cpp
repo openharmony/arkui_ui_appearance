@@ -269,5 +269,19 @@ HWTEST_F(DarkModeTest, ui_appearance_test_008, TestSize.Level0)
     test->OnRemoveSystemAbility(APP_MGR_SERVICE_ID, "");
     EXPECT_EQ(0, test->userSwitchUpdateConfigurationOnceFlag_.size());
 }
+
+/**
+ * @tc.name: ui_appearance_test_009
+ * @tc.desc: Test the alarm_timer_manager
+ * @tc.type: FUNC
+ */
+HWTEST_F(DarkModeTest, ui_appearance_test_009, TestSize.Level0)
+{
+    LOGI("Test BackGroundAppColorSwitch.");
+
+    auto test = DarkModeTest::GetUiAppearanceAbilityTest();
+    bool ret = test->BackGroundAppColorSwitch(nullptr, 0);
+    EXPECT_EQ(false, ret);
+}
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS

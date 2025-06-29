@@ -17,7 +17,7 @@
 #define UI_APPEARANCE_BACKGROUND_APP_COLOR_SWICH_SETTINGS_H
 
 #include <mutex>
-#include <unordered_set>
+#include <list>
 
 #include "errors.h"
 #include "nocopyable.h"
@@ -39,12 +39,12 @@ public:
 
     bool CheckInWhileList(const std::string& bundleName);
 
-    std::unordered_set<std::string> GetWhileList();
+    std::list<std::string> GetWhileList();
 private:
     std::mutex policyMutex_;
     bool isAllowListEnable_ = false;
 
-    std::unordered_set<std::string> allowList_;
+    std::list<std::string> allowList_;
     int32_t taskQuantity_ = -1;
     int32_t durationMillisecond_ = -1;
 };

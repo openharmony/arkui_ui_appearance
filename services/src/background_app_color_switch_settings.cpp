@@ -16,6 +16,7 @@
 #include "ui_appearance_log.h"
 #include "background_app_color_switch_settings.h"
 #include "json_utils.h"
+#include <algorithm>
 
 namespace {
 constexpr const char* CONFIG_PATH = "/etc/dark_mode_whilelist.json";
@@ -43,7 +44,7 @@ ErrCode BackGroundAppColorSwitchSettings::Initialize()
 {
     std::lock_guard lock(policyMutex_);
     nlohmann::json object;
-    if (!JsonUtils::GetInstance().LoadConfiguration(CONFIG_PATH, object)) {
+    if (!JsonUtils::LoadConfiguration(CONFIG_PATH, object)) {
         LOGW("BackGroundAppColorSwitchSettings read file failed");
         return ERR_NAME_NOT_FOUND;
     }
@@ -60,7 +61,7 @@ ErrCode BackGroundAppColorSwitchSettings::Initialize()
         }
         auto bundleName = jsonObject.at(BUNDLE_NAME).get<std::string>();
         LOGI("insert allowList_ bundleName = %{public}s", bundleName.c_str());
-        allowList_.insert(bundleName);
+        allowList_.push_back(bundleName);
     }
 
     if (!object.contains(STRATEGY)) {
@@ -106,7 +107,7 @@ int32_t BackGroundAppColorSwitchSettings::GetDurationMillisecond()
 bool BackGroundAppColorSwitchSettings::CheckInWhileList(const std::string& bundleName)
 {
     std::lock_guard lock(policyMutex_);
-    if (allowList_.find(bundleName) != allowList_.end()) {
+    if (std::find(allowList_.begin(), allowList_.end(), bundleName) != allowList_.end()) {
         return true;
     }
     return false;
@@ -121,7 +122,7 @@ void BackGroundAppColorSwitchSettings::Reset()
     isAllowListEnable_ = false;
 }
 
-std::unordered_set<std::string> BackGroundAppColorSwitchSettings::GetWhileList()
+std::list<std::string> BackGroundAppColorSwitchSettings::GetWhileList()
 {
     std::lock_guard lock(policyMutex_);
     return allowList_;
