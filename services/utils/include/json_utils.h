@@ -17,11 +17,8 @@
 #define UI_APPEARANCE_JSON_UTILS_H
 
 #include <string>
-#include <map>
-#include <optional>
 
 #include "nlohmann/json.hpp"
-#include "singleton.h"
 
 namespace OHOS::ArkUi::UiAppearance {
 /**
@@ -30,69 +27,11 @@ namespace OHOS::ArkUi::UiAppearance {
  */
 class JsonUtils {
 public:
-    /**
-     * GetInstance, get an instance of JsonUtils.
-     *
-     * @return an instance of JsonUtils.
-     */
-    static JsonUtils &GetInstance()
-    {
-        static JsonUtils instance;
-        return instance;
-    }
-
-    /**
-     * JsonUtils, destructor.
-     *
-     */
-    ~JsonUtils() = default;
-
-    /**
-     * LoadConfiguration, load configuration.
-     *
-     * @param path The json file path.
-     * @param jsonBuf The json buffer to be returned.
-     * @param defaultPath The default output path.
-     * @return Whether or not the load operation succeeds.
-     */
-    bool LoadConfiguration(const std::string& path, nlohmann::json& jsonBuf, const std::string& defaultPath = "");
-
-    /**
-     * IsEqual, check if json object contains certain key.
-     *
-     * @param jsonObject The json object.
-     * @param key The key.
-     * @param value The string value.
-     * @param checkEmpty The flag indicates whether the value can be empty.
-     * @return Whether or not the json object contains certain key.
-     */
-    bool IsEqual(nlohmann::json &jsonObject, const std::string &key,
-        const std::string &value, bool checkEmpty = false);
-    
-    /**
-     * IsEqual, check if json object contains certain key.
-     *
-     * @param jsonObject The json object.
-     * @param key The key.
-     * @param value The int32_t value.
-     * @return Whether or not the json object contains certain key.
-     */
-    bool IsEqual(nlohmann::json &jsonObject, const std::string &key, int32_t value);
-
-    /**
-     * parse json to optional bool.
-     *
-     * @param jsonObject The json object.
-     * @param key The key.
-     * @return optional boolean value.
-     */
-    std::optional<bool> JsonToOptionalBool(const nlohmann::json &jsonObject, const std::string &key);
-
-private:
-    std::string GetConfigPath(const std::string& path, const std::string& defaultPath);
-    bool ReadFileInfoJson(const std::string &filePath, nlohmann::json &jsonBuf);
-    JsonUtils() = default;
-    DISALLOW_COPY_AND_MOVE(JsonUtils);
+    static bool LoadConfiguration(const std::string& path, nlohmann::json& jsonBuf,
+        const std::string& defaultPath = "");
+    static std::string GetConfigPath(const std::string& path, const std::string& defaultPath);
+    static bool ReadFileInfoJson(const std::string &filePath, nlohmann::json &jsonBuf);
+    static bool ReadFileToBuffer(const std::string &filePath, std::string &dataBuffer);
 };
 } // namespace OHOS::ArkUi::UiAppearance
 #endif // UI_APPEARANCE_JSON_UTILS_H

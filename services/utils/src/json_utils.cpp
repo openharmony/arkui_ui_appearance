@@ -1,4 +1,4 @@
-    /*
+/*
  * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,10 @@
  */
 
 #include "json_utils.h"
-#include <fstream>
-#include <sstream>
 #include <unistd.h>
-#include <regex>
-
-#include "ui_appearance_log.h"
+#include <sys/stat.h>
 #include "config_policy_utils.h"
-#include "hilog_tag_wrapper.h"
+#include "ui_appearance_log.h"
 
 namespace OHOS::ArkUi::UiAppearance {
 bool JsonUtils::LoadConfiguration(const std::string& path, nlohmann::json& jsonBuf,
@@ -51,7 +47,7 @@ bool JsonUtils::ReadFileInfoJson(const std::string &filePath, nlohmann::json &js
         LOGE("filePath empty");
         return false;
     }
-    
+
     if (access(filePath.c_str(), F_OK) != 0) {
         LOGE("deepLink config not exist");
         return false;
@@ -63,27 +59,13 @@ bool JsonUtils::ReadFileInfoJson(const std::string &filePath, nlohmann::json &js
         return false;
     }
 
-    std::fstream in;
-    char errBuf[256];
-    errBuf[0] = '\0';
-    in.open(path, std::ios_base::in);
-    if (!in.is_open()) {
-        strerror_r(errno, errBuf, sizeof(errBuf));
-        LOGE("file not open: %{public}s", errBuf);
+    std::string dataBuffer;
+    bool res = ReadFileToBuffer(path, dataBuffer);
+    if (!res) {
+        LOGE("ReadFileToBuffer failed");
         return false;
     }
-
-    in.seekg(0, std::ios::end);
-    int64_t size = in.tellg();
-    if (size <= 0) {
-        LOGE("empty file");
-        in.close();
-        return false;
-    }
-
-    in.seekg(0, std::ios::beg);
-    jsonBuf = nlohmann::json::parse(in, nullptr, false);
-    in.close();
+    jsonBuf = nlohmann::json::parse(dataBuffer, nullptr, false);
     if (jsonBuf.is_discarded()) {
         LOGE("bad profile file");
         return false;
@@ -92,34 +74,59 @@ bool JsonUtils::ReadFileInfoJson(const std::string &filePath, nlohmann::json &js
     return true;
 }
 
-bool JsonUtils::IsEqual(nlohmann::json &jsonObject, const std::string &key, const std::string &value, bool checkEmpty)
+bool JsonUtils::ReadFileToBuffer(const std::string &filePath, std::string &dataBuffer)
 {
-    if (jsonObject.contains(key) && jsonObject[key].is_string()) {
-        std::string  jsonValue = jsonObject.at(key).get<std::string>();
-        if (checkEmpty && !jsonValue.empty() && jsonValue != value) {
-            return false;
-        } else if (value != jsonValue) {
-            return false;
-        }
+    struct stat statbuf;
+    int ret = stat(filePath.c_str(), &statbuf);
+    if (ret != 0) {
+        LOGE("fail, ret:%{public}d", ret);
+        return false;
     }
-    return true;
-}
+    size_t bufferSize = static_cast<size_t>(statbuf.st_size);
 
-bool JsonUtils::IsEqual(nlohmann::json &jsonObject, const std::string &key, int32_t value)
-{
-    if (jsonObject.contains(key) && jsonObject[key].is_number()) {
-        if (value != jsonObject.at(key).get<int32_t>()) {
-            return false;
-        }
+    std::unique_ptr<uint8_t[]> buffer = std::make_unique<uint8_t[]>(bufferSize);
+    if (buffer == nullptr) {
+        LOGE("buffer null");
+        return false;
     }
-    return true;
-}
 
-std::optional<bool> JsonUtils::JsonToOptionalBool(const nlohmann::json &jsonObject, const std::string &key)
-{
-    if (jsonObject.contains(key) && jsonObject[key].is_boolean()) {
-        return jsonObject[key].get<bool>();
+    FILE *fp = fopen(filePath.c_str(), "rb");
+    if (fp == nullptr) {
+        LOGE("fail, real path=%{public}s", filePath.c_str());
+        return false;
     }
-    return std::nullopt;
+
+    ret = fseek(fp, 0, SEEK_END);
+    if (ret != 0) {
+        LOGE("fseek fail, ret=%{public}d", ret);
+        fclose(fp);
+        return false;
+    }
+
+    size_t fileSize = static_cast<size_t>(ftell(fp));
+
+    ret = fseek(fp, 0, SEEK_SET);
+    if (ret != 0) {
+        LOGE("fseek fail, ret=%{public}d", ret);
+        fclose(fp);
+        return false;
+    }
+    
+    if (bufferSize < fileSize) {
+        LOGE("buffer size:(%{public}zu) is smaller than file size:(%{public}zu)", bufferSize,
+            fileSize);
+        fclose(fp);
+        return false;
+    }
+    size_t retSize = std::fread(buffer.get(), 1, fileSize, fp);
+    if (retSize != fileSize) {
+        LOGE("read file result size = %{public}zu, size = %{public}zu",
+            retSize, fileSize);
+        fclose(fp);
+        return false;
+    }
+    (void)fclose(fp);
+    dataBuffer = std::string(reinterpret_cast<char *>(buffer.get()), bufferSize);
+    return true;
 }
 } // namespace OHOS::ArkUi::UiAppearance
