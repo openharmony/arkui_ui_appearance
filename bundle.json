@@ -39,13 +39,15 @@
         "samgr",
         "time_service",
         "os_account",
-        "common_event_service"
+        "common_event_service",
+        "runtime_core"
       ],
       "third_party": []
     },
     "build": {
       "sub_component": [
-        "//foundation/arkui/ui_appearance:ui_appearance_packages"
+        "//foundation/arkui/ui_appearance:ui_appearance_packages",
+        "//foundation/arkui/ui_appearance/interfaces/ets/ani:ui_appearance_ani_package"
       ],
       "inner_kits": [
       ],
