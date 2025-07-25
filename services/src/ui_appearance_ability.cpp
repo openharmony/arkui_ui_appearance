@@ -105,7 +105,7 @@ void UiAppearanceEventSubscriber::BootCompetedCallback()
         DarkModeManager &manager = DarkModeManager::GetInstance();
         manager.OnSwitchUser(userId);
         bool isDarkMode = false;
-        manager.LoadUserSettingData(userId, true, isDarkMode);
+        manager.LoadUserSettingData(userId, true, isDarkMode, true);
         SmartGestureManager &smartGestureManager = SmartGestureManager::GetInstance();
         smartGestureManager.RegisterSettingDataObserver();
         smartGestureManager.UpdateSmartGestureInitialValue();
@@ -301,7 +301,7 @@ void UiAppearanceAbility::UserSwitchFunc(const int32_t userId)
     DarkModeManager& manager = DarkModeManager::GetInstance();
     manager.OnSwitchUser(userId);
     bool isDarkMode = false;
-    int32_t code = manager.LoadUserSettingData(userId, false, isDarkMode);
+    int32_t code = manager.LoadUserSettingData(userId, false, isDarkMode, false);
 
     if (isNeedDoCompatibleProcess_) {
         DoCompatibleProcess();

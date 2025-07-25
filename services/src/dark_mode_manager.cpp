@@ -41,7 +41,8 @@ ErrCode DarkModeManager::Initialize(const std::function<void(bool, int32_t)>& up
     return ERR_OK;
 }
 
-ErrCode DarkModeManager::LoadUserSettingData(const int32_t userId, const bool needUpdateCallback, bool &isDarkMode)
+ErrCode DarkModeManager::LoadUserSettingData(
+    const int32_t userId, const bool needUpdateCallback, bool &isDarkMode, const bool bootLoadFlag)
 {
     SettingDataManager& manager = SettingDataManager::GetInstance();
     int32_t darkMode = DARK_MODE_INVALID;
@@ -74,7 +75,7 @@ ErrCode DarkModeManager::LoadUserSettingData(const int32_t userId, const bool ne
         temporaryColorModeMgr_.SetColorModeNormal(userId);
     }
     screenSwitchOperatorMgr_.ResetScreenOffOperateInfo();
-    return OnStateChangeLocked(userId, needUpdateCallback, isDarkMode, false);
+    return OnStateChangeLocked(userId, needUpdateCallback, isDarkMode, false, bootLoadFlag);
 }
 
 void DarkModeManager::NotifyDarkModeUpdate(const int32_t userId, const bool isDarkMode)
@@ -164,7 +165,7 @@ void DarkModeManager::DoSwitchTemporaryColorMode(const int32_t userId, bool isDa
 }
 
 void DarkModeManager::UpdateDarkModeSchedule(
-    const DarkModeMode mode, const int32_t userId, const bool resetTempColorModeFlag)
+    const DarkModeMode mode, const int32_t userId, const bool resetTempColorModeFlag, const bool bootLoadFlag)
 {
     screenSwitchOperatorMgr_.ResetScreenOffOperateInfo();
     if (resetTempColorModeFlag == true) {
@@ -172,7 +173,7 @@ void DarkModeManager::UpdateDarkModeSchedule(
         return;
     }
 
-    if (screenSwitchOperatorMgr_.IsScreenOff()) {
+    if (screenSwitchOperatorMgr_.IsScreenOff() || bootLoadFlag) {
         if (temporaryColorModeMgr_.IsColorModeNormal(userId) ||
             temporaryColorModeMgr_.CheckTemporaryStateEffective(userId) == false) {
             OnChangeDarkMode(mode, userId);
@@ -206,9 +207,9 @@ ErrCode DarkModeManager::RestartTimer()
     }
 
     if (AlarmTimerManager::IsWithinTimeInterval(startTime, endTime)) {
-        UpdateDarkModeSchedule(DARK_MODE_ALWAYS_DARK, settingDataObserversUserId_, false);
+        UpdateDarkModeSchedule(DARK_MODE_ALWAYS_DARK, settingDataObserversUserId_, false, false);
     } else {
-        UpdateDarkModeSchedule(DARK_MODE_ALWAYS_LIGHT, settingDataObserversUserId_, false);
+        UpdateDarkModeSchedule(DARK_MODE_ALWAYS_LIGHT, settingDataObserversUserId_, false, false);
     }
     return alarmTimerManager_.RestartAllTimer();
 }
@@ -333,7 +334,7 @@ void DarkModeManager::SettingDataDarkModeModeUpdateFunc(const std::string& key, 
         key.c_str(), userId, darkModeStates_[userId].settingMode, value);
     darkModeStates_[userId].settingMode = mode;
     bool isDarkMode = false;
-    OnStateChangeLocked(userId, true, isDarkMode, true);
+    OnStateChangeLocked(userId, true, isDarkMode, true, false);
 }
 
 void DarkModeManager::SettingDataDarkModeStartTimeUpdateFunc(const std::string& key, const int32_t userId)
@@ -346,7 +347,7 @@ void DarkModeManager::SettingDataDarkModeStartTimeUpdateFunc(const std::string& 
         key.c_str(), userId, darkModeStates_[userId].settingStartTime, value);
     darkModeStates_[userId].settingStartTime = value;
     bool isDarkMode = false;
-    OnStateChangeLocked(userId, true, isDarkMode, true);
+    OnStateChangeLocked(userId, true, isDarkMode, true, false);
 }
 
 void DarkModeManager::SettingDataDarkModeEndTimeUpdateFunc(const std::string& key, const int32_t userId)
@@ -359,7 +360,7 @@ void DarkModeManager::SettingDataDarkModeEndTimeUpdateFunc(const std::string& ke
         key.c_str(), userId, darkModeStates_[userId].settingEndTime, value);
     darkModeStates_[userId].settingEndTime = value;
     bool isDarkMode = false;
-    OnStateChangeLocked(userId, true, isDarkMode, true);
+    OnStateChangeLocked(userId, true, isDarkMode, true, false);
 }
 
 void DarkModeManager::SettingDataDarkModeSunsetTimeUpdateFunc(const std::string& key, const int32_t userId)
@@ -377,7 +378,7 @@ void DarkModeManager::SettingDataDarkModeSunsetTimeUpdateFunc(const std::string&
         darkModeStates_[userId].settingSunsetTime = value;
     }
     bool isDarkMode = false;
-    OnStateChangeLocked(userId, true, isDarkMode, false);
+    OnStateChangeLocked(userId, true, isDarkMode, false, false);
 }
 
 void DarkModeManager::SettingDataDarkModeSunriseTimeUpdateFunc(const std::string& key, const int32_t userId)
@@ -395,11 +396,11 @@ void DarkModeManager::SettingDataDarkModeSunriseTimeUpdateFunc(const std::string
         darkModeStates_[userId].settingSunriseTime = value;
     }
     bool isDarkMode = false;
-    OnStateChangeLocked(userId, true, isDarkMode, false);
+    OnStateChangeLocked(userId, true, isDarkMode, false, false);
 }
 
-ErrCode DarkModeManager::OnStateChangeLocked(
-    const int32_t userId, const bool needUpdateCallback, bool& isDarkMode, const bool resetTempColorModeFlag)
+ErrCode DarkModeManager::OnStateChangeLocked(const int32_t userId, const bool needUpdateCallback, bool& isDarkMode,
+    const bool resetTempColorModeFlag, const bool bootLoadFlag)
 {
     ErrCode code = ERR_OK;
     DarkModeState& state = darkModeStates_[userId];
@@ -407,11 +408,12 @@ ErrCode DarkModeManager::OnStateChangeLocked(
         case DARK_MODE_ALWAYS_LIGHT:
         case DARK_MODE_ALWAYS_DARK:
             code = OnStateChangeToAllDayMode(
-                userId, state.settingMode, needUpdateCallback, isDarkMode, resetTempColorModeFlag);
+                userId, state.settingMode, needUpdateCallback, isDarkMode, resetTempColorModeFlag, bootLoadFlag);
             break;
         case DARK_MODE_CUSTOM_AUTO:
         case DARK_MODE_SUNRISE_SUNSET:
-            code = OnStateChangeToCustomAutoMode(userId, state, needUpdateCallback, isDarkMode, resetTempColorModeFlag);
+            code = OnStateChangeToCustomAutoMode(userId, state, needUpdateCallback, isDarkMode, resetTempColorModeFlag,
+                bootLoadFlag);
             break;
         default:
             // do nothing
@@ -422,18 +424,18 @@ ErrCode DarkModeManager::OnStateChangeLocked(
 }
 
 ErrCode DarkModeManager::OnStateChangeToAllDayMode(const int32_t userId, const DarkModeMode darkMode,
-    const bool needUpdateCallback, bool& isDarkMode, const bool resetTempColorModeFlag)
+    const bool needUpdateCallback, bool& isDarkMode, const bool resetTempColorModeFlag, const bool bootLoadFlag)
 {
     alarmTimerManager_.ClearTimerByUserId(userId);
     isDarkMode = darkMode == DARK_MODE_ALWAYS_DARK;
     if (needUpdateCallback) {
-        UpdateDarkModeSchedule(darkMode, userId, resetTempColorModeFlag);
+        UpdateDarkModeSchedule(darkMode, userId, resetTempColorModeFlag, bootLoadFlag);
     }
     return ERR_OK;
 }
 
 ErrCode DarkModeManager::OnStateChangeToCustomAutoMode(const int32_t userId, const DarkModeState& state,
-    const bool needUpdateCallback, bool& isDarkMode, const bool resetTempColorModeFlag)
+    const bool needUpdateCallback, bool& isDarkMode, const bool resetTempColorModeFlag, const bool bootLoadFlag)
 {
     int32_t startTime = -1;
     int32_t endTime = -1;
@@ -460,7 +462,7 @@ ErrCode DarkModeManager::OnStateChangeToCustomAutoMode(const int32_t userId, con
     }
 
     if (needUpdateCallback) {
-        UpdateDarkModeSchedule(mode, userId, resetTempColorModeFlag);
+        UpdateDarkModeSchedule(mode, userId, resetTempColorModeFlag, bootLoadFlag);
     }
     return ERR_OK;
 }
@@ -487,7 +489,7 @@ ErrCode DarkModeManager::CreateOrUpdateTimers(int32_t startTime, int32_t endTime
             LOGE("timer callback, params check failed: %{public}d", code);
             return;
         }
-        GetInstance().UpdateDarkModeSchedule(DARK_MODE_ALWAYS_DARK, userId, false);
+        GetInstance().UpdateDarkModeSchedule(DARK_MODE_ALWAYS_DARK, userId, false, false);
     };
 
     auto callbackSetLight = [startTime, endTime, userId]() {
@@ -498,7 +500,7 @@ ErrCode DarkModeManager::CreateOrUpdateTimers(int32_t startTime, int32_t endTime
             LOGE("timer callback, params check failed: %{public}d", code);
             return;
         }
-        GetInstance().UpdateDarkModeSchedule(DARK_MODE_ALWAYS_LIGHT, userId, false);
+        GetInstance().UpdateDarkModeSchedule(DARK_MODE_ALWAYS_LIGHT, userId, false, false);
     };
 
     return alarmTimerManager_.SetScheduleTime(startTime, endTime, userId, callbackSetDark, callbackSetLight);

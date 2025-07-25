@@ -36,7 +36,7 @@ public:
 
     ErrCode Initialize(const std::function<void(bool, int32_t)>& updateCallback);
 
-    ErrCode LoadUserSettingData(int32_t userId, bool needUpdateCallback, bool &isDarkMode);
+    ErrCode LoadUserSettingData(int32_t userId, bool needUpdateCallback, bool &isDarkMode, const bool bootLoadFlag);
 
     void NotifyDarkModeUpdate(int32_t userId, bool isDarkMode);
 
@@ -90,14 +90,14 @@ private:
 
     void SettingDataDarkModeSunriseTimeUpdateFunc(const std::string& key, int32_t userId);
 
-    ErrCode OnStateChangeLocked(
-        int32_t userId, bool needUpdateCallback, bool& isDarkMode, const bool resetTempColorModeFlag);
+    ErrCode OnStateChangeLocked(int32_t userId, bool needUpdateCallback, bool& isDarkMode,
+        const bool resetTempColorModeFlag, const bool bootLoadFlag);
 
     ErrCode OnStateChangeToAllDayMode(int32_t userId, DarkModeMode darkMode, bool needUpdateCallback, bool& isDarkMode,
-        const bool resetTempColorModeFlag);
+        const bool resetTempColorModeFlag, const bool bootLoadFlag);
 
     ErrCode OnStateChangeToCustomAutoMode(int32_t userId, const DarkModeState& state, bool needUpdateCallback,
-        bool& isDarkMode, const bool resetTempColorModeFlag);
+        bool& isDarkMode, const bool resetTempColorModeFlag, const bool bootLoadFlag);
 
     void OnChangeDarkMode(DarkModeMode mode, int32_t userId);
 
@@ -105,7 +105,8 @@ private:
 
     ErrCode CheckTimerCallbackParams(int32_t startTime, int32_t endTime, int32_t userId);
 
-    void UpdateDarkModeSchedule(const DarkModeMode isDarkMode, const int32_t userId, const bool resetTempColorModeFlag);
+    void UpdateDarkModeSchedule(const DarkModeMode isDarkMode, const int32_t userId, const bool resetTempColorModeFlag,
+        const bool bootLoadFlag);
 
     bool IsDarkModeCustomAuto(const int32_t userId);
 
