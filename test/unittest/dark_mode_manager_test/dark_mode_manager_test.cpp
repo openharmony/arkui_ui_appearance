@@ -100,7 +100,7 @@ protected:
 
         DarkModeManager& manager = DarkModeManager::GetInstance();
         bool isDarkMode = false;
-        EXPECT_EQ(manager.LoadUserSettingData(userId, true, isDarkMode), ERR_INVALID_OPERATION);
+        EXPECT_EQ(manager.LoadUserSettingData(userId, true, isDarkMode, false), ERR_INVALID_OPERATION);
         EXPECT_EQ(isDarkMode, false);
         EXPECT_EQ(manager.darkModeStates_[userId].settingMode, expectDarkMode);
         EXPECT_EQ(manager.darkModeStates_[userId].settingStartTime, darkModeState.settingStartTime);
@@ -125,7 +125,7 @@ protected:
         }
 
         bool isDarkMode = !expectIsDarkMode;
-        EXPECT_EQ(manager.LoadUserSettingData(userId, needUpdateCallback, isDarkMode), ERR_OK);
+        EXPECT_EQ(manager.LoadUserSettingData(userId, needUpdateCallback, isDarkMode, false), ERR_OK);
         EXPECT_EQ(isDarkMode, expectIsDarkMode);
         EXPECT_EQ(manager.darkModeStates_[userId].settingMode, expectDarkMode);
         EXPECT_EQ(manager.darkModeStates_[userId].settingStartTime, darkModeState.settingStartTime);
@@ -155,7 +155,7 @@ protected:
         EXPECT_CALL(*this, UpdateCallback(_, _)).Times(0);
 
         bool isDarkMode = false;
-        EXPECT_EQ(manager.LoadUserSettingData(userId, true, isDarkMode), TEST_ERROR);
+        EXPECT_EQ(manager.LoadUserSettingData(userId, true, isDarkMode, false), TEST_ERROR);
         EXPECT_EQ(isDarkMode, false);
         EXPECT_EQ(manager.darkModeStates_[userId].settingMode, expectDarkMode);
         EXPECT_EQ(manager.darkModeStates_[userId].settingStartTime, darkModeState.settingStartTime);
@@ -195,7 +195,7 @@ protected:
         }
 
         bool isDarkMode = !expectWithin;
-        EXPECT_EQ(manager.LoadUserSettingData(userId, needUpdateCallback, isDarkMode), ERR_OK);
+        EXPECT_EQ(manager.LoadUserSettingData(userId, needUpdateCallback, isDarkMode, false), ERR_OK);
         EXPECT_EQ(isDarkMode, expectWithin);
         EXPECT_EQ(manager.darkModeStates_[userId].settingMode, expectDarkMode);
         EXPECT_EQ(manager.darkModeStates_[userId].settingStartTime, darkModeState.settingStartTime);
