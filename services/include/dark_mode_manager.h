@@ -56,6 +56,10 @@ public:
 
     void DoSwitchTemporaryColorMode(const int32_t userId, bool isDarkMode);
 
+    static ErrCode GetCurrentTimeOfSeconds(int32_t &seconds);
+
+    static bool CheckCurrentTimeInDarkInterval(
+        const int32_t startTime, const int32_t endTime, const int32_t seconds);
 private:
     enum DarkModeMode {
         DARK_MODE_INVALID = -1,
@@ -103,7 +107,7 @@ private:
 
     ErrCode CreateOrUpdateTimers(int32_t startTime, int32_t endTime, int32_t userId);
 
-    ErrCode CheckTimerCallbackParams(int32_t startTime, int32_t endTime, int32_t userId);
+    ErrCode CheckTimerCallbackParams(int32_t startTime, int32_t endTime, int32_t userId, DarkModeMode &darkMode);
 
     void UpdateDarkModeSchedule(const DarkModeMode isDarkMode, const int32_t userId, const bool resetTempColorModeFlag,
         const bool bootLoadFlag);
