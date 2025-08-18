@@ -26,6 +26,8 @@ const std::string SETTING_DARK_MODE_END_TIME = "settings.uiappearance.darkmode_e
 const std::string SETTING_DARK_MODE_SUN_SET = "settings.display.sun_set";
 const std::string SETTING_DARK_MODE_SUN_RISE = "settings.display.sun_rise";
 const static int32_t USER100 = 100;
+constexpr int32_t MINUTE_TO_SECOND = 60;
+constexpr int32_t OFFSET_SECONDS = 5;
 }
 
 DarkModeManager &DarkModeManager::GetInstance()
@@ -481,32 +483,22 @@ void DarkModeManager::OnChangeDarkMode(const DarkModeMode mode, const int32_t us
 
 ErrCode DarkModeManager::CreateOrUpdateTimers(int32_t startTime, int32_t endTime, int32_t userId)
 {
-    auto callbackSetDark = [startTime, endTime, userId]() {
+    auto callbackSetColorMode = [startTime, endTime, userId]() {
         LOGI("timer callback, startTime: %{public}d, endTime: %{public}d, userId: %{public}d",
             startTime, endTime, userId);
-        ErrCode code = GetInstance().CheckTimerCallbackParams(startTime, endTime, userId);
+        DarkModeMode colorMode = DarkModeMode::DARK_MODE_ALWAYS_LIGHT;
+        ErrCode code = GetInstance().CheckTimerCallbackParams(startTime, endTime, userId, colorMode);
         if (code != ERR_OK) {
             LOGE("timer callback, params check failed: %{public}d", code);
             return;
         }
-        GetInstance().UpdateDarkModeSchedule(DARK_MODE_ALWAYS_DARK, userId, false, false);
+        GetInstance().UpdateDarkModeSchedule(colorMode, userId, false, false);
     };
-
-    auto callbackSetLight = [startTime, endTime, userId]() {
-        LOGI("timer callback, startTime: %{public}d, endTime: %{public}d, userId: %{public}d",
-            startTime, endTime, userId);
-        ErrCode code = GetInstance().CheckTimerCallbackParams(startTime, endTime, userId);
-        if (code != ERR_OK) {
-            LOGE("timer callback, params check failed: %{public}d", code);
-            return;
-        }
-        GetInstance().UpdateDarkModeSchedule(DARK_MODE_ALWAYS_LIGHT, userId, false, false);
-    };
-
-    return alarmTimerManager_.SetScheduleTime(startTime, endTime, userId, callbackSetDark, callbackSetLight);
+    return alarmTimerManager_.SetScheduleTime(startTime, endTime, userId, callbackSetColorMode, callbackSetColorMode);
 }
 
-ErrCode DarkModeManager::CheckTimerCallbackParams(const int32_t startTime, const int32_t endTime, const int32_t userId)
+ErrCode DarkModeManager::CheckTimerCallbackParams(
+    const int32_t startTime, const int32_t endTime, const int32_t userId, DarkModeMode &darkMode)
 {
     std::lock_guard lock(darkModeStatesMutex_);
     DarkModeState& state = darkModeStates_[userId];
@@ -536,6 +528,51 @@ ErrCode DarkModeManager::CheckTimerCallbackParams(const int32_t startTime, const
         LOGE("timer callback, param wrong, setting mode: %{public}d", state.settingMode);
         return ERR_INVALID_OPERATION;
     }
+
+    int32_t currentTimeSeconds = 0;
+    ErrCode code = GetCurrentTimeOfSeconds(currentTimeSeconds);
+    if (code != ERR_OK) {
+        LOGE("GetCurrentTimeOfSeconds error: %{public}d", code);
+        return code;
+    }
+    bool inDarkIntervalFlag = CheckCurrentTimeInDarkInterval(startTime, endTime, currentTimeSeconds);
+    darkMode = (inDarkIntervalFlag ? DarkModeMode::DARK_MODE_ALWAYS_DARK : DarkModeMode::DARK_MODE_ALWAYS_LIGHT);
     return ERR_OK;
+}
+
+
+ErrCode DarkModeManager::GetCurrentTimeOfSeconds(int32_t &seconds)
+{
+    std::time_t timestamp = std::time(nullptr);
+    if (timestamp == static_cast<std::time_t>(-1)) {
+        LOGE("fail to get timestamp");
+        return ERR_INVALID_OPERATION;
+    }
+    std::tm *nowTime = std::localtime(&timestamp);
+    if (nowTime == nullptr) {
+        LOGE("fail to get localtime");
+        return ERR_INVALID_OPERATION;
+    }
+    seconds = static_cast<int32_t>(
+        nowTime->tm_hour * HOUR_TO_MINUTE * MINUTE_TO_SECOND + nowTime->tm_min * MINUTE_TO_SECOND + nowTime->tm_sec);
+    return ERR_OK;
+}
+
+bool DarkModeManager::CheckCurrentTimeInDarkInterval(
+    const int32_t startTime, const int32_t endTime, const int32_t currentTimeSeconds)
+{
+    //Due to 1-second offset in the timer trigger, so subtract OFFSET_SECONDS
+    if (endTime <= DAY_TO_MINUTE) {
+        if ((startTime * MINUTE_TO_SECOND - OFFSET_SECONDS < currentTimeSeconds) &&
+            (currentTimeSeconds < endTime * MINUTE_TO_SECOND - OFFSET_SECONDS)) {
+            return true;
+        }
+    } else {
+        if ((currentTimeSeconds < (endTime - DAY_TO_MINUTE) * MINUTE_TO_SECOND - OFFSET_SECONDS) ||
+            (currentTimeSeconds > startTime * MINUTE_TO_SECOND - OFFSET_SECONDS)) {
+            return true;
+        }
+    }
+    return false;
 }
 } // namespace OHOS::ArkUi::UiAppearance
