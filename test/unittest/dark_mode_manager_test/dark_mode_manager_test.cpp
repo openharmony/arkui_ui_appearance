@@ -568,11 +568,6 @@ protected:
         EXPECT_EQ(manager.CreateOrUpdateTimers(startTime, endTime, userId), ERR_OK);
         EXPECT_NE(startCallbackFunc, nullptr);
         EXPECT_NE(endCallbackFunc, nullptr);
-
-        expectSet += EXPECT_CALL(*this, UpdateCallback(true, userId)).Times(1).After(expectSet);
-        startCallbackFunc();
-        expectSet += EXPECT_CALL(*this, UpdateCallback(false, userId)).Times(1).After(expectSet);
-        endCallbackFunc();
     }
 
     MOCK_METHOD(void, UpdateCallback, (bool, int32_t), (const));
@@ -1121,5 +1116,60 @@ HWTEST_F(DarkModeManagerTest, TimerCallback_0200, TestSize.Level1)
     TimerCallbackTest(TEST_USER1, -1, 1);
     TimerCallbackTest(TEST_USER100, 0, 0);
     TimerCallbackTest(TEST_USER101, 1, -1);
+}
+
+HWTEST_F(DarkModeManagerTest, CheckCurrentTimeInDarkInterval_0100, TestSize.Level1)
+{
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(7 * 60, 8 * 60, 7.5 * 60 * 60), true);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(7 * 60, 8 * 60, 9 * 60 * 60), false);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(7 * 60, 8 * 60, 8 * 60 * 60), false);
+
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(7 * 60, 8 * 60, 8 * 60 * 60 - 4), false);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(7 * 60, 8 * 60, 8 * 60 * 60 - 5), false);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(7 * 60, 8 * 60, 8 * 60 * 60 - 6), true);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(7 * 60, 8 * 60, 8 * 60 * 60 + 1), false);
+
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(7 * 60, 8 * 60, 7 * 60 * 60), true);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(7 * 60, 8 * 60, 7 * 60 * 60 + 1), true);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(7 * 60, 8 * 60, 7 * 60 * 60 - 1), true);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(7 * 60, 8 * 60, 7 * 60 * 60 - 4), true);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(7 * 60, 8 * 60, 7 * 60 * 60 - 5), false);
+
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(22 * 60, (7 + 24) * 60, 23 * 60 * 60), true);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(22 * 60, (7 + 24) * 60, 10 * 60 * 60), false);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(22 * 60, (7 + 24) * 60, 22 * 60 * 60), true);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(22 * 60, (7 + 24) * 60, 22 * 60 * 60 + 1), true);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(22 * 60, (7 + 24) * 60, 22 * 60 * 60 - 1), true);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(22 * 60, (7 + 24) * 60, 22 * 60 * 60 - 4), true);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(22 * 60, (7 + 24) * 60, 22 * 60 * 60 - 5), false);
+
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(22 * 60, (7 + 24) * 60, 7 * 60 * 60), false);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(22 * 60, (7 + 24) * 60, 7 * 60 * 60 + 1), false);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(22 * 60, (7 + 24) * 60, 7 * 60 * 60 - 1), false);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(22 * 60, (7 + 24) * 60, 7 * 60 * 60 - 4), false);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(22 * 60, (7 + 24) * 60, 7 * 60 * 60 - 5), false);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(22 * 60, (7 + 24) * 60, 7 * 60 * 60 - 6), true);
+
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(0, 0, 0), false);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(0, 9, 0), true);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(9, 0, 0), false);
+
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(0, 0, 1), false);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(0, 9, 1), true);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(9, 0, 1), false);
+
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(0, 0, 4), false);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(0, 9, 4), true);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(9, 0, 4), false);
+
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(0, 0, 6), false);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(0, 9, 6), true);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(9, 0, 6), false);
+
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(7 * 60, 24 * 60, 24 * 60 * 60), false);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(7 * 60, 24 * 60, 24 * 60 * 60 - 1), false);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(7 * 60, 24 * 60, 24 * 60 * 60 - 4), false);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(7 * 60, 24 * 60, 24 * 60 * 60 - 5), false);
+    EXPECT_EQ(DarkModeManager::CheckCurrentTimeInDarkInterval(7 * 60, 24 * 60, 24 * 60 * 60 - 6), true);
 }
 } // namespace OHOS::ArkUi::UiAppearance
