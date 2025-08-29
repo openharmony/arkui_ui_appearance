@@ -66,8 +66,8 @@ ani_object GetErrorObject(ani_env *env, const std::string &errMsg, int32_t code)
         LOGE("Object_New failed %{public}d", status);
         return nullptr;
     }
-    if (ANI_OK != (status = env->Object_SetFieldByName_Double(errObj, "code", static_cast<ani_double>(code)))) {
-        LOGE("Object_SetFieldByName_Double failed %{public}d", status);
+    if (ANI_OK != (status = env->Object_SetFieldByName_Int(errObj, "code", static_cast<ani_int>(code)))) {
+        LOGE("Object_SetFieldByName_Int failed %{public}d", status);
         return nullptr;
     }
     if (ANI_OK != (status = env->Object_SetPropertyByName_Ref(errObj, "message", errMessage))) {
