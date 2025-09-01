@@ -101,13 +101,13 @@ HWTEST_F(DarkModeTest, ui_appearance_test_001, TestSize.Level0)
     auto test = DarkModeTest::GetUiAppearanceAbilityTest();
     int32_t result = -1;
     test->SetDarkMode(DarkMode::ALWAYS_DARK, result);
-    EXPECT_EQ(result, 0);
+    EXPECT_EQ(result, UiAppearanceAbilityErrCode::SUCCEEDED);
     int32_t mode = -1;
     test->GetDarkMode(mode);
     EXPECT_EQ(mode, DarkMode::ALWAYS_DARK);
 
     test->SetDarkMode(DarkMode::ALWAYS_LIGHT, result);
-    EXPECT_EQ(result, 0);
+    EXPECT_EQ(result, UiAppearanceAbilityErrCode::SUCCEEDED);
     test->GetDarkMode(mode);
     EXPECT_EQ(mode, DarkMode::ALWAYS_LIGHT);
 }
@@ -282,6 +282,50 @@ HWTEST_F(DarkModeTest, ui_appearance_test_009, TestSize.Level0)
     auto test = DarkModeTest::GetUiAppearanceAbilityTest();
     bool ret = test->BackGroundAppColorSwitch(nullptr, 0);
     EXPECT_EQ(false, ret);
+}
+
+/**
+ * @tc.name: ui_appearance_test_010
+ * @tc.desc: Test SetFontScale and GetFontScale APIs when repeatedly setting font scale.
+ * @tc.type: FUNC
+ */
+HWTEST_F(DarkModeTest, ui_appearance_test_010, TestSize.Level0)
+{
+    LOGI("Test SetFontScale and GetFontScale APIs when repeatedly setting font scale.");
+
+    auto test = DarkModeTest::GetUiAppearanceAbilityTest();
+    int32_t result = -1;
+    test->SetFontScale("", result);
+    EXPECT_EQ(result, UiAppearanceAbilityErrCode::SYS_ERR);
+    std::string scale = "1";
+    test->SetFontScale(scale, result);
+    EXPECT_EQ(result, UiAppearanceAbilityErrCode::SUCCEEDED);
+    std::string scaleGet;
+    test->GetFontScale(scaleGet, result);
+    ASSERT_EQ(result, UiAppearanceAbilityErrCode::SUCCEEDED);
+    EXPECT_EQ(scale, scaleGet);
+}
+
+/**
+ * @tc.name: ui_appearance_test_011
+ * @tc.desc: Test SetFontWeightScale and GetFontWeightScale APIs when repeatedly setting font weight scale.
+ * @tc.type: FUNC
+ */
+HWTEST_F(DarkModeTest, ui_appearance_test_011, TestSize.Level0)
+{
+    LOGI("Test SetFontWeightScale and GetFontWeightScale APIs when repeatedly setting font weight scale.");
+
+    auto test = DarkModeTest::GetUiAppearanceAbilityTest();
+    int32_t result = -1;
+    test->SetFontWeightScale("", result);
+    EXPECT_EQ(result, UiAppearanceAbilityErrCode::SYS_ERR);
+    std::string scale = "1";
+    test->SetFontWeightScale(scale, result);
+    EXPECT_EQ(result, UiAppearanceAbilityErrCode::SUCCEEDED);
+    std::string scaleGet;
+    test->GetFontWeightScale(scaleGet, result);
+    ASSERT_EQ(result, UiAppearanceAbilityErrCode::SUCCEEDED);
+    EXPECT_EQ(scale, scaleGet);
 }
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS
