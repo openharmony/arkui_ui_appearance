@@ -544,7 +544,7 @@ ErrCode UiAppearanceAbility::SetDarkMode(int32_t mode, int32_t& funcResult)
     if (!isCallingPerm) {
         LOGE("permission verification failed");
         funcResult = PERMISSION_ERR;
-        return funcResult;
+        return SUCCEEDED;
     }
 
     auto userId = GetCallingUserId();
@@ -558,11 +558,11 @@ ErrCode UiAppearanceAbility::SetDarkMode(int32_t mode, int32_t& funcResult)
     }
     if (darkMode != currentDarkMode) {
         funcResult = OnSetDarkMode(userId, darkMode);
-        return funcResult;
+        return SUCCEEDED;
     } else {
         LOGW("current color mode is %{public}d, no need to change", darkMode);
         funcResult = SYS_ERR;
-        return funcResult;
+        return SUCCEEDED;
     }
 }
 
@@ -635,16 +635,16 @@ ErrCode UiAppearanceAbility::SetFontScale(const std::string& fontScale, int32_t&
     if (!isCallingPerm) {
         LOGE("permission verification failed");
         funcResult = PERMISSION_ERR;
-        return funcResult;
+        return SUCCEEDED;
     }
     if (!fontScale.empty()) {
         funcResult = OnSetFontScale(GetCallingUserId(), fontScale);
-        return funcResult;
+        return SUCCEEDED;
     } else {
         LOGE("current fontScale is empty!");
     }
     funcResult = SYS_ERR;
-    return funcResult;
+    return SUCCEEDED;
 }
 
 ErrCode UiAppearanceAbility::GetFontScale(std::string& fontScale, int32_t& funcResult)
@@ -660,7 +660,7 @@ ErrCode UiAppearanceAbility::GetFontScale(std::string& fontScale, int32_t& funcR
     }
     LOGD("get font scale :%{public}s", fontScale.c_str());
     funcResult = SUCCEEDED;
-    return funcResult;
+    return SUCCEEDED;
 }
 
 int32_t UiAppearanceAbility::OnSetFontWeightScale(const int32_t userId, const std::string& fontWeightScale)
@@ -700,16 +700,16 @@ ErrCode UiAppearanceAbility::SetFontWeightScale(const std::string& fontWeightSca
     if (!isCallingPerm) {
         LOGE("permission verification failed");
         funcResult = PERMISSION_ERR;
-        return funcResult;
+        return SUCCEEDED;
     }
     if (!fontWeightScale.empty()) {
         funcResult = OnSetFontWeightScale(GetCallingUserId(), fontWeightScale);
-        return funcResult;
+        return SUCCEEDED;
     } else {
         LOGE("current fontWeightScale is empty!");
     }
     funcResult = SYS_ERR;
-    return funcResult;
+    return SUCCEEDED;
 }
 
 ErrCode UiAppearanceAbility::GetFontWeightScale(std::string& fontWeightScale, int32_t& funcResult)
@@ -726,7 +726,7 @@ ErrCode UiAppearanceAbility::GetFontWeightScale(std::string& fontWeightScale, in
 
     LOGD("get font weight scale :%{public}s", fontWeightScale.c_str());
     funcResult = SUCCEEDED;
-    return funcResult;
+    return SUCCEEDED;
 }
 
 void UiAppearanceAbility::UpdateSmartGestureModeCallback(bool isAutoMode, int32_t userId)
