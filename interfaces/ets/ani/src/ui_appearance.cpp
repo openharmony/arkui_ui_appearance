@@ -47,12 +47,12 @@ ani_object GetErrorObject(ani_env *env, const std::string &errMsg, int32_t code)
         return nullptr;
     }
     ani_class errClass;
-    if (ANI_OK != (status = env->FindClass("L@ohos/base/BusinessError;", &errClass))) {
+    if (ANI_OK != (status = env->FindClass("@ohos.base.BusinessError", &errClass))) {
         LOGE("FindClass failed %{public}d", status);
         return nullptr;
     }
     ani_method ctor;
-    if (ANI_OK != (status = env->Class_FindMethod(errClass, "<ctor>", ":V", &ctor))) {
+    if (ANI_OK != (status = env->Class_FindMethod(errClass, "<ctor>", ":", &ctor))) {
         LOGE("Class_FindMethod failed %{public}d", status);
         return nullptr;
     }
