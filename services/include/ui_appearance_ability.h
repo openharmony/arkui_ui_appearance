@@ -75,7 +75,8 @@ private:
     bool VerifyAccessToken(const std::string& permissionName);
     void Init();
     void SubscribeCommonEvent();
-    bool UpdateConfiguration(const AppExecFwk::Configuration& configuration, const int32_t userId);
+    bool UpdateConfiguration(const AppExecFwk::Configuration& configuration, const int32_t userId,
+        const std::vector<std::int32_t>& effectiveUserIds = {});
     void DoCompatibleProcess();
     int32_t GetCallingUserId();
     std::list<int32_t> GetUserIds();
@@ -97,6 +98,9 @@ private:
     void UpdateSmartGestureModeCallback(bool isAutoMode, int32_t userId);
     void UpdateDarkModeCallback(bool isDarkMode, int32_t userId);
     bool BackGroundAppColorSwitch(sptr<AppExecFwk::IAppMgr> appManagerInstance, const int32_t userId);
+    std::vector<std::int32_t> GetMultipleUsers();
+    void ConfigurePersistence(const bool isDarkMode, const int32_t userId, const std::string& paramValue);
+    int32_t ConfigurePersistence(const int32_t userId, DarkMode mode, const std::string& paramValue);
 
     std::shared_ptr<UiAppearanceEventSubscriber> uiAppearanceEventSubscriber_;
     std::mutex usersParamMutex_;
