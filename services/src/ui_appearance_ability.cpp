@@ -452,7 +452,8 @@ bool UiAppearanceAbility::BackGroundAppColorSwitch(sptr<AppExecFwk::IAppMgr> app
     return true;
 }
 
-bool UiAppearanceAbility::UpdateConfiguration(const AppExecFwk::Configuration& configuration, const int32_t userId)
+bool UiAppearanceAbility::UpdateConfiguration(const AppExecFwk::Configuration& configuration, const int32_t userId,
+    const std::vector<std::int32_t>& effectiveUserIds)
 {
     auto appManagerInstance = GetAppManagerInstance();
     if (appManagerInstance == nullptr) {
@@ -460,8 +461,16 @@ bool UiAppearanceAbility::UpdateConfiguration(const AppExecFwk::Configuration& c
         return false;
     }
 
-    LOGI("update Configuration start,userId:%{public}d config = %{public}s.", userId, configuration.GetName().c_str());
-    auto errcode = appManagerInstance->UpdateConfiguration(configuration, userId);
+    int32_t errcode = 0;
+    if (effectiveUserIds.size() > 1) {
+        LOGI("UpdateConfigurationByUserIds start, config = %{public}s.", configuration.GetName().c_str());
+        errcode = appManagerInstance->UpdateConfigurationByUserIds(configuration, effectiveUserIds);
+    } else {
+        LOGI("update Configuration start,userId:%{public}d config = %{public}s.",
+            userId, configuration.GetName().c_str());
+        errcode = appManagerInstance->UpdateConfiguration(configuration, userId);
+    }
+
     if (errcode != 0) {
         AppExecFwk::Configuration config;
         auto retVal = appManagerInstance->GetConfiguration(config);
@@ -477,11 +486,16 @@ bool UiAppearanceAbility::UpdateConfiguration(const AppExecFwk::Configuration& c
             return false;
         } else {
             LOGW("uiappearance is different against configuration. Forced to use the configuration, error is "
-                "%{public}d.",
-                errcode);
+                "%{public}d.", errcode);
         }
     } else if (!configuration.GetItem(AAFwk::GlobalConfigurationKey::SYSTEM_COLORMODE).empty()) {
-        BackGroundAppColorSwitch(appManagerInstance, userId);
+        if (effectiveUserIds.size() > 1) {
+            for (const int32_t &effectiveUserId : effectiveUserIds) {
+                BackGroundAppColorSwitch(appManagerInstance, effectiveUserId);
+            }
+        } else {
+            BackGroundAppColorSwitch(appManagerInstance, userId);
+        }
     }
     return true;
 }
@@ -513,27 +527,23 @@ int32_t UiAppearanceAbility::OnSetDarkMode(const int32_t userId, DarkMode mode)
         return INVALID_ARG;
     }
 
-    if (!UpdateConfiguration(config, userId)) {
+    std::vector<int32_t> effectiveUserIds = GetMultipleUsers();
+    if (!UpdateConfiguration(config, userId, effectiveUserIds)) {
         return SYS_ERR;
     }
 
-    DarkModeManager::GetInstance().DoSwitchTemporaryColorMode(userId, mode == ALWAYS_DARK ? true : false);
-
-    {
-        std::lock_guard<std::mutex> guard(usersParamMutex_);
-        usersParam_[userId].darkMode = mode;
+    if (effectiveUserIds.size() > 1) {
+        SetParameterWrap(PERSIST_DARKMODE_KEY, paramValue);
+        for (const int32_t effectiveUserId : effectiveUserIds) {
+            if (ConfigurePersistence(effectiveUserId, mode, paramValue) != SUCCEEDED) {
+                return SYS_ERR;
+            }
+        }
+        return SUCCEEDED;
     }
 
     SetParameterWrap(PERSIST_DARKMODE_KEY, paramValue);
-
-    // persist to file: etc/para/ui_appearance.para
-    auto isSetPara = SetParameterWrap(DarkModeParamAssignUser(userId), paramValue);
-    if (!isSetPara) {
-        LOGE("set parameter failed");
-        return SYS_ERR;
-    }
-    DarkModeManager::GetInstance().NotifyDarkModeUpdate(userId, mode == ALWAYS_DARK);
-    return SUCCEEDED;
+    return ConfigurePersistence(userId, mode, paramValue);
 }
 
 ErrCode UiAppearanceAbility::SetDarkMode(int32_t mode, int32_t& funcResult)
@@ -767,19 +777,64 @@ void UiAppearanceAbility::UpdateDarkModeCallback(const bool isDarkMode, const in
         return;
     }
 
-    if (!UpdateConfiguration(config, userId)) {
+    std::vector<int32_t> effectiveUserIds = GetMultipleUsers();
+    if (!UpdateConfiguration(config, userId, effectiveUserIds)) {
+        return;
+    }
+    if (effectiveUserIds.size() > 1) {
+        SetParameterWrap(PERSIST_DARKMODE_KEY, paramValue);
+        for (const int32_t effectiveUserId : effectiveUserIds) {
+            ConfigurePersistence(isDarkMode, effectiveUserId, paramValue);
+        }
         return;
     }
 
+    SetParameterWrap(PERSIST_DARKMODE_KEY, paramValue);
+    ConfigurePersistence(isDarkMode, userId, paramValue);
+}
+
+std::vector<std::int32_t> UiAppearanceAbility::GetMultipleUsers()
+{
+    std::vector<int32_t> effectiveUserIds;
+    std::vector<AccountSA::ForegroundOsAccount> accounts;
+    auto result = AccountSA::OsAccountManager::GetForegroundOsAccounts(accounts);
+    if (result == ERR_OK) {
+        for (const auto &account : accounts) {
+            effectiveUserIds.push_back(account.localId);
+        }
+    }
+    return effectiveUserIds;
+}
+
+void UiAppearanceAbility::ConfigurePersistence(
+    const bool isDarkMode, const int32_t userId, const std::string& paramValue)
+{
     {
         std::lock_guard<std::mutex> guard(usersParamMutex_);
         usersParam_[userId].darkMode = isDarkMode ? ALWAYS_DARK : ALWAYS_LIGHT;
     }
 
-    SetParameterWrap(PERSIST_DARKMODE_KEY, paramValue);
     if (!SetParameterWrap(DarkModeParamAssignUser(userId), paramValue)) {
         LOGE("set parameter failed");
     }
+}
+
+int32_t UiAppearanceAbility::ConfigurePersistence(const int32_t userId, DarkMode mode, const std::string& paramValue)
+{
+    DarkModeManager::GetInstance().DoSwitchTemporaryColorMode(userId, mode == ALWAYS_DARK ? true : false);
+    {
+        std::lock_guard<std::mutex> guard(usersParamMutex_);
+        usersParam_[userId].darkMode = mode;
+    }
+
+    // persist to file: etc/para/ui_appearance.para
+    auto isSetPara = SetParameterWrap(DarkModeParamAssignUser(userId), paramValue);
+    if (!isSetPara) {
+        LOGE("set parameter failed");
+        return SYS_ERR;
+    }
+    DarkModeManager::GetInstance().NotifyDarkModeUpdate(userId, mode == ALWAYS_DARK);
+    return SUCCEEDED;
 }
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS
