@@ -48,6 +48,7 @@ public:
     static napi_status CheckArgs(napi_env env, size_t argc, napi_value* argv);
     static napi_status CheckFontScaleArgs(napi_env env, size_t argc, napi_value* argv);
     static DarkMode ConvertJsDarkMode2Enum(int32_t jsVal);
+    static bool CheckCallerIsSystemApp();
 };
 
 napi_value JSSetDarkModeSync(napi_env env, napi_callback_info info);

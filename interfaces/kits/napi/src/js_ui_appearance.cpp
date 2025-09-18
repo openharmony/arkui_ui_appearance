@@ -17,6 +17,8 @@
 
 #include <string>
 #include "js_native_api.h"
+#include "ipc_skeleton.h"
+#include "tokenid_kit.h"
 #include "ui_appearance_log.h"
 
 namespace OHOS {
@@ -26,6 +28,7 @@ static constexpr size_t ARGC_WITH_ONE = 1;
 static constexpr size_t ARGC_WITH_TWO = 2;
 static constexpr size_t MAX_FONT_SCALE = 5;
 static constexpr size_t MIN_FONT_SCALE = 0;
+const std::string NOT_SYSTEM_APP_MSG = "A non-system application calls a system API.";
 const std::string PERMISSION_ERR_MSG =
     "An attempt was made to update configuration forbidden by permission: ohos.permission.UPDATE_CONFIGURATION.";
 const std::string INVALID_ARG_MSG = "The type of 'mode' must be DarkMode.";
@@ -35,6 +38,8 @@ std::string ParseErrCode(const int32_t errCode)
     switch (errCode) {
         case UiAppearanceAbilityErrCode::PERMISSION_ERR:
             return "Permission denied. ";
+        case UiAppearanceAbilityErrCode::NOT_SYSTEM_APP:
+            return "Permission verification failed. ";
         case UiAppearanceAbilityErrCode::INVALID_ARG:
             return "Parameter error. ";
         case UiAppearanceAbilityErrCode::SYS_ERR:
@@ -69,9 +74,16 @@ void JsUiAppearance::OnExecute(napi_env env, void* data)
         NapiThrow(env, "asyncContext is null.", UiAppearanceAbilityErrCode::SYS_ERR);
         return;
     }
-    auto resCode = UiAppearanceAbilityClient::GetInstance()->SetDarkMode(asyncContext->mode);
+    int32_t resCode = 0;
+    if (!CheckCallerIsSystemApp()) {
+        resCode = UiAppearanceAbilityErrCode::NOT_SYSTEM_APP;
+    } else {
+        resCode = UiAppearanceAbilityClient::GetInstance()->SetDarkMode(asyncContext->mode);
+    }
     asyncContext->status = static_cast<UiAppearanceAbilityErrCode>(resCode);
-    if (asyncContext->status == UiAppearanceAbilityErrCode::PERMISSION_ERR) {
+    if (asyncContext->status == UiAppearanceAbilityErrCode::NOT_SYSTEM_APP) {
+        asyncContext->errMsg = NOT_SYSTEM_APP_MSG;
+    } else if (asyncContext->status == UiAppearanceAbilityErrCode::PERMISSION_ERR) {
         asyncContext->errMsg = PERMISSION_ERR_MSG;
     } else if (asyncContext->status == UiAppearanceAbilityErrCode::INVALID_ARG) {
         asyncContext->errMsg = INVALID_ARG_MSG;
@@ -89,14 +101,18 @@ void JsUiAppearance::OnSetFontScale(napi_env env, void* data)
         return;
     }
     int32_t resCode = 0;
-    if (asyncContext->jsFontScale <= MIN_FONT_SCALE || asyncContext->jsFontScale > MAX_FONT_SCALE) {
+    if (!CheckCallerIsSystemApp()) {
+        resCode = UiAppearanceAbilityErrCode::NOT_SYSTEM_APP;
+    } else if (asyncContext->jsFontScale <= MIN_FONT_SCALE || asyncContext->jsFontScale > MAX_FONT_SCALE) {
         resCode = UiAppearanceAbilityErrCode::INVALID_ARG;
     } else {
         resCode = UiAppearanceAbilityClient::GetInstance()->SetFontScale(asyncContext->fontScale);
     }
 
     asyncContext->status = static_cast<UiAppearanceAbilityErrCode>(resCode);
-    if (asyncContext->status == UiAppearanceAbilityErrCode::PERMISSION_ERR) {
+    if (asyncContext->status == UiAppearanceAbilityErrCode::NOT_SYSTEM_APP) {
+        asyncContext->errMsg = NOT_SYSTEM_APP_MSG;
+    } else if (asyncContext->status == UiAppearanceAbilityErrCode::PERMISSION_ERR) {
         asyncContext->errMsg = PERMISSION_ERR_MSG;
     } else if (asyncContext->status == UiAppearanceAbilityErrCode::INVALID_ARG) {
         asyncContext->errMsg = "fontScale must between 0 and 5";
@@ -114,7 +130,9 @@ void JsUiAppearance::OnSetFontWeightScale(napi_env env, void* data)
         return;
     }
     int32_t resCode = 0;
-    if (asyncContext->jsFontWeightScale <= MIN_FONT_SCALE ||
+    if (!CheckCallerIsSystemApp()) {
+        resCode = UiAppearanceAbilityErrCode::NOT_SYSTEM_APP;
+    } else if (asyncContext->jsFontWeightScale <= MIN_FONT_SCALE ||
         asyncContext->jsFontWeightScale > MAX_FONT_SCALE) {
         resCode = UiAppearanceAbilityErrCode::INVALID_ARG;
     } else {
@@ -123,7 +141,9 @@ void JsUiAppearance::OnSetFontWeightScale(napi_env env, void* data)
     }
 
     asyncContext->status = static_cast<UiAppearanceAbilityErrCode>(resCode);
-    if (asyncContext->status == UiAppearanceAbilityErrCode::PERMISSION_ERR) {
+    if (asyncContext->status == UiAppearanceAbilityErrCode::NOT_SYSTEM_APP) {
+        asyncContext->errMsg = NOT_SYSTEM_APP_MSG;
+    } else if (asyncContext->status == UiAppearanceAbilityErrCode::PERMISSION_ERR) {
         asyncContext->errMsg = PERMISSION_ERR_MSG;
     } else if (asyncContext->status == UiAppearanceAbilityErrCode::INVALID_ARG) {
         asyncContext->errMsg = "fontWeightScale must between 0 and 5";
@@ -259,6 +279,15 @@ DarkMode JsUiAppearance::ConvertJsDarkMode2Enum(int32_t jsVal)
         default:
             return DarkMode::UNKNOWN;
     }
+}
+
+bool JsUiAppearance::CheckCallerIsSystemApp()
+{
+    auto selfToken = IPCSkeleton::GetSelfTokenID();
+    if (!Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(selfToken)) {
+        return false;
+    }
+    return true;
 }
 
 static napi_value JSSetDarkMode(napi_env env, napi_callback_info info)
