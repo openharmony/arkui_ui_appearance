@@ -28,6 +28,7 @@ enum DarkMode : int32_t {
 enum UiAppearanceAbilityErrCode : int32_t {
     SUCCEEDED = 0,
     PERMISSION_ERR = 201,
+    NOT_SYSTEM_APP = 202,
     INVALID_ARG = 401,
     SYS_ERR = 500001,
 };
