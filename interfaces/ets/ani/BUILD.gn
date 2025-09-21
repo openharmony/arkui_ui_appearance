@@ -35,6 +35,7 @@ ohos_shared_library("ui_appearance_ani") {
     "runtime_core:ani_helpers",
     "c_utils:utils",
     "hilog:libhilog",
+    "ipc:ipc_core",
   ]
 
   part_name = "ui_appearance"
