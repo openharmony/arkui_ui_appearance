@@ -18,24 +18,22 @@ import("//foundation/arkui/ui_appearance/ui_appearance.gni")
 group("ui_appearance_ani_package") {
   deps = [
     ":ui_appearance_ani",
-    ":ui_appearance_etc"
+    ":ui_appearance_etc",
   ]
 }
 
 #构建ANI库
 ohos_shared_library("ui_appearance_ani") {
-  deps = [ 
-    "$ui_appearance_services_path:ui_appearance_client"
-  ]
-  
+  deps = [ "$ui_appearance_services_path:ui_appearance_client" ]
+
   include_dirs = [ "include/" ]
   sources = [ "./src/ui_appearance.cpp" ]
   external_deps = [
-    "runtime_core:ani",
-    "runtime_core:ani_helpers",
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "runtime_core:ani",
+    "runtime_core:ani_helpers",
   ]
 
   part_name = "ui_appearance"
