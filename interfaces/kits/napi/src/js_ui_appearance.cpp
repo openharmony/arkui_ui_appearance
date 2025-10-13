@@ -201,6 +201,9 @@ void JsUiAppearance::OnComplete(napi_env env, napi_status status, void* data)
         }
     }
     napi_delete_async_work(env, asyncContext->work);
+    if (asyncContext->callbackRef) {
+        napi_delete_reference(env, asyncContext->callbackRef);
+    }
     delete asyncContext;
     napi_close_handle_scope(env, scope);
 }
