@@ -74,16 +74,9 @@ void JsUiAppearance::OnExecute(napi_env env, void* data)
         NapiThrow(env, "asyncContext is null.", UiAppearanceAbilityErrCode::SYS_ERR);
         return;
     }
-    int32_t resCode = 0;
-    if (!CheckCallerIsSystemApp()) {
-        resCode = UiAppearanceAbilityErrCode::NOT_SYSTEM_APP;
-    } else {
-        resCode = UiAppearanceAbilityClient::GetInstance()->SetDarkMode(asyncContext->mode);
-    }
+    auto resCode = UiAppearanceAbilityClient::GetInstance()->SetDarkMode(asyncContext->mode);
     asyncContext->status = static_cast<UiAppearanceAbilityErrCode>(resCode);
-    if (asyncContext->status == UiAppearanceAbilityErrCode::NOT_SYSTEM_APP) {
-        asyncContext->errMsg = NOT_SYSTEM_APP_MSG;
-    } else if (asyncContext->status == UiAppearanceAbilityErrCode::PERMISSION_ERR) {
+    if (asyncContext->status == UiAppearanceAbilityErrCode::PERMISSION_ERR) {
         asyncContext->errMsg = PERMISSION_ERR_MSG;
     } else if (asyncContext->status == UiAppearanceAbilityErrCode::INVALID_ARG) {
         asyncContext->errMsg = INVALID_ARG_MSG;
