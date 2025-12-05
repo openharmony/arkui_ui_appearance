@@ -25,8 +25,8 @@ bool GetParameterWrap(const std::string& paramName, std::string& value, const st
         LOGE("get parameter %{public}s failed", paramName.c_str());
         return false;
     }
-    LOGI("get parameter %{public}s:%{public}s", paramName.c_str(), value.c_str());
     value = buf;
+    LOGI("after get parameter %{public}s:%{public}s", paramName.c_str(), value.c_str());
     return true;
 }
 bool GetParameterWrap(const std::string& paramName, std::string& value)
