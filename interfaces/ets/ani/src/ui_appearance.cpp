@@ -192,11 +192,11 @@ void SetDarkMode([[maybe_unused]] ani_env* env, ani_enum_item mode, ani_object c
 ani_object SetDarkModeWithPromise([[maybe_unused]] ani_env* env, ani_enum_item mode)
 {
     ani_ref resultref = nullptr;
+    if (!env) {
+        return nullptr;
+    }
     env->GetUndefined(&resultref);
     ani_object result = static_cast<ani_object>(resultref);
-    if (!env) {
-        return result;
-    }
     auto asyncContext = new (std::nothrow) AsyncContext();
     if (asyncContext == nullptr) {
         AniThrow(env, "create AsyncContext failed.", UiAppearanceAbilityErrCode::SYS_ERR);
