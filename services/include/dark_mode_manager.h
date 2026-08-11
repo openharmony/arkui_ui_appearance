@@ -27,6 +27,7 @@
 #include "alarm_timer_manager.h"
 #include "dark_mode_temp_state_manager.h"
 #include "screen_switch_operator_manager.h"
+#include "sunrise_sunset_calc.h"
 
 namespace OHOS::ArkUi::UiAppearance {
 constexpr int32_t HOUR_TO_MINUTE = 60;
@@ -127,6 +128,18 @@ private:
     bool IsDarkModeCustomAuto(const AccountContext& context);
 
     bool IsDarkModeSunsetSunrise(const AccountContext& context);
+
+    ErrCode RestoreDarkModeSchedule(const AccountContext& context);
+
+    void CalculateAndApplySunriseSunsetTimes(const AccountContext& context);
+
+    std::unique_ptr<OHOS::Location::Location> GetCachedLocation(const AccountContext& context);
+
+    void ApplySunriseSunsetTimes(double lat, double lon, const AccountContext& context);
+
+    void InitSunriseSunsetMode(const AccountContext& context);
+
+    bool ShouldUpdateSunriseSunsetTimes(int32_t oldSunset, int32_t newSunset, int32_t oldSunrise, int32_t newSunrise);
 
     std::mutex settingDataObserversMutex_;
     std::list<std::pair<std::string, std::function<void(const std::string&, const AccountContext&)>>>

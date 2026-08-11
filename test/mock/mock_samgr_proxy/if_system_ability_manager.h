@@ -29,6 +29,7 @@ public:
     ~ISystemAbilityManager() override = default;
 
     MOCK_METHOD(sptr<IRemoteObject>, GetSystemAbility, (int32_t));
+    MOCK_METHOD(sptr<IRemoteObject>, CheckSystemAbility, (int32_t));
 };
 } // namespace OHOS
 #endif // UI_APPEARANCE_MOCK_IF_SYSTEM_ABILITY_MANAGER_H

@@ -46,11 +46,16 @@ public:
     static void SetTimerTriggerTime(uint64_t startTime, uint64_t endTime,
         std::array<uint64_t, TRIGGER_ARRAY_SIZE>& triggerTimeInterval);
 
+    void SetRecalculationTimer(uint64_t userId, const std::function<void()>& callback);
+
+    void ClearRecalculationTimer(uint64_t userId);
+
     void Dump();
 
 private:
     std::map<uint64_t, std::array<uint64_t, TRIGGER_ARRAY_SIZE>> timerIdMap_;
     std::map<uint64_t, std::array<uint64_t, TRIGGER_ARRAY_SIZE>> initialSetupTimeMap_;
+    std::map<uint64_t, uint64_t> recalculationTimerIdMap_;
     std::mutex timerMapMutex_;
 
     static void RestartTimerByTimerId(uint64_t timerId, uint64_t time);

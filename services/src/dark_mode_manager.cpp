@@ -15,6 +15,13 @@
 
 #include "dark_mode_manager.h"
 
+#include <chrono>
+
+#include "iservice_registry.h"
+#include "message_parcel.h"
+#include "system_ability_definition.h"
+#include "location.h"
+#include "parameter_wrap.h"
 #include "setting_data_manager.h"
 #include "ui_appearance_log.h"
 
@@ -28,6 +35,10 @@ const std::string SETTING_DARK_MODE_SUN_RISE = "settings.display.sun_rise";
 const static int32_t USER100 = 100;
 constexpr int32_t MINUTE_TO_SECOND = 60;
 constexpr int32_t OFFSET_SECONDS = 5;
+constexpr int32_t TIME_DIFF_THRESHOLD_MINUTES = 30;
+constexpr int32_t LOCATOR_SA_ID = 2802;
+constexpr uint32_t COMMAND_GET_CACHE_LOCATION = 5;
+const std::u16string LOCATOR_INTERFACE_TOKEN = u"OHOS.Location.ILocatorService";
 }
 
 DarkModeManager &DarkModeManager::GetInstance()
@@ -97,7 +108,13 @@ ErrCode DarkModeManager::LoadUserSettingData(
         temporaryColorModeMgr_.SetColorModeNormal(context);
     }
     screenSwitchOperatorMgr_.ResetScreenOffOperateInfo();
-    return OnStateChangeLocked(context, needUpdateCallback, isDarkMode, false, bootLoadFlag);
+    DarkModeMode currentMode = state.settingMode;
+    ErrCode code = OnStateChangeLocked(context, needUpdateCallback, isDarkMode, false, bootLoadFlag);
+
+    if (currentMode == DARK_MODE_SUNRISE_SUNSET) {
+        InitSunriseSunsetMode(context);
+    }
+    return code;
 }
 
 void DarkModeManager::NotifyDarkModeUpdate(const int32_t userId, const bool isDarkMode)
@@ -237,24 +254,41 @@ void DarkModeManager::UpdateDarkModeSchedule(
 
 ErrCode DarkModeManager::RestartTimer()
 {
-    std::lock_guard lock(darkModeStatesMutex_);
-    AccountContext currentContext = settingDataObserversContext_;
-    if (currentContext.userId == INVALID_USER_ID && settingDataObserversUserId_ != INVALID_USER_ID) {
-        currentContext = AccountContextHelper::CreateBaseContext(settingDataObserversUserId_);
-    }
-    DarkModeMode mode = darkModeStates_[currentContext].settingMode;
+    AccountContext currentContext;
+    DarkModeMode mode;
     int32_t startTime = -1;
     int32_t endTime = -1;
+    {
+        std::lock_guard lock(darkModeStatesMutex_);
+        currentContext = settingDataObserversContext_;
+        if (currentContext.userId == INVALID_USER_ID && settingDataObserversUserId_ != INVALID_USER_ID) {
+            currentContext = AccountContextHelper::CreateBaseContext(settingDataObserversUserId_);
+        }
+        mode = darkModeStates_[currentContext].settingMode;
+        if (mode == DARK_MODE_SUNRISE_SUNSET) {
+            startTime = darkModeStates_[currentContext].settingSunsetTime;
+            endTime = darkModeStates_[currentContext].settingSunriseTime;
+        } else if (mode == DARK_MODE_CUSTOM_AUTO) {
+            startTime = darkModeStates_[currentContext].settingStartTime;
+            endTime = darkModeStates_[currentContext].settingEndTime;
+        } else {
+            LOGD("no need to restart timer.");
+            return ERR_OK;
+        }
+    }
 
+    // Recalculate outside the lock to avoid recursive locking in CalculateAndApplySunriseSunsetTimes.
     if (mode == DARK_MODE_SUNRISE_SUNSET) {
-        startTime = darkModeStates_[currentContext].settingSunsetTime;
-        endTime = darkModeStates_[currentContext].settingSunriseTime;
-    } else if (mode == DARK_MODE_CUSTOM_AUTO) {
-        startTime = darkModeStates_[currentContext].settingStartTime;
-        endTime = darkModeStates_[currentContext].settingEndTime;
-    } else {
-        LOGD("no need to restart timer.");
-        return ERR_OK;
+        CalculateAndApplySunriseSunsetTimes(currentContext);
+        // Reacquire the lock because the recalculation may have updated the sunrise and sunset times.
+        std::lock_guard lock(darkModeStatesMutex_);
+        if (darkModeStates_[currentContext].settingMode == DARK_MODE_SUNRISE_SUNSET) {
+            startTime = darkModeStates_[currentContext].settingSunsetTime;
+            endTime = darkModeStates_[currentContext].settingSunriseTime;
+        } else {
+            // Another thread changed the mode, and SettingDataDarkModeModeUpdateFunc handled the timers.
+            return ERR_OK;
+        }
     }
 
     if (AlarmTimerManager::IsWithinTimeInterval(startTime, endTime)) {
@@ -385,6 +419,7 @@ void DarkModeManager::UnregisterSettingDataObserversLocked(const AccountContext&
 
 void DarkModeManager::SettingDataDarkModeModeUpdateFunc(const std::string& key, const AccountContext& context)
 {
+    LOGD("DarkModeManager SettingDataDarkModeModeUpdateFunc enter");
     SettingDataManager& manager = SettingDataManager::GetInstance();
     int32_t value = DARK_MODE_INVALID;
     ErrCode code = manager.GetInt32ValueStrictly(key, value, context.userId);
@@ -400,12 +435,20 @@ void DarkModeManager::SettingDataDarkModeModeUpdateFunc(const std::string& key, 
     }
 
     auto mode = static_cast<DarkModeMode>(value);
-    std::lock_guard lock(darkModeStatesMutex_);
-    LOGI("dark mode change, key: %{public}s, context: %{public}s, from %{public}d to %{public}d",
-        key.c_str(), AccountContextHelper::ToString(context).c_str(), darkModeStates_[context].settingMode, value);
-    darkModeStates_[context].settingMode = mode;
-    bool isDarkMode = false;
-    OnStateChangeLocked(context, true, isDarkMode, true, false);
+    {
+        std::lock_guard lock(darkModeStatesMutex_);
+        LOGI("dark mode change, key: %{public}s, context: %{public}s, from %{public}d to %{public}d",
+            key.c_str(), AccountContextHelper::ToString(context).c_str(), darkModeStates_[context].settingMode, value);
+        darkModeStates_[context].settingMode = mode;
+        bool isDarkMode = false;
+        OnStateChangeLocked(context, true, isDarkMode, true, false);
+    }
+
+    if (mode == DARK_MODE_SUNRISE_SUNSET) {
+        InitSunriseSunsetMode(context);
+    } else {
+        alarmTimerManager_.ClearRecalculationTimer(AccountContextHelper::BuildTimerKey(context));
+    }
 }
 
 void DarkModeManager::SettingDataDarkModeStartTimeUpdateFunc(const std::string& key, const AccountContext& context)
@@ -500,6 +543,7 @@ ErrCode DarkModeManager::OnStateChangeLocked(const AccountContext& context, cons
 ErrCode DarkModeManager::OnStateChangeToAllDayMode(const AccountContext& context, const DarkModeMode darkMode,
     const bool needUpdateCallback, bool& isDarkMode, const bool resetTempColorModeFlag, const bool bootLoadFlag)
 {
+    alarmTimerManager_.ClearRecalculationTimer(AccountContextHelper::BuildTimerKey(context));
     alarmTimerManager_.ClearTimerByUserId(AccountContextHelper::BuildTimerKey(context));
     isDarkMode = darkMode == DARK_MODE_ALWAYS_DARK;
     if (needUpdateCallback) {
@@ -653,5 +697,134 @@ bool DarkModeManager::CheckCurrentTimeInDarkInterval(
         }
     }
     return false;
+}
+
+std::unique_ptr<OHOS::Location::Location> DarkModeManager::GetCachedLocation(const AccountContext& context)
+{
+    std::string switchValue;
+    if (GetParameterWrap("persist.location.switch_mode", switchValue, "2")) {
+        if (switchValue != "1") {
+            LOGI("location switch is off, keeping existing times, context: %{public}s",
+                AccountContextHelper::ToString(context).c_str());
+            return nullptr;
+        }
+    }
+
+    sptr<ISystemAbilityManager> sam = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (sam == nullptr) {
+        LOGW("GetSystemAbilityManager failed, context: %{public}s",
+            AccountContextHelper::ToString(context).c_str());
+        return nullptr;
+    }
+    sptr<IRemoteObject> remote = sam->CheckSystemAbility(LOCATOR_SA_ID);
+    if (remote == nullptr) {
+        LOGW("locator SA not available, context: %{public}s",
+            AccountContextHelper::ToString(context).c_str());
+        return nullptr;
+    }
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_SYNC);
+    if (!data.WriteInterfaceToken(LOCATOR_INTERFACE_TOKEN)) {
+        LOGW("WriteInterfaceToken failed, context: %{public}s",
+            AccountContextHelper::ToString(context).c_str());
+        return nullptr;
+    }
+    int32_t ret = remote->SendRequest(COMMAND_GET_CACHE_LOCATION, data, reply, option);
+    if (ret != ERR_NONE) {
+        LOGW("SendRequest failed, ret: %{public}d, context: %{public}s",
+            ret, AccountContextHelper::ToString(context).c_str());
+        return nullptr;
+    }
+    ErrCode errCode = reply.ReadInt32();
+    if (errCode != ERR_OK) {
+        LOGI("no cached location (err: %{public}d), keeping existing times, context: %{public}s",
+            errCode, AccountContextHelper::ToString(context).c_str());
+        return nullptr;
+    }
+    std::unique_ptr<OHOS::Location::Location> loc(reply.ReadParcelable<OHOS::Location::Location>());
+    if (loc == nullptr) {
+        LOGW("cached location unavailable, context: %{public}s",
+            AccountContextHelper::ToString(context).c_str());
+        return nullptr;
+    }
+    LOGI("get cached location, lat: %{public}f, lon: %{public}f, context: %{public}s",
+        loc->GetLatitude(), loc->GetLongitude(), AccountContextHelper::ToString(context).c_str());
+    return loc;
+}
+
+void DarkModeManager::ApplySunriseSunsetTimes(double lat, double lon, const AccountContext& context)
+{
+    int64_t nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    SunriseSunsetInfo info(lat, lon, nowMs);
+
+    if (info.isPolarDay() || info.isPolarNight()) {
+        LOGI("polar condition detected (day=%{public}d, night=%{public}d), keeping defaults, context: %{public}s",
+            info.isPolarDay(), info.isPolarNight(), AccountContextHelper::ToString(context).c_str());
+        return;
+    }
+
+    std::string sunsetStr = info.getSunsetStr();
+    std::string sunriseStr = info.getSunriseStr();
+    if (sunsetStr.empty() || sunriseStr.empty()) {
+        LOGW("sunrise/sunset calculation returned empty, keeping existing times, context: %{public}s",
+            AccountContextHelper::ToString(context).c_str());
+        return;
+    }
+    int32_t newSunset = std::stoi(sunsetStr);
+    int32_t newSunrise = std::stoi(sunriseStr);
+    LOGI("calculated sunrise/sunset, sunset: %{public}d, sunrise: %{public}d, context: %{public}s",
+        newSunset, newSunrise, AccountContextHelper::ToString(context).c_str());
+
+    SettingDataManager& manager = SettingDataManager::GetInstance();
+    const std::string sunsetKey = AccountContextHelper::BuildSettingKey(SETTING_DARK_MODE_SUN_SET, context);
+    const std::string sunriseKey = AccountContextHelper::BuildSettingKey(SETTING_DARK_MODE_SUN_RISE, context);
+
+    std::lock_guard lock(darkModeStatesMutex_);
+    DarkModeState& state = darkModeStates_[context];
+    bool significantChange = ShouldUpdateSunriseSunsetTimes(
+        state.settingSunsetTime, newSunset, state.settingSunriseTime, newSunrise);
+    if (significantChange) {
+        LOGI("significant change detected, updating SettingsData with notification, context: %{public}s",
+            AccountContextHelper::ToString(context).c_str());
+        manager.SetInt32Value(sunsetKey, newSunset, context.userId, true);
+        manager.SetInt32Value(sunriseKey, newSunrise, context.userId, true);
+    } else {
+        LOGI("no significant change, updating cache silently, context: %{public}s",
+            AccountContextHelper::ToString(context).c_str());
+        manager.SetInt32Value(sunsetKey, newSunset, context.userId, false);
+        manager.SetInt32Value(sunriseKey, newSunrise, context.userId, false);
+        state.settingSunsetTime = newSunset;
+        state.settingSunriseTime = newSunrise;
+    }
+}
+
+void DarkModeManager::CalculateAndApplySunriseSunsetTimes(const AccountContext& context)
+{
+    std::unique_ptr<OHOS::Location::Location> loc = GetCachedLocation(context);
+    if (loc == nullptr) {
+        return;
+    }
+    ApplySunriseSunsetTimes(loc->GetLatitude(), loc->GetLongitude(), context);
+}
+
+void DarkModeManager::InitSunriseSunsetMode(const AccountContext& context)
+{
+    CalculateAndApplySunriseSunsetTimes(context);
+    alarmTimerManager_.SetRecalculationTimer(AccountContextHelper::BuildTimerKey(context),
+        [context]() {
+            LOGI("recalculation timer fired, context: %{public}s",
+                AccountContextHelper::ToString(context).c_str());
+            GetInstance().CalculateAndApplySunriseSunsetTimes(context);
+        });
+}
+
+bool DarkModeManager::ShouldUpdateSunriseSunsetTimes(
+    int32_t oldSunset, int32_t newSunset, int32_t oldSunrise, int32_t newSunrise)
+{
+    return std::abs(oldSunset - newSunset) >= TIME_DIFF_THRESHOLD_MINUTES ||
+        std::abs(oldSunrise - newSunrise) >= TIME_DIFF_THRESHOLD_MINUTES;
 }
 } // namespace OHOS::ArkUi::UiAppearance
