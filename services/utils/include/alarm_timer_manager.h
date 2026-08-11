@@ -67,6 +67,8 @@ private:
 
     static void ClearTimer(uint64_t id);
 
+    void ClearRecalculationTimerLocked(uint64_t userId);
+
     void RecordInitialSetupTime(uint64_t startTime, uint64_t endTime, uint64_t userId);
 
     void SetTimer(int8_t index, uint64_t userId, uint64_t time, const std::function<void()>& callback);

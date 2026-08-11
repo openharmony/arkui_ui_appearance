@@ -83,7 +83,7 @@ constexpr double UTC_NOON_HOUR = 12.0;
 /**
  * Calculates the Julian day.
  */
-double calcJulianDay(int year, int month, int day, double hour)
+double CalcJulianDay(int year, int month, int day, double hour)
 {
     if (month <= 2) {
         year -= 1;
@@ -99,7 +99,7 @@ double calcJulianDay(int year, int month, int day, double hour)
 /**
  * Converts a Julian day to Julian centuries since J2000.0.
  */
-double calcJulianCent(double jd)
+double CalcJulianCent(double jd)
 {
     return (jd - J2000_JD) / DAYS_PER_JULIAN_CENT;
 }
@@ -107,7 +107,7 @@ double calcJulianCent(double jd)
 /**
  * Calculates the solar geometric mean longitude in degrees.
  */
-double calcMeanLong(double t)
+double CalcMeanLong(double t)
 {
     double meanLong = MEAN_LONG_A + MEAN_LONG_B * t + MEAN_LONG_C * t * t;
     return fmod(fmod(meanLong, 360.0) + 360.0, 360.0);
@@ -116,7 +116,7 @@ double calcMeanLong(double t)
 /**
  * Calculates the solar geometric mean anomaly in degrees.
  */
-double calcMeanAnomaly(double t)
+double CalcMeanAnomaly(double t)
 {
     return MEAN_ANOM_A + MEAN_ANOM_B * t - MEAN_ANOM_C * t * t;
 }
@@ -124,7 +124,7 @@ double calcMeanAnomaly(double t)
 /**
  * Calculates the eccentricity of Earth's orbit.
  */
-double calcEccentricity(double t)
+double CalcEccentricity(double t)
 {
     return ECC_A - ECC_B * t - ECC_C * t * t;
 }
@@ -132,7 +132,7 @@ double calcEccentricity(double t)
 /**
  * Calculates the solar equation of center.
  */
-double calcEqOfCenter(double t, double m)
+double CalcEqOfCenter(double t, double m)
 {
     double mRad = m * DEG2RAD;
     return (EQC_A0 - EQC_A1 * t - EQC_A2 * t * t) * sin(mRad) +
@@ -143,7 +143,7 @@ double calcEqOfCenter(double t, double m)
 /**
  * Calculates the solar apparent longitude in degrees, including nutation and aberration corrections.
  */
-double calcAppLong(double t, double lTrue)
+double CalcAppLong(double t, double lTrue)
 {
     double omega = OMEGA_A - OMEGA_B * t;
     return lTrue - ABERR_A - ABERR_B * sin(omega * DEG2RAD);
@@ -152,7 +152,7 @@ double calcAppLong(double t, double lTrue)
 /**
  * Calculates the mean obliquity of the ecliptic in degrees.
  */
-double calcMeanObliq(double t)
+double CalcMeanObliq(double t)
 {
     double sec = OBLIQ_SEC_A -
         t * (OBLIQ_SEC_B + t * (OBLIQ_SEC_C - t * OBLIQ_SEC_D));
@@ -163,7 +163,7 @@ double calcMeanObliq(double t)
 /**
  * Calculates the corrected obliquity in degrees, including nutation correction.
  */
-double calcObliqCorr(double t, double meanObliq)
+double CalcObliqCorr(double t, double meanObliq)
 {
     double omega = OMEGA_A - OMEGA_B * t;
     return meanObliq + OBLIQ_CORR_COEFF * cos(omega * DEG2RAD);
@@ -172,7 +172,7 @@ double calcObliqCorr(double t, double meanObliq)
 /**
  * Calculates the solar declination in degrees.
  */
-double calcDeclination(double obliqCorr, double appLong)
+double CalcDeclination(double obliqCorr, double appLong)
 {
     return asin(sin(obliqCorr * DEG2RAD) * sin(appLong * DEG2RAD)) * RAD2DEG;
 }
@@ -180,7 +180,7 @@ double calcDeclination(double obliqCorr, double appLong)
 /**
  * Calculates the equation of time in minutes.
  */
-double calcEqOfTime(double meanLong, double meanAnomaly, double e, double obliqCorr)
+double CalcEqOfTime(double meanLong, double meanAnomaly, double e, double obliqCorr)
 {
     double y = tan(obliqCorr * DEG2RAD / 2.0) * tan(obliqCorr * DEG2RAD / 2.0);
     double meanLongRad = meanLong * DEG2RAD;
@@ -202,7 +202,7 @@ double calcEqOfTime(double meanLong, double meanAnomaly, double e, double obliqC
  * Calculates the sunrise or sunset hour angle in degrees.
  * @returns The hour angle in degrees, or POLAR_MARK for polar day or polar night.
  */
-double calcHourAngle(double lat, double dec)
+double CalcHourAngle(double lat, double dec)
 {
     double cosH =
         (cos(ZENITH * DEG2RAD) - sin(lat * DEG2RAD) * sin(dec * DEG2RAD)) /
@@ -220,21 +220,21 @@ double calcHourAngle(double lat, double dec)
  * Calculates sunrise or sunset in UTC minutes.
  * @returns UTC minutes, or POLAR_MARK for polar day or polar night.
  */
-double calcSunTimeMin(double lat, double lon, double jd, bool isSunrise)
+double CalcSunTimeMin(double lat, double lon, double jd, bool isSunrise)
 {
-    double t = calcJulianCent(jd);
-    double meanLong = calcMeanLong(t);
-    double meanAnomaly = calcMeanAnomaly(t);
-    double e = calcEccentricity(t);
-    double eqOfCenter = calcEqOfCenter(t, meanAnomaly);
+    double t = CalcJulianCent(jd);
+    double meanLong = CalcMeanLong(t);
+    double meanAnomaly = CalcMeanAnomaly(t);
+    double e = CalcEccentricity(t);
+    double eqOfCenter = CalcEqOfCenter(t, meanAnomaly);
     double lTrue = meanLong + eqOfCenter;
-    double appLong = calcAppLong(t, lTrue);
-    double meanObliq = calcMeanObliq(t);
-    double obliqCorr = calcObliqCorr(t, meanObliq);
-    double dec = calcDeclination(obliqCorr, appLong);
-    double eqTime = calcEqOfTime(meanLong, meanAnomaly, e, obliqCorr);
+    double appLong = CalcAppLong(t, lTrue);
+    double meanObliq = CalcMeanObliq(t);
+    double obliqCorr = CalcObliqCorr(t, meanObliq);
+    double dec = CalcDeclination(obliqCorr, appLong);
+    double eqTime = CalcEqOfTime(meanLong, meanAnomaly, e, obliqCorr);
 
-    double ha = calcHourAngle(lat, dec);
+    double ha = CalcHourAngle(lat, dec);
     if (ha == POLAR_MARK) {
         return POLAR_MARK;
     }
@@ -253,28 +253,28 @@ double calcSunTimeMin(double lat, double lon, double jd, bool isSunrise)
 
 namespace SunriseSunsetUtils {
 
-SunriseSunsetResult calculateSunriseSunset(double lat, double lon, int64_t timestampMs)
+SunriseSunsetResult CalculateSunriseSunset(double lat, double lon, int64_t timestampMs)
 {
     time_t rawTime = static_cast<time_t>(timestampMs / DarkModeConstants::MS_PER_SEC);
     struct tm utcTm;
     gmtime_r(&rawTime, &utcTm);
 
     // Use UTC noon as the base time for the Julian day.
-    double jd = calcJulianDay(
+    double jd = CalcJulianDay(
         utcTm.tm_year + 1900, utcTm.tm_mon + 1, utcTm.tm_mday, UTC_NOON_HOUR);
 
     // First iteration.
-    double sunriseMin = calcSunTimeMin(lat, lon, jd, true);
-    double sunsetMin = calcSunTimeMin(lat, lon, jd, false);
+    double sunriseMin = CalcSunTimeMin(lat, lon, jd, true);
+    double sunsetMin = CalcSunTimeMin(lat, lon, jd, false);
 
     // Refine the Julian day with the first result for a more accurate second iteration.
     if (sunriseMin != POLAR_MARK) {
         double jdRise = jd + sunriseMin / DarkModeConstants::MINS_PER_DAY;
-        sunriseMin = calcSunTimeMin(lat, lon, jdRise, true);
+        sunriseMin = CalcSunTimeMin(lat, lon, jdRise, true);
     }
     if (sunsetMin != POLAR_MARK) {
         double jdSet = jd + sunsetMin / DarkModeConstants::MINS_PER_DAY;
-        sunsetMin = calcSunTimeMin(lat, lon, jdSet, false);
+        sunsetMin = CalcSunTimeMin(lat, lon, jdSet, false);
     }
 
     // Convert the results to UTC seconds.
@@ -295,7 +295,7 @@ SunriseSunsetResult calculateSunriseSunset(double lat, double lon, int64_t times
     return { sunriseSec, sunsetSec };
 }
 
-std::string formatTimeFromSec(double utcSec, int timezoneOffset)
+std::string FormatTimeFromSec(double utcSec, int timezoneOffset)
 {
     if (utcSec == POLAR_MARK) {
         return "---";
@@ -329,7 +329,7 @@ SunriseSunsetInfo::SunriseSunsetInfo(double lat, double lon, int64_t timestampMs
     localtime_r(&rawTime, &localTm);
     timezoneOffset_ = -localTm.tm_gmtoff / DarkModeConstants::SECS_PER_MIN;
 
-    auto result = SunriseSunsetUtils::calculateSunriseSunset(lat, lon, timestampMs);
+    auto result = SunriseSunsetUtils::CalculateSunriseSunset(lat, lon, timestampMs);
     sunrise_ = result.sunrise;
     sunset_ = result.sunset;
 
@@ -342,7 +342,7 @@ SunriseSunsetInfo::SunriseSunsetInfo(double lat, double lon, int64_t timestampMs
     }
 }
 
-int32_t SunriseSunsetInfo::toLocalMinutes(double utcSec) const
+int32_t SunriseSunsetInfo::ToLocalMinutes(double utcSec) const
 {
     double localSec = utcSec - timezoneOffset_ * DarkModeConstants::SECS_PER_MIN;
     localSec = fmod(fmod(localSec, static_cast<double>(DarkModeConstants::SECS_PER_DAY)) +
@@ -350,7 +350,7 @@ int32_t SunriseSunsetInfo::toLocalMinutes(double utcSec) const
     return static_cast<int32_t>(round(localSec / DarkModeConstants::SECS_PER_MIN));
 }
 
-bool SunriseSunsetInfo::isDaytime(int64_t timestampMs) const
+bool SunriseSunsetInfo::IsDaytime(int64_t timestampMs) const
 {
     if (condition_ == SunCondition::POLAR_DAY) {
         return true;
@@ -362,8 +362,8 @@ bool SunriseSunsetInfo::isDaytime(int64_t timestampMs) const
     struct tm localTm;
     localtime_r(&rawTime, &localTm);
     int32_t currentMinutes = localTm.tm_hour * DarkModeConstants::MINS_PER_HOUR + localTm.tm_min;
-    int32_t sunriseMin = toLocalMinutes(sunrise_);
-    int32_t sunsetMin = toLocalMinutes(sunset_);
+    int32_t sunriseMin = ToLocalMinutes(sunrise_);
+    int32_t sunsetMin = ToLocalMinutes(sunset_);
     if (sunriseMin < sunsetMin) {
         return currentMinutes >= sunriseMin && currentMinutes < sunsetMin;
     } else {
@@ -371,7 +371,7 @@ bool SunriseSunsetInfo::isDaytime(int64_t timestampMs) const
     }
 }
 
-bool SunriseSunsetInfo::isNighttime(int64_t timestampMs) const
+bool SunriseSunsetInfo::IsNighttime(int64_t timestampMs) const
 {
     if (condition_ == SunCondition::POLAR_NIGHT) {
         return true;
@@ -379,43 +379,43 @@ bool SunriseSunsetInfo::isNighttime(int64_t timestampMs) const
     if (condition_ == SunCondition::POLAR_DAY) {
         return false;
     }
-    return !isDaytime(timestampMs);
+    return !IsDaytime(timestampMs);
 }
 
-bool SunriseSunsetInfo::isPolarDay() const
+bool SunriseSunsetInfo::IsPolarDay() const
 {
     return condition_ == SunCondition::POLAR_DAY;
 }
 
-bool SunriseSunsetInfo::isPolarNight() const
+bool SunriseSunsetInfo::IsPolarNight() const
 {
     return condition_ == SunCondition::POLAR_NIGHT;
 }
 
-int32_t SunriseSunsetInfo::getDayLength() const
+int32_t SunriseSunsetInfo::GetDayLength() const
 {
     if (condition_ != SunCondition::NORMAL) {
         return -1;
     }
-    return (toLocalMinutes(sunset_) - toLocalMinutes(sunrise_) + DarkModeConstants::MINS_PER_DAY) %
+    return (ToLocalMinutes(sunset_) - ToLocalMinutes(sunrise_) + DarkModeConstants::MINS_PER_DAY) %
         DarkModeConstants::MINS_PER_DAY;
 }
 
-std::string SunriseSunsetInfo::getSunsetStr() const
+std::string SunriseSunsetInfo::GetSunsetStr() const
 {
     if (condition_ != SunCondition::NORMAL) {
         return "";
     }
-    return std::to_string(toLocalMinutes(sunset_));
+    return std::to_string(ToLocalMinutes(sunset_));
 }
 
-std::string SunriseSunsetInfo::getSunriseStr() const
+std::string SunriseSunsetInfo::GetSunriseStr() const
 {
     if (condition_ != SunCondition::NORMAL) {
         return "";
     }
-    int32_t sunriseMinutes = toLocalMinutes(sunrise_);
-    int32_t sunsetMinutes = toLocalMinutes(sunset_);
+    int32_t sunriseMinutes = ToLocalMinutes(sunrise_);
+    int32_t sunsetMinutes = ToLocalMinutes(sunset_);
     // Add one day when sunrise is earlier than sunset so the result denotes the next day.
     int32_t totalMinutes = (sunriseMinutes < sunsetMinutes) ?
         sunriseMinutes + DarkModeConstants::MINS_PER_DAY : sunriseMinutes;
