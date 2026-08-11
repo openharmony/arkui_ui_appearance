@@ -32,7 +32,9 @@
 #undef protected
 #include "ui_appearance_log.h"
 #include "ui_appearance_ability_client.h"
+#define private public
 #include "alarm_timer_manager.h"
+#undef private
 
 using namespace testing::ext;
 static constexpr int UISERVER_UID = 3050;
@@ -275,6 +277,24 @@ HWTEST_F(DarkModeTest, ui_appearance_test_007, TestSize.Level0)
     EXPECT_EQ(res, 1);
 
     uiAppearanceTimerManager->ClearTimerByUserId(100);
+}
+
+/**
+ * @tc.name: ui_appearance_test_0071
+ * @tc.desc: Test recalculation timer cleanup while clearing user timers.
+ * @tc.type: FUNC
+ */
+HWTEST_F(DarkModeTest, ui_appearance_test_0071, TestSize.Level0)
+{
+    auto timerManager = DarkModeTest::GetAlarmTimerManager();
+    constexpr uint64_t userId = 101;
+    EXPECT_EQ(timerManager->SetScheduleTime(10, 12, userId, []() {}, []() {}), ERR_OK);
+
+    timerManager->SetRecalculationTimer(userId, []() {});
+    EXPECT_EQ(timerManager->recalculationTimerIdMap_.count(userId), 1);
+
+    timerManager->ClearTimerByUserId(userId);
+    EXPECT_EQ(timerManager->recalculationTimerIdMap_.count(userId), 0);
 }
 
 /**

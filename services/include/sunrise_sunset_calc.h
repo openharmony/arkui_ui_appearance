@@ -40,7 +40,7 @@ namespace SunriseSunsetUtils {
      * @param timestampMs Timestamp in milliseconds.
      * @returns Sunrise and sunset in UTC seconds from 00:00; -1 for polar day or polar night.
      */
-    SunriseSunsetResult calculateSunriseSunset(double lat, double lon, int64_t timestampMs);
+    SunriseSunsetResult CalculateSunriseSunset(double lat, double lon, int64_t timestampMs);
 
     /**
      * Formats UTC seconds as local time in HH:mm format, rounded to the nearest minute.
@@ -48,7 +48,7 @@ namespace SunriseSunsetUtils {
      * @param timezoneOffset Time zone offset in minutes, for example -480 for UTC+8.
      * @returns The formatted time, or "---" for polar day or polar night.
      */
-    std::string formatTimeFromSec(double utcSec, int timezoneOffset);
+    std::string FormatTimeFromSec(double utcSec, int timezoneOffset);
 
 } // namespace SunriseSunsetUtils
 
@@ -82,35 +82,35 @@ public:
      * @param timestampMs Timestamp in milliseconds.
      * @returns true if the timestamp is during daytime; false otherwise.
      */
-    bool isDaytime(int64_t timestampMs) const;
+    bool IsDaytime(int64_t timestampMs) const;
 
     /**
      * @param timestampMs Timestamp in milliseconds.
      * @returns true if the timestamp is during nighttime; false otherwise.
      */
-    bool isNighttime(int64_t timestampMs) const;
+    bool IsNighttime(int64_t timestampMs) const;
 
     /**
      * @returns true for polar day, when the sun does not set; false otherwise.
      */
-    bool isPolarDay() const;
+    bool IsPolarDay() const;
 
     /**
      * @returns true for polar night, when the sun does not rise; false otherwise.
      */
-    bool isPolarNight() const;
+    bool IsPolarNight() const;
 
     /**
      * @returns Daylight duration in minutes, or -1 for polar day or polar night.
      */
-    int32_t getDayLength() const;
+    int32_t GetDayLength() const;
 
     /**
      * Returns sunset as minutes from midnight for use as the dark mode start time.
      * For example, 19:14 is returned as "1154".
      * @returns Sunset in minutes as a string, or an empty string for polar day or polar night.
      */
-    std::string getSunsetStr() const;
+    std::string GetSunsetStr() const;
 
     /**
      * Returns sunrise as minutes from midnight for use as the dark mode end time.
@@ -118,14 +118,14 @@ public:
      * for example, 05:07 on the next day is returned as "1747".
      * @returns Sunrise in minutes as a string, or an empty string for polar day or polar night.
      */
-    std::string getSunriseStr() const;
+    std::string GetSunriseStr() const;
 
 private:
     /**
      * @param utcSec UTC seconds from 00:00.
      * @returns Local minutes from midnight in the range [0, 1439].
      */
-    int32_t toLocalMinutes(double utcSec) const;
+    int32_t ToLocalMinutes(double utcSec) const;
 
     /** Sunrise time in UTC seconds from 00:00; -1 for polar day or polar night. */
     double sunrise_;

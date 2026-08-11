@@ -139,8 +139,6 @@ private:
 
     void InitSunriseSunsetMode(const AccountContext& context);
 
-    bool ShouldUpdateSunriseSunsetTimes(int32_t oldSunset, int32_t newSunset, int32_t oldSunrise, int32_t newSunrise);
-
     std::mutex settingDataObserversMutex_;
     std::list<std::pair<std::string, std::function<void(const std::string&, const AccountContext&)>>>
         settingDataObservers_;

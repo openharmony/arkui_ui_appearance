@@ -1097,6 +1097,87 @@ HWTEST_F(DarkModeManagerTest, StartTimeUpdateFunc_0400, TestSize.Level1)
     TimeUpdateFuncCustomAutoTest(TEST_USER101, SETTING_DARK_MODE_END_TIME, 4, -1, false);
 }
 
+HWTEST_F(DarkModeManagerTest, ApplySunriseSunsetTimes_0100, TestSize.Level1)
+{
+    const AccountContext context = AccountContextHelper::CreateBaseContext(TEST_USER100);
+    DarkModeManager& manager = DarkModeManager::GetInstance();
+    auto& state = manager.darkModeStates_[context];
+    state.settingMode = DarkModeMode::DARK_MODE_SUNRISE_SUNSET;
+    state.settingSunsetTime = -1;
+    state.settingSunriseTime = -1;
+
+    SettingDataManager& dataManager = SettingDataManager::GetInstance();
+    auto checkLockReleased = [&manager](const std::string&, int32_t, int32_t, bool) {
+        bool locked = manager.darkModeStatesMutex_.try_lock();
+        EXPECT_TRUE(locked);
+        if (locked) {
+            manager.darkModeStatesMutex_.unlock();
+        }
+        return ERR_OK;
+    };
+    EXPECT_CALL(dataManager, MockSetInt32Value(SETTING_DARK_MODE_SUN_SET, _, TEST_USER100, true))
+        .Times(1).WillOnce(Invoke(checkLockReleased));
+    EXPECT_CALL(dataManager, MockSetInt32Value(SETTING_DARK_MODE_SUN_RISE, _, TEST_USER100, true))
+        .Times(1).WillOnce(Invoke(checkLockReleased));
+
+    manager.ApplySunriseSunsetTimes(31.2304, 121.4737, context);
+}
+
+HWTEST_F(DarkModeManagerTest, ApplySunriseSunsetTimes_0200, TestSize.Level1)
+{
+    const AccountContext context = AccountContextHelper::CreateBaseContext(TEST_USER100);
+    DarkModeManager& manager = DarkModeManager::GetInstance();
+    manager.darkModeStates_[context].settingMode = DarkModeMode::DARK_MODE_ALWAYS_LIGHT;
+
+    SettingDataManager& dataManager = SettingDataManager::GetInstance();
+    EXPECT_CALL(dataManager, MockSetInt32Value(_, _, _, _)).Times(0);
+
+    manager.ApplySunriseSunsetTimes(31.2304, 121.4737, context);
+}
+
+HWTEST_F(DarkModeManagerTest, InitSunriseSunsetMode_0100, TestSize.Level1)
+{
+    const AccountContext context = AccountContextHelper::CreateBaseContext(TEST_USER100);
+    DarkModeManager& manager = DarkModeManager::GetInstance();
+    manager.darkModeStates_[context].settingMode = DarkModeMode::DARK_MODE_SUNRISE_SUNSET;
+
+    std::function<void()> recalculationCallback;
+    EXPECT_CALL(manager.alarmTimerManager_, SetRecalculationTimer(TEST_USER100, _))
+        .Times(1).WillOnce(SaveArg<1>(&recalculationCallback));
+    manager.InitSunriseSunsetMode(context);
+    ASSERT_NE(recalculationCallback, nullptr);
+
+    manager.darkModeStates_[context].settingMode = DarkModeMode::DARK_MODE_ALWAYS_LIGHT;
+    SettingDataManager& dataManager = SettingDataManager::GetInstance();
+    EXPECT_CALL(dataManager, MockSetInt32Value(_, _, _, _)).Times(0);
+    recalculationCallback();
+}
+
+HWTEST_F(DarkModeManagerTest, SettingDataSunsetTimeUpdateFunc_0100, TestSize.Level1)
+{
+    const AccountContext context = AccountContextHelper::CreateBaseContext(TEST_USER100);
+    constexpr int32_t sunsetTime = 1081;
+    constexpr int32_t sunriseTime = 1860;
+    DarkModeManager& manager = DarkModeManager::GetInstance();
+    auto& state = manager.darkModeStates_[context];
+    state.settingMode = DarkModeMode::DARK_MODE_SUNRISE_SUNSET;
+    state.settingSunsetTime = 1080;
+    state.settingSunriseTime = sunriseTime;
+
+    SettingDataManager& dataManager = SettingDataManager::GetInstance();
+    EXPECT_CALL(dataManager, MockGetInt32ValueStrictly(SETTING_DARK_MODE_SUN_SET, _, TEST_USER100))
+        .Times(1).WillOnce(DoAll(SetArgReferee<1>(sunsetTime), Return(ERR_OK)));
+    EXPECT_CALL(manager.alarmTimerManager_, SetScheduleTime(sunsetTime, sunriseTime, TEST_USER100, _, _))
+        .Times(1).WillOnce(Return(ERR_OK));
+    AlarmTimerManager& alarmTimerManagerStaticInstance = AlarmTimerManager::GetInstance();
+    EXPECT_CALL(alarmTimerManagerStaticInstance, MockIsWithinTimeInterval(sunsetTime, sunriseTime))
+        .Times(1).WillOnce(Return(false));
+    EXPECT_CALL(*this, UpdateCallback(_, _)).Times(AnyNumber());
+
+    manager.SettingDataDarkModeSunsetTimeUpdateFunc(SETTING_DARK_MODE_SUN_SET, context);
+    EXPECT_EQ(manager.darkModeStates_[context].settingSunsetTime, sunsetTime);
+}
+
 HWTEST_F(DarkModeManagerTest, TimerCallback_0100, TestSize.Level1)
 {
     TimerCallbackFailTest(TEST_USER1, -1, 7, DarkModeMode::DARK_MODE_INVALID, -1, 7);

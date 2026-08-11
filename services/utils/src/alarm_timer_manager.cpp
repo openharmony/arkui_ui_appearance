@@ -198,19 +198,18 @@ uint64_t AlarmTimerManager::UpdateTimer(const uint64_t id, const uint64_t time,
 void AlarmTimerManager::ClearTimerByUserId(const uint64_t userId)
 {
     std::lock_guard<std::mutex> lock(timerMapMutex_);
-    if (timerIdMap_.find(userId) == timerIdMap_.end()) {
-        LOGE("timerIdMap_ fail to find Timer: %{public}" PRIu64, userId);
-        return;
+    auto timerIt = timerIdMap_.find(userId);
+    if (timerIt != timerIdMap_.end()) {
+        ClearTimer(timerIt->second[START_INDEX]);
+        ClearTimer(timerIt->second[END_INDEX]);
+        timerIdMap_.erase(timerIt);
+    } else {
+        LOGD("timerIdMap_ has no entry for userId: %{public}" PRIu64, userId);
     }
-
-    ClearTimer(timerIdMap_[userId][START_INDEX]);
-    ClearTimer(timerIdMap_[userId][END_INDEX]);
-    timerIdMap_.erase(userId);
-
-    ClearRecalculationTimer(userId);
+    ClearRecalculationTimerLocked(userId);
 
     if (initialSetupTimeMap_.find(userId) == initialSetupTimeMap_.end()) {
-        LOGE("initialSetupTimeMap_ fail to find Timer: %{public}" PRIu64, userId);
+        LOGD("initialSetupTimeMap_ has no entry for userId: %{public}" PRIu64, userId);
     }
     initialSetupTimeMap_.erase(userId);
 }
@@ -319,6 +318,12 @@ void AlarmTimerManager::SetRecalculationTimer(uint64_t userId, const std::functi
 }
 
 void AlarmTimerManager::ClearRecalculationTimer(uint64_t userId)
+{
+    std::lock_guard<std::mutex> lock(timerMapMutex_);
+    ClearRecalculationTimerLocked(userId);
+}
+
+void AlarmTimerManager::ClearRecalculationTimerLocked(uint64_t userId)
 {
     auto it = recalculationTimerIdMap_.find(userId);
     if (it != recalculationTimerIdMap_.end()) {
