@@ -35,6 +35,7 @@ ohos_unittest("dark_mode_manager_test") {
     "${ui_appearance_services_path}/src/dark_mode_manager.cpp",
     "${ui_appearance_services_path}/src/dark_mode_temp_state_manager.cpp",
     "${ui_appearance_services_path}/src/screen_switch_operator_manager.cpp",
+    "${ui_appearance_services_path}/src/sunrise_sunset_calc.cpp",
     "${ui_appearance_services_path}/utils/src/parameter_wrap.cpp",
     "dark_mode_manager_test.cpp",
   ]
@@ -51,6 +52,7 @@ ohos_unittest("dark_mode_manager_test") {
     "hilog:libhilog",
     "init:libbegetutil",
     "safwk:system_ability_fwk",
+    "location:lbsservice_common",
   ]
 }
 
