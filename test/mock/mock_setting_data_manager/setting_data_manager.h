@@ -75,6 +75,12 @@ public:
         return MockSetInt32Value(key, value, userId, needNotify);
     }
 
+    ErrCode SetInt32ValuePair(const std::string& firstKey, int32_t firstValue,
+        const std::string& secondKey, int32_t secondValue, int32_t userId = INVALID_USER_ID) const
+    {
+        return MockSetInt32ValuePair(firstKey, firstValue, secondKey, secondValue, userId);
+    }
+
     ErrCode SetBoolValue(const std::string& key, bool value, int32_t userId = INVALID_USER_ID,
         bool needNotify = true) const
     {
@@ -97,6 +103,8 @@ public:
     MOCK_METHOD(ErrCode, MockGetBoolValue, (const std::string&, bool&, int32_t), (const));
     MOCK_METHOD(ErrCode, MockSetStringValue, (const std::string&, const std::string&, int32_t, bool), (const));
     MOCK_METHOD(ErrCode, MockSetInt32Value, (const std::string&, int32_t, int32_t, bool), (const));
+    MOCK_METHOD(ErrCode, MockSetInt32ValuePair,
+        (const std::string&, int32_t, const std::string&, int32_t, int32_t), (const));
     MOCK_METHOD(ErrCode, MockSetBoolValue, (const std::string&, bool, int32_t, bool), (const));
     MOCK_METHOD(ErrCode, MockIsValidKey, (const std::string&, int32_t), (const));
 };

@@ -19,6 +19,7 @@
 #include <functional>
 #include <list>
 #include <map>
+#include <memory>
 #include <mutex>
 
 #include "account_context.h"
@@ -28,6 +29,10 @@
 #include "dark_mode_temp_state_manager.h"
 #include "screen_switch_operator_manager.h"
 #include "sunrise_sunset_calc.h"
+
+namespace OHOS::Location {
+class Location;
+} // namespace OHOS::Location
 
 namespace OHOS::ArkUi::UiAppearance {
 constexpr int32_t HOUR_TO_MINUTE = 60;
@@ -128,8 +133,6 @@ private:
     bool IsDarkModeCustomAuto(const AccountContext& context);
 
     bool IsDarkModeSunsetSunrise(const AccountContext& context);
-
-    ErrCode RestoreDarkModeSchedule(const AccountContext& context);
 
     void CalculateAndApplySunriseSunsetTimes(const AccountContext& context);
 

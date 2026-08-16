@@ -261,6 +261,63 @@ ErrCode SettingDataManager::SetInt32Value(const std::string& key, const int32_t 
     return SetStringValue(key, valueString, userId, needNotify);
 }
 
+ErrCode SettingDataManager::SetInt32ValuePair(const std::string& firstKey, const int32_t firstValue,
+    const std::string& secondKey, const int32_t secondValue, const int32_t userId) const
+{
+    int32_t oldFirstValue = 0;
+    const bool canRollbackFirst = GetInt32Value(firstKey, oldFirstValue, userId) == ERR_OK;
+    std::string firstUriString;
+    std::string secondUriString;
+    ResetCallingIdentityScope scope;
+    std::shared_ptr<DataShare::DataShareHelper> firstHelper;
+    std::shared_ptr<DataShare::DataShareHelper> secondHelper;
+    CreateDataShareHelperAndUri(userId, firstKey, firstUriString, firstHelper);
+    CreateDataShareHelperAndUri(userId, secondKey, secondUriString, secondHelper);
+    if (firstHelper == nullptr || secondHelper == nullptr) {
+        LOGE("helper is null when setting value pair, userId: %{public}d", userId);
+        ReleaseDataShareHelper(firstHelper);
+        ReleaseDataShareHelper(secondHelper);
+        return ERR_NO_INIT;
+    }
+
+    auto updateValue = [](const std::shared_ptr<DataShare::DataShareHelper>& helper, Uri& uri,
+        const std::string& key, const std::string& value) {
+        DataShare::DataShareValueObject keyObj(key);
+        DataShare::DataShareValueObject valueObj(value);
+        DataShare::DataShareValuesBucket bucket;
+        bucket.Put(SETTING_DATA_COLUMN_KEYWORD, keyObj);
+        bucket.Put(SETTING_DATA_COLUMN_VALUE, valueObj);
+        DataShare::DataSharePredicates predicates;
+        predicates.EqualTo(SETTING_DATA_COLUMN_KEYWORD, key);
+        int32_t result = helper->Update(uri, predicates, bucket);
+        if (result <= 0) {
+            result = helper->Insert(uri, bucket);
+        }
+        return result > 0;
+    };
+
+    Uri firstUri(firstUriString);
+    Uri secondUri(secondUriString);
+    bool firstUpdated = updateValue(firstHelper, firstUri, firstKey, std::to_string(firstValue));
+    bool secondUpdated = firstUpdated &&
+        updateValue(secondHelper, secondUri, secondKey, std::to_string(secondValue));
+    if (!secondUpdated) {
+        if (firstUpdated && canRollbackFirst) {
+            updateValue(firstHelper, firstUri, firstKey, std::to_string(oldFirstValue));
+        }
+        LOGE("failed to set value pair, firstKey: %{public}s, secondKey: %{public}s, userId: %{public}d",
+            firstKey.c_str(), secondKey.c_str(), userId);
+        ReleaseDataShareHelper(firstHelper);
+        ReleaseDataShareHelper(secondHelper);
+        return ERR_INVALID_OPERATION;
+    }
+    firstHelper->NotifyChange(firstUri);
+    secondHelper->NotifyChange(secondUri);
+    ReleaseDataShareHelper(firstHelper);
+    ReleaseDataShareHelper(secondHelper);
+    return ERR_OK;
+}
+
 ErrCode SettingDataManager::SetBoolValue(const std::string& key, const bool value, const int32_t userId,
     const bool needNotify) const
 {
