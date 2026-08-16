@@ -206,7 +206,12 @@ void AlarmTimerManager::ClearTimerByUserId(const uint64_t userId)
     } else {
         LOGD("timerIdMap_ has no entry for userId: %{public}" PRIu64, userId);
     }
-    ClearRecalculationTimerLocked(userId);
+    // Clear the recalculation timer in the current critical section to avoid reacquiring timerMapMutex_.
+    auto recalculationTimerIt = recalculationTimerIdMap_.find(userId);
+    if (recalculationTimerIt != recalculationTimerIdMap_.end()) {
+        ClearTimer(recalculationTimerIt->second);
+        recalculationTimerIdMap_.erase(recalculationTimerIt);
+    }
 
     if (initialSetupTimeMap_.find(userId) == initialSetupTimeMap_.end()) {
         LOGD("initialSetupTimeMap_ has no entry for userId: %{public}" PRIu64, userId);
@@ -319,17 +324,12 @@ void AlarmTimerManager::SetRecalculationTimer(uint64_t userId, const std::functi
 
 void AlarmTimerManager::ClearRecalculationTimer(uint64_t userId)
 {
+    // This independent entry protects recalculationTimerIdMap_ with timerMapMutex_.
     std::lock_guard<std::mutex> lock(timerMapMutex_);
-    ClearRecalculationTimerLocked(userId);
-}
-
-void AlarmTimerManager::ClearRecalculationTimerLocked(uint64_t userId)
-{
     auto it = recalculationTimerIdMap_.find(userId);
     if (it != recalculationTimerIdMap_.end()) {
         ClearTimer(it->second);
         recalculationTimerIdMap_.erase(it);
-        LOGI("recalculation timer cleared for userId: %{public}" PRIu64, userId);
     }
 }
 } // namespace ArkUi::UiAppearance

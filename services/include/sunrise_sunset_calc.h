@@ -5,17 +5,23 @@
 #ifndef UI_APPEARANCE_SUNRISE_SUNSET_CALC_H
 #define UI_APPEARANCE_SUNRISE_SUNSET_CALC_H
 
+#include <cstdint>
 #include <ctime>
 #include <string>
-#include <cmath>
 
+namespace OHOS::ArkUi::UiAppearance {
 namespace DarkModeConstants {
-    constexpr int32_t MS_PER_SEC = 1000;
-    constexpr int32_t SECS_PER_MIN = 60;
-    constexpr int32_t MINS_PER_HOUR = 60;
-    constexpr int32_t SECS_PER_DAY = 86400;
-    constexpr int32_t MINS_PER_DAY = 1440;
-}
+/** Number of milliseconds in one second. */
+constexpr int32_t MS_PER_SEC = 1000;
+/** Number of seconds in one minute. */
+constexpr int32_t SECS_PER_MIN = 60;
+/** Number of minutes in one hour. */
+constexpr int32_t MINS_PER_HOUR = 60;
+/** Number of seconds in one 24-hour day. */
+constexpr int32_t SECS_PER_DAY = 86400;
+/** Number of minutes in one 24-hour day. */
+constexpr int32_t MINS_PER_DAY = 1440;
+} // namespace DarkModeConstants
 
 /**
  * Sunrise and sunset calculation result.
@@ -32,23 +38,23 @@ struct SunriseSunsetResult {
  */
 namespace SunriseSunsetUtils {
 
-    /**
-     * Uses two iterations for accuracy: the first starts at UTC noon, and the second
-     * recalculates with a Julian day adjusted by the first result.
-     * @param lat Latitude in the range [-90, 90].
-     * @param lon Longitude in the range [-180, 180].
-     * @param timestampMs Timestamp in milliseconds.
-     * @returns Sunrise and sunset in UTC seconds from 00:00; -1 for polar day or polar night.
-     */
-    SunriseSunsetResult CalculateSunriseSunset(double lat, double lon, int64_t timestampMs);
+/**
+ * Uses two iterations for accuracy: the first starts at UTC noon, and the second
+ * recalculates with a Julian day adjusted by the first result.
+ * @param lat Latitude in the range [-90, 90].
+ * @param lon Longitude in the range [-180, 180].
+ * @param timestampMs Timestamp in milliseconds.
+ * @returns Sunrise and sunset in UTC seconds from 00:00; -1 for polar day or polar night.
+ */
+SunriseSunsetResult CalculateSunriseSunset(double lat, double lon, int64_t timestampMs);
 
-    /**
-     * Formats UTC seconds as local time in HH:mm format, rounded to the nearest minute.
-     * @param utcSec UTC seconds from 00:00; -1 for polar day or polar night.
-     * @param timezoneOffset Time zone offset in minutes, for example -480 for UTC+8.
-     * @returns The formatted time, or "---" for polar day or polar night.
-     */
-    std::string FormatTimeFromSec(double utcSec, int timezoneOffset);
+/**
+ * Formats UTC seconds as local time in HH:mm format, rounded to the nearest minute.
+ * @param utcSec UTC seconds from 00:00; -1 for polar day or polar night.
+ * @param timezoneOffset Time zone offset in minutes, for example -480 for UTC+8.
+ * @returns The formatted time, or "---" for polar day or polar night.
+ */
+std::string FormatTimeFromSec(double utcSec, int timezoneOffset);
 
 } // namespace SunriseSunsetUtils
 
@@ -136,7 +142,10 @@ private:
     /** Current sunrise and sunset condition. */
     SunCondition condition_;
 
+    /** Sentinel returned when a date has no sunrise or no sunset. */
     static constexpr double POLAR_MARK = -1;
 };
+
+} // namespace OHOS::ArkUi::UiAppearance
 
 #endif // UI_APPEARANCE_SUNRISE_SUNSET_CALC_H

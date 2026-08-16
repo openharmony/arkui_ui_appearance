@@ -18,6 +18,7 @@
 #include <chrono>
 
 #include "iservice_registry.h"
+#include "message_option.h"
 #include "message_parcel.h"
 #include "system_ability_definition.h"
 #include "location.h"
@@ -736,7 +737,7 @@ std::unique_ptr<OHOS::Location::Location> DarkModeManager::GetCachedLocation(con
         return nullptr;
     }
     int32_t ret = remote->SendRequest(COMMAND_GET_CACHE_LOCATION, data, reply, option);
-    if (ret != ERR_NONE) {
+    if (ret != ERR_OK) {
         LOGW("SendRequest failed, ret: %{public}d, context: %{public}s",
             ret, AccountContextHelper::ToString(context).c_str());
         return nullptr;
@@ -764,7 +765,7 @@ void DarkModeManager::ApplySunriseSunsetTimes(double lat, double lon, const Acco
     SunriseSunsetInfo info(lat, lon, nowMs);
 
     if (info.IsPolarDay() || info.IsPolarNight()) {
-        LOGI("polar condition detected (day=%{public}d, night=%{public}d), keeping defaults, context: %{public}s",
+        LOGW("polar condition detected (day=%{public}d, night=%{public}d), keeping defaults, context: %{public}s",
             info.IsPolarDay(), info.IsPolarNight(), AccountContextHelper::ToString(context).c_str());
         return;
     }
@@ -799,29 +800,9 @@ void DarkModeManager::ApplySunriseSunsetTimes(double lat, double lon, const Acco
             return;
         }
     }
-
-    LOGI("updating sunrise/sunset settings with notification, context: %{public}s",
-        AccountContextHelper::ToString(context).c_str());
-    auto isSunriseSunsetMode = [this, context]() {
-        std::lock_guard lock(darkModeStatesMutex_);
-        auto it = darkModeStates_.find(context);
-        return it != darkModeStates_.end() && it->second.settingMode == DARK_MODE_SUNRISE_SUNSET;
-    };
-    if (!isSunriseSunsetMode()) {
-        LOGD("skip sunrise/sunset write because mode changed, context: %{public}s",
-            AccountContextHelper::ToString(context).c_str());
-        return;
-    }
-    ErrCode sunsetCode = manager.SetInt32Value(sunsetKey, newSunset, context.userId, true);
-    if (!isSunriseSunsetMode()) {
-        LOGD("skip sunrise write because mode changed, context: %{public}s",
-            AccountContextHelper::ToString(context).c_str());
-        return;
-    }
-    ErrCode sunriseCode = manager.SetInt32Value(sunriseKey, newSunrise, context.userId, true);
-    if (sunsetCode != ERR_OK || sunriseCode != ERR_OK) {
-        LOGW("failed to update sunrise/sunset settings, sunsetCode: %{public}d, sunriseCode: %{public}d",
-            sunsetCode, sunriseCode);
+    ErrCode code = manager.SetInt32ValuePair(sunsetKey, newSunset, sunriseKey, newSunrise, context.userId);
+    if (code != ERR_OK) {
+        LOGW("failed to update sunrise/sunset settings, code: %{public}d", code);
     }
 }
 

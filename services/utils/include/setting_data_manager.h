@@ -49,6 +49,10 @@ public:
     ErrCode SetInt32Value(const std::string& key, int32_t value, int32_t userId = INVALID_USER_ID,
         bool needNotify = true) const;
 
+    // Updates both values before notifying observers; rolls back the first value if the second update fails.
+    ErrCode SetInt32ValuePair(const std::string& firstKey, int32_t firstValue,
+        const std::string& secondKey, int32_t secondValue, int32_t userId = INVALID_USER_ID) const;
+
     ErrCode SetBoolValue(const std::string& key, bool value, int32_t userId = INVALID_USER_ID,
         bool needNotify = true) const;
 

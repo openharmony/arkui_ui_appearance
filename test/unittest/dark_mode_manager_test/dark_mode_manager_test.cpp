@@ -1107,18 +1107,8 @@ HWTEST_F(DarkModeManagerTest, ApplySunriseSunsetTimes_0100, TestSize.Level1)
     state.settingSunriseTime = -1;
 
     SettingDataManager& dataManager = SettingDataManager::GetInstance();
-    auto checkLockReleased = [&manager](const std::string&, int32_t, int32_t, bool) {
-        bool locked = manager.darkModeStatesMutex_.try_lock();
-        EXPECT_TRUE(locked);
-        if (locked) {
-            manager.darkModeStatesMutex_.unlock();
-        }
-        return ERR_OK;
-    };
-    EXPECT_CALL(dataManager, MockSetInt32Value(SETTING_DARK_MODE_SUN_SET, _, TEST_USER100, true))
-        .Times(1).WillOnce(Invoke(checkLockReleased));
-    EXPECT_CALL(dataManager, MockSetInt32Value(SETTING_DARK_MODE_SUN_RISE, _, TEST_USER100, true))
-        .Times(1).WillOnce(Invoke(checkLockReleased));
+    EXPECT_CALL(dataManager, MockSetInt32ValuePair(SETTING_DARK_MODE_SUN_SET, _,
+        SETTING_DARK_MODE_SUN_RISE, _, TEST_USER100)).Times(1).WillOnce(Return(ERR_OK));
 
     manager.ApplySunriseSunsetTimes(31.2304, 121.4737, context);
 }
