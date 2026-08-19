@@ -78,9 +78,9 @@ Use the KB as the first-stop context before any deep code analysis, and follow t
 
 | Task | Read this KB first |
 |---|---|
-| Dark mode logic / scheduling | `docs/kb/service/dark-mode-manager.md` |
+| Dark mode logic / scheduling | `docs/kb/feature/dark-mode-manager.md` |
 | Service lifecycle / SA / IPC | `docs/kb/service/ui-appearance-service.md` |
-| Smart gesture mode | `docs/kb/service/smart-gesture-manager.md` |
+| Smart gesture mode | `docs/kb/feature/smart-gesture-manager.md` |
 | Architecture / three-layer stack | `docs/kb/architecture/ui-appearance-architecture.md` |
 | API surface / NAPI / ANI | `docs/kb/api/` |
 
@@ -88,10 +88,10 @@ Use the KB as the first-stop context before any deep code analysis, and follow t
 
 | Term | KB lookup |
 |---|---|
-| custom-auto, sunrise-sunset, darkmode_starttime | `docs/kb/service/dark-mode-manager.md` |
+| custom-auto, sunrise-sunset, darkmode_starttime | `docs/kb/feature/dark-mode-manager.md` |
 | SA ID 7002, ui_service, IUiAppearanceAbility | `docs/kb/service/ui-appearance-service.md` |
 | UPDATE_CONFIGURATION, PERMISSION_ERR(201) | `docs/kb/service/ui-appearance-service.md` |
-| smart_gesture, auto/disabled | `docs/kb/service/smart-gesture-manager.md` |
+| smart_gesture, auto/disabled | `docs/kb/feature/smart-gesture-manager.md` |
 
 ### 3.4 Authoring Standard
 
@@ -144,7 +144,7 @@ find docs/kb -name "*.md" -type f | wc -l
   - `src/account_context.cpp`: Multi-user and sub-profile context
   - `src/screen_switch_operator_manager.cpp`: Screen on/off state tracking
   - `src/background_app_color_switch_settings.cpp`: Background app color switch whitelist
-  - `utils/`: Utility classes (SettingDataManager, AlarmTimerManager, ParameterWrap, JsonUtils, IpcSkeletonUtils)
+  - `utils/`: Utility classes (SettingDataManager, SettingDataObserver, AlarmTimerManager, AlarmTimer, ParameterWrap, JsonUtils, IpcSkeletonUtils)
   - `IUiAppearanceAbility.idl`: IDL interface definition (generates Stub + Proxy)
 - `interfaces/`: Public API layers
   - `kits/native/`: C++ native kit (`UIAppearance` class, `ui_appearance_types.h`)
