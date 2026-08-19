@@ -48,6 +48,8 @@ public:
     MOCK_METHOD(bool, RestartAllTimer, ());
     MOCK_METHOD(void, Dump, (), (const));
     MOCK_METHOD(bool, MockIsWithinTimeInterval, (uint64_t startTime, uint64_t endTime));
+    MOCK_METHOD(void, SetRecalculationTimer, (uint64_t userId, const std::function<void()>& callback));
+    MOCK_METHOD(void, ClearRecalculationTimer, (uint64_t userId));
 };
 } // namespace OHOS::ArkUi::UiAppearance
 #endif // UI_APPEARANCE_MOCK_UTILS_ALARM_TIMER_MANAGER_H

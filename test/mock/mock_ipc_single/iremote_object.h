@@ -19,11 +19,19 @@
 #include "refbase.h"
 
 namespace OHOS {
+class MessageParcel;
+class MessageOption;
+
 class IRemoteObject : public virtual RefBase {
 public:
     IRemoteObject() = default;
 
     ~IRemoteObject() override = default;
+
+    virtual int32_t SendRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+    {
+        return 0;
+    }
 };
 } // namespace OHOS
 #endif // UI_APPEARANCE_MOCK_IREMOTE_OBJECT_H
