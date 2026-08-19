@@ -16,6 +16,7 @@
 #include "alarm_timer_manager.h"
 
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <ctime>
 #include <sys/time.h>
@@ -34,6 +35,7 @@ constexpr int32_t START_INDEX = 0;
 constexpr int32_t END_INDEX = 1;
 const std::string START_TIMER_NAME = "dark_mode_start_timer";
 const std::string END_TIMER_NAME = "dark_mode_end_timer";
+const std::string RECALCULATION_TIMER_NAME = "dark_mode_recalculation_timer";
 
 ErrCode AlarmTimerManager::SetScheduleTime(const uint64_t startTime, const uint64_t endTime,
     const uint64_t userId, const std::function<void()>& startCallback, const std::function<void()>& endCallback)
@@ -196,17 +198,23 @@ uint64_t AlarmTimerManager::UpdateTimer(const uint64_t id, const uint64_t time,
 void AlarmTimerManager::ClearTimerByUserId(const uint64_t userId)
 {
     std::lock_guard<std::mutex> lock(timerMapMutex_);
-    if (timerIdMap_.find(userId) == timerIdMap_.end()) {
-        LOGE("timerIdMap_ fail to find Timer: %{public}" PRIu64, userId);
-        return;
+    auto timerIt = timerIdMap_.find(userId);
+    if (timerIt != timerIdMap_.end()) {
+        ClearTimer(timerIt->second[START_INDEX]);
+        ClearTimer(timerIt->second[END_INDEX]);
+        timerIdMap_.erase(timerIt);
+    } else {
+        LOGD("timerIdMap_ has no entry for userId: %{public}" PRIu64, userId);
+    }
+    // Clear the recalculation timer in the current critical section to avoid reacquiring timerMapMutex_.
+    auto recalculationTimerIt = recalculationTimerIdMap_.find(userId);
+    if (recalculationTimerIt != recalculationTimerIdMap_.end()) {
+        ClearTimer(recalculationTimerIt->second);
+        recalculationTimerIdMap_.erase(recalculationTimerIt);
     }
 
-    ClearTimer(timerIdMap_[userId][START_INDEX]);
-    ClearTimer(timerIdMap_[userId][END_INDEX]);
-    timerIdMap_.erase(userId);
-
     if (initialSetupTimeMap_.find(userId) == initialSetupTimeMap_.end()) {
-        LOGE("initialSetupTimeMap_ fail to find Timer: %{public}" PRIu64, userId);
+        LOGD("initialSetupTimeMap_ has no entry for userId: %{public}" PRIu64, userId);
     }
     initialSetupTimeMap_.erase(userId);
 }
@@ -288,6 +296,41 @@ bool AlarmTimerManager::RestartAllTimer()
     }
 
     return res;
+}
+
+void AlarmTimerManager::SetRecalculationTimer(uint64_t userId, const std::function<void()>& callback)
+{
+    std::lock_guard<std::mutex> lock(timerMapMutex_);
+    auto it = recalculationTimerIdMap_.find(userId);
+    if (it != recalculationTimerIdMap_.end() && it->second > 0) {
+        LOGD("recalculation timer already running for userId: %{public}" PRIu64, userId);
+        return;
+    }
+
+    uint64_t triggerTime = static_cast<uint64_t>(
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count()) +
+        DAY_TO_SECOND * SECOND_TO_MILLI;
+
+    uint64_t timerId = InitTimer(triggerTime, callback, RECALCULATION_TIMER_NAME);
+    if (timerId == 0) {
+        LOGE("fail to create recalculation timer for userId: %{public}" PRIu64, userId);
+        return;
+    }
+
+    recalculationTimerIdMap_[userId] = timerId;
+    LOGI("recalculation timer started, id: %{public}" PRIu64 ", userId: %{public}" PRIu64, timerId, userId);
+}
+
+void AlarmTimerManager::ClearRecalculationTimer(uint64_t userId)
+{
+    // This independent entry protects recalculationTimerIdMap_ with timerMapMutex_.
+    std::lock_guard<std::mutex> lock(timerMapMutex_);
+    auto it = recalculationTimerIdMap_.find(userId);
+    if (it != recalculationTimerIdMap_.end()) {
+        ClearTimer(it->second);
+        recalculationTimerIdMap_.erase(it);
+    }
 }
 } // namespace ArkUi::UiAppearance
 } // namespace OHOS

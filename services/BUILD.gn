@@ -67,6 +67,7 @@ ohos_shared_library("ui_appearance_service") {
     "src/smart_gesture_manager.cpp",
     "src/ui_appearance_ability.cpp",
     "src/background_app_color_switch_settings.cpp",
+    "src/sunrise_sunset_calc.cpp",
     "utils/src/alarm_timer.cpp",
     "utils/src/alarm_timer_manager.cpp",
     "utils/src/json_utils.cpp",
@@ -118,7 +119,8 @@ ohos_shared_library("ui_appearance_service") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "time_service:time_client",
-    "access_token:libtokenid_sdk"
+    "access_token:libtokenid_sdk",
+    "location:lbsservice_common",
   ]
   subsystem_name = "arkui"
   part_name = "ui_appearance"

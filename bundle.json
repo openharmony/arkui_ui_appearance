@@ -40,7 +40,8 @@
         "time_service",
         "os_account",
         "common_event_service",
-        "runtime_core"
+        "runtime_core",
+        "location"
       ],
       "third_party": []
     },
