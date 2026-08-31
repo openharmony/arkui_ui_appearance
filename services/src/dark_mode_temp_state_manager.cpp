@@ -20,6 +20,7 @@
 #include <cinttypes>
 #include "dark_mode_manager.h"
 #include "parameter_wrap.h"
+#include "parse_persist_int64.h"
 #include "ui_appearance_log.h"
 
 namespace OHOS::ArkUi::UiAppearance {
@@ -49,11 +50,15 @@ void TemporaryColorModeManager::InitData(const AccountContext& context)
     if (info.tempColorMode == TempColorModeType::ColorModeTemp) {
         std::string startTime = "0";
         GetParameterWrap(TemporaryStateStartTimeAssignUser(context), startTime);
-        info.keepTemporaryStateStartTime = atoll(startTime.c_str());
+        if (!ParsePersistInt64(startTime, info.keepTemporaryStateStartTime)) {
+            LOGE("invalid persist start time: %{public}s", startTime.c_str());
+        }
 
         std::string endTime = "0";
         GetParameterWrap(TemporaryStateEndTimeAssignUser(context), endTime);
-        info.keepTemporaryStateEndTime = atoll(endTime.c_str());
+        if (!ParsePersistInt64(endTime, info.keepTemporaryStateEndTime)) {
+            LOGE("invalid persist end time: %{public}s", endTime.c_str());
+        }
     }
     {
         std::lock_guard guard(multiUserTempColorModeMapMutex_);
