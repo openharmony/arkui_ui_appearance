@@ -100,19 +100,22 @@ bool TemporaryColorModeManager::SetColorModeTemporary(const int32_t userId)
 
 bool TemporaryColorModeManager::SetColorModeTemporary(const AccountContext& context)
 {
+    int32_t settingStartTime = 0;
+    int32_t settingEndTime = 0;
+    auto res = DarkModeManager::GetInstance().GetSettingTime(context, settingStartTime, settingEndTime);
+    if (res == false) {
+        LOGE("GetSettingTime faild context: %{public}s", AccountContextHelper::ToString(context).c_str());
+        return false;
+    }
+    int64_t keepTemporaryStateStartTime = 0;
+    int64_t keepTemporaryStateEndTime = 0;
+    GetTempColorModeTimeInfo(settingStartTime, settingEndTime,
+        keepTemporaryStateStartTime, keepTemporaryStateEndTime);
     {
         std::lock_guard guard(multiUserTempColorModeMapMutex_);
         multiUserTempColorModeMap_[context].tempColorMode = TempColorModeType::ColorModeTemp;
-        int32_t settingStartTime = 0;
-        int32_t settingEndTime = 0;
-        auto res = DarkModeManager::GetInstance().GetSettingTime(context, settingStartTime, settingEndTime);
-        if (res == false) {
-            LOGE("GetSettingTime faild context: %{public}s", AccountContextHelper::ToString(context).c_str());
-            return false;
-        }
-        GetTempColorModeTimeInfo(settingStartTime, settingEndTime,
-            multiUserTempColorModeMap_[context].keepTemporaryStateStartTime,
-            multiUserTempColorModeMap_[context].keepTemporaryStateEndTime);
+        multiUserTempColorModeMap_[context].keepTemporaryStateStartTime = keepTemporaryStateStartTime;
+        multiUserTempColorModeMap_[context].keepTemporaryStateEndTime = keepTemporaryStateEndTime;
     }
     SaveTempColorModeInfo(context);
     return true;
